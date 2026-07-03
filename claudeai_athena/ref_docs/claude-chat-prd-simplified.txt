@@ -1,0 +1,2276 @@
+<project_specification>
+  <project_name>Claude Chat Platform - Simplified Edition</project_name>
+
+  <overview>
+    Build a clean, focused AI chat interface powered by AWS Bedrock Claude models. 
+    Features streaming conversations, HTML artifacts with live preview, MCP tool integrations, 
+    provider-native tools (code execution, web search), and basic conversation management. 
+    Built with Next.js, Prompt Kit components, and Tailwind CSS for a modern, professional experience.
+  </overview>
+
+  <feature_count>6 Core Features</feature_count>
+
+  <scope_summary>
+    INCLUDED:
+    - AWS Bedrock provider (Claude models only)
+    - Basic email/password authentication
+    - Conversation CRUD (create, read, update, delete)
+    - HTML artifacts with live preview panel
+    - MCP (Model Context Protocol) tool connections
+    - Provider-native tools (code execution, web search)
+    - Prompt Kit component library integration
+    
+    EXCLUDED:
+    - Multi-organization support
+    - Role-based access control (RBAC)
+    - Admin panels
+    - Multiple artifact types (React, SVG, Mermaid, etc.)
+    - Projects and knowledge base
+    - Conversation sharing/export
+    - Analytics and usage tracking
+    - Multiple AI providers
+    - Prompt library
+    - Folders/organization features
+  </scope_summary>
+
+  <technology_stack>
+    <frontend>
+      <framework>Next.js 15 with App Router and React 19</framework>
+      <styling>Tailwind CSS</styling>
+      <ui_components>Prompt Kit (shadcn-based) from https://prompt-kit.com/</ui_components>
+      <state_management>React hooks and context</state_management>
+      <routing>Next.js App Router with file-based routing</routing>
+      <markdown>Prompt Kit Markdown component</markdown>
+      <code_highlighting>Prompt Kit CodeBlock with Shiki</code_highlighting>
+    </frontend>
+
+    <backend>
+      <runtime>Next.js API Routes (Route Handlers)</runtime>
+      <database>Supabase PostgreSQL</database>
+      <authentication>Supabase Auth</authentication>
+      <storage>Supabase Storage (for file uploads)</storage>
+      <api_integration>Vercel AI SDK 5.x with AWS Bedrock provider</api_integration>
+      <streaming>AI SDK streaming with toDataStreamResponse()</streaming>
+      <provider>AWS Bedrock (Claude Opus 4.5, Sonnet 4.5, Haiku 4.5)</provider>
+    </backend>
+
+    <communication>
+      <api>RESTful endpoints via Next.js Route Handlers</api>
+      <streaming>Server-Sent Events via AI SDK streaming</streaming>
+      <ai_sdk>Vercel AI SDK 5.x with Bedrock provider</ai_sdk>
+    </communication>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 20+ LTS
+      - npm or pnpm package manager
+      - Supabase project with PostgreSQL database
+      - AWS account with Bedrock access
+      - AWS Bedrock API credentials (Access Key ID, Secret Access Key, Region)
+      - Claude models enabled in AWS Bedrock console
+    </environment_setup>
+  </prerequisites>
+
+  <!-- ============================================================== -->
+  <!-- ROUTE STRUCTURE                                                -->
+  <!-- ============================================================== -->
+
+  <route_structure>
+    <overview>
+      Simple single-tenant application with basic authentication.
+      All routes are at root level, no organization-based routing.
+    </overview>
+
+    <public_routes>
+      PUBLIC ROUTES (no auth required):
+      - /login                   Login page
+      - /register                Registration page
+      - /forgot-password         Password reset request
+      - /reset-password          Password reset form
+    </public_routes>
+
+    <authenticated_routes>
+      AUTHENTICATED ROUTES (login required):
+      - /                        Main chat interface (welcome state)
+      - /c/[id]                  Specific conversation view
+      - /settings                User settings and preferences
+    </authenticated_routes>
+
+    <middleware_logic>
+      AUTHENTICATION MIDDLEWARE:
+
+      ```typescript
+      // middleware.ts
+      export function middleware(request: NextRequest) {
+        const { pathname } = request.nextUrl;
+        const session = getSession(request);
+
+        // Public routes
+        const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
+        if (publicRoutes.includes(pathname)) {
+          return NextResponse.next();
+        }
+
+        // Protected routes - require authentication
+        if (!session) {
+          return redirect('/login');
+        }
+
+        return NextResponse.next();
+      }
+      ```
+    </middleware_logic>
+  </route_structure>
+
+  <!-- ============================================================== -->
+  <!-- CORE FEATURES                                                  -->
+  <!-- ============================================================== -->
+
+  <core_features>
+
+    <!-- ============================================================ -->
+    <!-- 1. BASIC AUTHENTICATION                                      -->
+    <!-- ============================================================ -->
+
+    <authentication>
+      <overview>
+        Simple email/password authentication using Supabase Auth.
+        No roles, no permissions - all users have equal access.
+      </overview>
+
+      <features>
+        - Email/password registration
+        - Email/password login
+        - Password reset via email
+        - User profile (name, avatar)
+        - Session management
+        - Logout functionality
+      </features>
+
+      <user_profile>
+        Users can manage:
+        - Name
+        - Email address
+        - Avatar image
+        - AWS Bedrock API credentials (encrypted)
+        - Password change
+      </user_profile>
+
+      <api_key_management>
+        SINGLE-TIER API KEY SYSTEM:
+        
+        Each user provides their own AWS Bedrock credentials:
+        - AWS Access Key ID
+        - AWS Secret Access Key
+        - AWS Region (e.g., us-east-1)
+        
+        Keys are:
+        - Encrypted with AES-256-GCM before storage
+        - Never exposed to client
+        - Validated before saving
+        - Used for all API calls to Bedrock
+      </api_key_management>
+
+      <ui_flow>
+        REGISTRATION:
+        1. User visits /register
+        2. Enters email, password, name
+        3. Receives verification email
+        4. Clicks verification link
+        5. Redirected to /settings to add AWS credentials
+        6. Can start chatting
+
+        LOGIN:
+        1. User visits /login
+        2. Enters email and password
+        3. Redirected to / (main chat)
+        
+        FIRST-TIME SETUP:
+        1. After registration, user prompted to add AWS Bedrock API key
+        2. Instructions provided on how to obtain credentials
+        3. Keys tested before saving
+        4. User can proceed to chat
+      </ui_flow>
+    </authentication>
+
+    <!-- ============================================================ -->
+    <!-- 2. CHAT INTERFACE                                            -->
+    <!-- ============================================================ -->
+
+    <chat_interface>
+      <basic_features>
+        - Clean, centered chat layout (Prompt Kit Message components)
+        - Streaming message responses with loader (Prompt Kit PulseLoader)
+        - Markdown rendering (Prompt Kit Markdown)
+        - Code blocks with syntax highlighting (Prompt Kit CodeBlock)
+        - Message editing and regeneration
+        - Stop generation button during streaming
+        - Input field with auto-resize (Prompt Kit PromptInput)
+        - Keyboard shortcuts (Enter to send, Shift+Enter for newline)
+        - Reasoning display (Prompt Kit Reasoning component)
+        - Tool execution display (Prompt Kit Tool component)
+        - Source display for web searches (Prompt Kit Source component)
+        - Floating scroll-to-bottom button (Prompt Kit ScrollButton)
+      </basic_features>
+
+      <model_selection>
+        MODEL SELECTOR DROPDOWN:
+        - Claude Opus 4.5 (most capable, highest cost)
+        - Claude Sonnet 4.5 (balanced performance and cost)
+        - Claude Haiku 4.5 (fastest, lowest cost)
+        
+        User can switch models:
+        - Between conversations (any model)
+        - Within same conversation (locked to same model)
+        
+        Model info displayed:
+        - Model name
+        - Context window size
+        - Relative cost indicator
+      </model_selection>
+
+      <welcome_state>
+        CENTERED LAYOUT - Shown when no conversation is active:
+
+        ┌──────────────────────────────────────────────────────────┐
+        │                                                          │
+        │                    [Claude Logo ✱]                       │
+        │                                                          │
+        │          "Good morning, [User Name]"                     │
+        │                                                          │
+        │        ┌────────────────────────────────────┐            │
+        │        │ How can I help you today?          │            │
+        │        │ [+]                        [Send ↑]│            │
+        │        └────────────────────────────────────┘            │
+        │                                                          │
+        │   [Write] [Learn] [Code] [Analyze] [Create]              │
+        │                                                          │
+        └──────────────────────────────────────────────────────────┘
+
+        GREETING SYSTEM (Prompt Kit):
+        Time-based personalized greetings:
+        - 5am-12pm: "Good morning, [User Name]"
+        - 12pm-5pm: "Good afternoon, [User Name]"
+        - 5pm-9pm: "Good evening, [User Name]"
+        - 9pm-5am: "Good night, [User Name]"
+
+        CENTERED INPUT (Prompt Kit PromptInput):
+        - Input box centered in middle of screen
+        - [+] button on left for attachments/options
+        - [Send] button on right
+        - Model selector appears after first message
+
+        SUGGESTION CHIPS (Prompt Kit PromptSuggestion):
+        - Default chips: Write, Learn, Code, Analyze, Create
+        - Click chip to populate input with starter prompt
+        - Uses "default" mode for clean styling
+
+        LAYOUT TRANSITION:
+        When user sends first message:
+        1. Input box moves from center to bottom (sticky)
+        2. Greeting and suggestions disappear
+        3. Chat messages appear in main area
+        4. Conversation title appears at top
+        5. Model selector appears in input area
+      </welcome_state>
+
+      <conversation_view>
+        ACTIVE CHAT LAYOUT:
+        
+        ┌─────────────────────────────────────────────────────┐
+        │ Conversation Title                          [...]   │
+        └─────────────────────────────────────────────────────┘
+        │                                      ┌────────────┐ │
+        │                                      │ User msg   │ │
+        │                                      └────────────┘ │
+        │  ┌────────────────────────────────────────────────┐ │
+        │  │ <Reasoning>                            [∧/∨]   │ │
+        │  │ Claude's thinking process...                   │ │
+        │  │ Step-by-step reasoning here                    │ │
+        │  └────────────────────────────────────────────────┘ │
+        │                                                     │
+        │  ┌────────────────────────────────────────────────┐ │
+        │  │ <Tool name="code_execution">                   │ │
+        │  │   ⚙️ Running Python code...                    │ │
+        │  │   <CodeBlock language="python">                │ │
+        │  │     def calculate():                           │ │
+        │  │       return 42                                │ │
+        │  │   </CodeBlock>                                 │ │
+        │  │   Output: 42                                   │ │
+        │  └────────────────────────────────────────────────┘ │
+        │                                                     │
+        │  <Markdown>                                         │
+        │  Assistant response text here...                    │
+        │  </Markdown>                                        │
+        │                                                     │
+        │  [Copy] [👍] [👎] [Regenerate]                      │
+        │  ✱                                                  │
+        ├─────────────────────────────────────────────────────┤
+        │ <PromptInput>                                       │
+        │ Reply to Claude...                                  │
+        │ [+]                             [Model ▼] [Send ↑]  │
+        │ </PromptInput>                                      │
+        └─────────────────────────────────────────────────────┘
+
+        MESSAGE COMPONENTS (Prompt Kit):
+
+        USER MESSAGES (Prompt Kit Message):
+        - Right-aligned dark pill/bubble
+        - Rounded corners (full pill shape)
+        - Compact styling
+        - User avatar on right (optional)
+
+        ASSISTANT MESSAGES (Prompt Kit Message):
+        - Left-aligned, no bubble background
+        - Text flows naturally on page background
+        - Claude asterisk (✱) icon as avatar
+        - Markdown rendered with Prompt Kit Markdown
+        - Code blocks with Prompt Kit CodeBlock + Shiki
+        - Message actions below (Copy, Thumbs, Regenerate)
+
+        REASONING DISPLAY (Prompt Kit Reasoning):
+        - Collapsible section at top of assistant message
+        - Shows Claude's extended thinking process
+        - Collapsed by default after generation complete
+        - One-line summary when collapsed
+        - Expand to see full reasoning chain
+
+        TOOL EXECUTION (Prompt Kit Tool):
+        - Shows tool name and status
+        - Input parameters displayed
+        - Code blocks for code execution
+        - Output/results shown
+        - Status indicators (running, success, error)
+
+        WEB SEARCH (Prompt Kit TextShimmer + Source):
+        - TextShimmer shows "Searching web..." during execution
+        - Source components display search results
+        - Each source shows: title, URL, snippet
+        - Expandable for full context
+
+        INPUT TOOLBAR (Prompt Kit PromptInput):
+        
+        [+] DROPDOWN OPTIONS:
+        - Upload image
+        - MCP Connectors (toggle connections)
+
+        MODEL SELECTOR:
+        - Dropdown showing current model
+        - Switch between Opus/Sonnet/Haiku
+        - Shows context window info
+
+        BEHAVIOR:
+        - Enter sends message
+        - Shift+Enter for new line
+        - Input auto-expands for multiline
+        - Character counter (optional)
+        - Placeholder: "Reply to Claude..."
+      </conversation_view>
+
+      <mcp_connector_toggle>
+        IN-CHAT MCP USAGE:
+        
+        1. Click [+] button in chat input
+        2. Select "MCP Connectors" option
+        3. Opens MCP submenu showing all configured connections:
+           - Each connection: name, status, ON/OFF toggle
+           - Status: Connected (green) | Error (red) | Disconnected (gray)
+           - Toggle state saved per-conversation
+           - Badge shows count of active MCPs
+        4. Toggle connections ON/OFF for this conversation
+        5. "Manage Connections" link opens Settings
+
+        MCP SUBMENU (Prompt Kit Dialog/Dropdown):
+        ┌─────────────────────────────────┐
+        │ MCP Connectors (2 active)       │
+        ├─────────────────────────────────┤
+        │ 🟢 GitHub Tools      [ON  ✓]    │
+        │ 🟢 Slack API         [OFF  ]    │
+        │ 🔴 Database Tools    [OFF  ]    │
+        ├─────────────────────────────────┤
+        │ ⚙️ Manage Connections            │
+        └─────────────────────────────────┘
+      </mcp_connector_toggle>
+
+      <streaming_indicators>
+        WHILE CLAUDE IS RESPONDING (Prompt Kit):
+        
+        - PulseLoader (large size) shown during initial response
+        - Streaming text appears progressively
+        - Stop button available to halt generation
+        - Reasoning section streams in real-time (if enabled)
+        - Tool execution shows progress states
+        - TextShimmer for web search progress
+      </streaming_indicators>
+    </chat_interface>
+
+    <!-- ============================================================ -->
+    <!-- 3. CONVERSATION MANAGEMENT                                   -->
+    <!-- ============================================================ -->
+
+    <conversation_management>
+      <basic_features>
+        - Create new conversation
+        - List all conversations in sidebar
+        - View conversation messages
+        - Rename conversation
+        - Delete conversation
+        - Auto-generate title from first message
+        - Timestamp display (created, last message)
+        - Continue existing conversations
+      </basic_features>
+
+      <sidebar_conversation_list>
+        SIDEBAR LAYOUT:
+        
+        ┌────────────────────┐
+        │ ✱  Claude          │
+        │                    │
+        │ + New chat         │
+        │                    │
+        │ Recent             │
+        │ • Web scraper...   │
+        │ • Landing page...  │
+        │ • Debug Python...  │
+        │ • Marketing cop... │
+        │                    │
+        │ (scroll for more)  │
+        │                    │
+        ├────────────────────┤
+        │ 👤 User Name       │
+        │    ⚙️ Settings      │
+        └────────────────────┘
+
+        FEATURES:
+        - Most recent conversations at top
+        - Title truncated with "..." if too long
+        - Hover shows full title
+        - Click to open conversation
+        - Active conversation highlighted
+        - Delete button on hover (trash icon)
+      </sidebar_conversation_list>
+
+      <conversation_operations>
+        CREATE NEW:
+        - Click "+ New chat" button
+        - Returns to welcome state
+        - First message auto-generates title
+
+        RENAME:
+        - Click conversation title at top
+        - Inline edit
+        - Save on Enter or blur
+        - Cancel on Escape
+
+        DELETE:
+        - Hover over conversation in sidebar
+        - Click trash icon
+        - Confirmation dialog
+        - Permanent deletion
+        - Redirects to welcome state if deleted active conversation
+
+        AUTO-TITLE GENERATION:
+        - After first message sent
+        - Claude generates concise title
+        - Async update (non-blocking)
+        - Falls back to "New Conversation" if fails
+      </conversation_operations>
+
+      <data_persistence>
+        All conversations stored in database:
+        - User ID association
+        - Model used
+        - Message history
+        - Timestamps
+        - Active MCP connections
+        
+        Messages include:
+        - Role (user/assistant/tool)
+        - Content (text, code, etc.)
+        - Metadata (tool calls, reasoning)
+        - Timestamps
+      </data_persistence>
+    </conversation_management>
+
+    <!-- ============================================================ -->
+    <!-- 4. HTML ARTIFACTS                                            -->
+    <!-- ============================================================ -->
+
+    <html_artifacts>
+      <overview>
+        When Claude generates HTML code, it's automatically detected and 
+        displayed in a live preview panel. Simple, focused implementation 
+        with just HTML support - no React, SVG, or other formats.
+      </overview>
+
+      <artifact_detection>
+        TAG-BASED DETECTION:
+        
+        Claude wraps HTML in XML tags:
+        ```xml
+        <artifact type="html" title="Landing Page">
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>My Page</title>
+              <style>...</style>
+            </head>
+            <body>
+              ...
+            </body>
+          </html>
+        </artifact>
+        ```
+
+        DETECTION LOGIC:
+        - Regex pattern matching for <artifact> tags
+        - Type validation (must be "html" or auto-detect HTML)
+        - Extract title and content
+        - Parse during message streaming
+        - Handle partial tags during streaming
+        
+        AUTO-DETECTION (if no type specified):
+        - Looks for <!DOCTYPE html> or <html> tags
+        - Validates HTML structure
+        - Falls back to code block if not valid HTML
+      </artifact_detection>
+
+      <artifact_panel>
+        RIGHT SPLIT PANEL (opens on demand):
+        
+        ┌───────────────────────┬───────────────────────────────┐
+        │                       │ [👁 Preview] [</> Code]       │
+        │   Chat content        │ Landing Page            [×]   │
+        │   (60% width)         ├───────────────────────────────┤
+        │                       │                               │
+        │                       │   PREVIEW MODE:               │
+        │                       │   ┌─────────────────────────┐ │
+        │                       │   │ <iframe>                │ │
+        │                       │   │   (live HTML preview)   │ │
+        │                       │   │                         │ │
+        │                       │   └─────────────────────────┘ │
+        │                       │                               │
+        │                       │   or                          │
+        │                       │                               │
+        │                       │   CODE MODE:                  │
+        │                       │   <CodeBlock language="html"> │
+        │                       │     <!DOCTYPE html>           │
+        │                       │     <html>...</html>          │
+        │                       │   </CodeBlock>                │
+        │                       │                               │
+        │                       │   [Copy Code] [Download HTML] │
+        └───────────────────────┴───────────────────────────────┘
+
+        HEADER CONTROLS:
+        - [👁 Preview] tab - Shows live rendering
+        - [</> Code] tab - Shows HTML source
+        - Title display
+        - [×] Close button
+
+        PREVIEW MODE:
+        - Sandboxed iframe for security
+        - Full HTML rendering (CSS, JS supported)
+        - Isolated from parent page
+        - Responsive viewport
+        - Scroll if content exceeds height
+
+        CODE MODE (Prompt Kit CodeBlock):
+        - Syntax highlighted HTML
+        - Line numbers
+        - Copy button (built-in)
+        - Shiki highlighting engine
+        - Read-only view
+
+        ACTIONS:
+        - Copy Code: Copies HTML to clipboard
+        - Download HTML: Downloads as .html file
+        - Close: Closes artifact panel
+
+        BEHAVIOR:
+        - Panel opens automatically when artifact detected
+        - Chat area narrows to 60% width
+        - Panel takes 40% width
+        - Sidebar auto-collapses to icons
+        - Mobile: Full screen overlay
+        - Close panel: Returns to full chat view
+      </artifact_panel>
+
+      <artifact_storage>
+        DATABASE PERSISTENCE:
+        
+        Artifacts saved to database with:
+        - ID (unique)
+        - Conversation ID
+        - Message ID (which message created it)
+        - User ID
+        - Type (always "html" in this version)
+        - Title
+        - Content (full HTML)
+        - Created timestamp
+        - Updated timestamp
+
+        RETRIEVAL:
+        - Load with conversation
+        - Display inline reference card in chat
+        - Click card to open in artifact panel
+        - Only one artifact panel open at a time
+      </artifact_storage>
+
+      <artifact_inline_reference>
+        CARD IN CHAT MESSAGE (Prompt Kit):
+        
+        When artifact is created, show reference card:
+        ┌─────────────────────────────────────────────────┐
+        │ [</>] Landing Page                              │
+        │ HTML                        [Open Preview]      │
+        └─────────────────────────────────────────────────┘
+        
+        - Shows artifact icon, title, type
+        - Click anywhere on card to open artifact panel
+        - Visual indicator that artifact exists
+      </artifact_inline_reference>
+
+      <security>
+        SANDBOX SECURITY:
+        
+        Preview iframe attributes:
+        - sandbox="allow-scripts allow-same-origin"
+        - No access to parent window
+        - No top-level navigation
+        - Isolated JavaScript context
+        
+        SANITIZATION:
+        - No sanitization needed (full HTML support)
+        - Iframe provides isolation
+        - User's own generated content
+        - Running in isolated context
+      </security>
+    </html_artifacts>
+
+    <!-- ============================================================ -->
+    <!-- 5. MCP TOOLS                                                 -->
+    <!-- ============================================================ -->
+
+    <mcp_tools>
+      <overview>
+        Model Context Protocol (MCP) enables connecting external tools and 
+        data sources to Claude. Users can configure MCP servers that expose 
+        tools like GitHub integration, database access, Slack, etc.
+        
+        Reference: https://modelcontextprotocol.io/
+        AI SDK MCP: https://sdk.vercel.ai/docs/ai-sdk-core/mcp-tools
+      </overview>
+
+      <connection_management>
+        SETTINGS → MCP CONNECTIONS:
+        
+        ┌─────────────────────────────────────────────────────┐
+        │  MCP Connections                   [+ Add Server]   │
+        ├─────────────────────────────────────────────────────┤
+        │                                                      │
+        │  Configured Servers (2)                              │
+        │  ┌──────────────────────────────────────────────┐   │
+        │  │ 🟢 GitHub Tools                              │   │
+        │  │ https://github-mcp.example.com               │   │
+        │  │ Status: Connected                            │   │
+        │  │ Tools: 5 available                           │   │
+        │  │ [Edit] [Test] [Remove]                       │   │
+        │  └──────────────────────────────────────────────┘   │
+        │                                                      │
+        │  ┌──────────────────────────────────────────────┐   │
+        │  │ 🔴 Database Access                           │   │
+        │  │ https://db-mcp.example.com                   │   │
+        │  │ Status: Connection failed                    │   │
+        │  │ Error: Authentication required               │   │
+        │  │ [Edit] [Test] [Remove]                       │   │
+        │  └──────────────────────────────────────────────┘   │
+        │                                                      │
+        └─────────────────────────────────────────────────────┘
+
+        ADD SERVER FLOW:
+        
+        1. Click "+ Add Server"
+        2. Dialog opens with form:
+           ┌────────────────────────────────────────┐
+           │ Add MCP Server                         │
+           ├────────────────────────────────────────┤
+           │                                        │
+           │ Server Name:                           │
+           │ [GitHub Integration____________]       │
+           │                                        │
+           │ Server URL:                            │
+           │ [https://github-mcp.example.com]       │
+           │                                        │
+           │ Authentication:                        │
+           │ (○) None                               │
+           │ (●) API Key                            │
+           │ ( ) OAuth 2.0                          │
+           │                                        │
+           │ API Key:                               │
+           │ [ghp_xxxxxxxxxxxxx___________]         │
+           │                                        │
+           │ [Cancel]              [Add & Test]     │
+           └────────────────────────────────────────┘
+
+        3. System connects to MCP server
+        4. Discovers available tools
+        5. Saves connection to database
+        6. Shows success/error message
+
+        EDIT SERVER:
+        - Update name, URL, or credentials
+        - Re-test connection
+        - Update available tools
+
+        REMOVE SERVER:
+        - Confirmation dialog
+        - Permanent deletion
+        - Removes from all conversations
+      </connection_management>
+
+      <tool_discovery>
+        AUTOMATIC TOOL DISCOVERY:
+        
+        When MCP server connected:
+        1. System calls MCP server's tool discovery endpoint
+        2. Server returns list of available tools with schemas
+        3. Tools stored in database
+        4. Tools available for use in chat
+        
+        TOOL INFORMATION:
+        Each tool includes:
+        - Tool name
+        - Description
+        - Input parameters (JSON schema)
+        - Output format
+        - Examples (optional)
+      </tool_discovery>
+
+      <in_chat_usage>
+        TOGGLE MCPS PER CONVERSATION:
+        
+        1. In chat input, click [+] button
+        2. Select "MCP Connectors"
+        3. Submenu shows all configured servers
+        4. Toggle ON/OFF per conversation
+        5. Active MCPs: Tools available to Claude
+        6. Inactive MCPs: Tools not available
+        
+        STATE PERSISTENCE:
+        - MCP toggle state saved per conversation
+        - State persists across sessions
+        - Different conversations can have different active MCPs
+        
+        VISUAL INDICATORS (Prompt Kit Badge):
+        - Badge on [+] button shows active MCP count
+        - Example: [+] with badge "2" = 2 MCPs active
+        - Green dot on connected MCPs
+        - Red dot on failed connections
+      </in_chat_usage>
+
+      <tool_execution_display>
+        WHEN CLAUDE USES MCP TOOL (Prompt Kit Tool component):
+        
+        ┌─────────────────────────────────────────────────┐
+        │ <Tool name="github_get_prs">                    │
+        │   🔧 Fetching GitHub pull requests...           │
+        │                                                 │
+        │   Input:                                        │
+        │   {                                             │
+        │     "repo": "username/repo",                    │
+        │     "state": "open"                             │
+        │   }                                             │
+        │                                                 │
+        │   ✅ Success                                    │
+        │                                                 │
+        │   Found 3 open pull requests:                   │
+        │   1. Feature: Add dark mode (#42)               │
+        │   2. Fix: Login bug (#41)                       │
+        │   3. Update dependencies (#40)                  │
+        │ </Tool>                                         │
+        └─────────────────────────────────────────────────┘
+
+        STATES:
+        - Loading: Shows spinner + "Executing..."
+        - Success: ✅ + formatted results
+        - Error: ❌ + error message
+        - Timeout: ⏱️ + timeout message
+
+        Prompt Kit Tool component handles:
+        - Collapsible details
+        - Status indicators
+        - Input/output formatting
+        - Error states
+      </tool_execution_display>
+
+      <example_mcp_servers>
+        COMMON MCP INTEGRATIONS:
+        
+        - GitHub: Repos, PRs, issues, commits
+        - Slack: Channels, messages, users
+        - Database: Query, insert, update
+        - File System: Read, write, list files
+        - Calendar: Events, scheduling
+        - Email: Send, read, search
+        - Custom: Any API can be wrapped as MCP
+        
+        Users can use public MCP servers or build their own.
+      </example_mcp_servers>
+    </mcp_tools>
+
+    <!-- ============================================================ -->
+    <!-- 6. PROVIDER-NATIVE TOOLS                                     -->
+    <!-- ============================================================ -->
+
+    <provider_native_tools>
+      <overview>
+        AWS Bedrock Claude models include built-in tools that run on AWS 
+        infrastructure. These tools are automatically available and included 
+        in the model's API pricing - no extra cost or configuration needed.
+      </overview>
+
+      <bedrock_claude_tools>
+        TWO CORE TOOLS:
+
+        1. CODE EXECUTION (codeExecution_20250825)
+           - Bash command execution
+           - File operations
+           - Sandboxed environment
+           - Runs on AWS infrastructure
+           - Included in Bedrock pricing
+
+        2. WEB SEARCH (webSearch_20250305)
+           - Real-time web search
+           - Returns sources with citations
+           - Must be enabled in AWS Bedrock console
+           - Included in Bedrock pricing
+      </bedrock_claude_tools>
+
+      <code_execution>
+        BASH EXECUTION TOOL:
+        
+        CAPABILITIES:
+        - Run bash commands
+        - Execute Python, Node.js, etc.
+        - File operations (create, read, write)
+        - Package installation (pip, npm)
+        - Multi-step workflows
+        
+        SANDBOX ENVIRONMENT:
+        - Isolated AWS container
+        - No network access (except tool-provided)
+        - File system isolated per execution
+        - Resource limits enforced by AWS
+        - Automatic cleanup after execution
+        
+        DISPLAY (Prompt Kit Tool component):
+        
+        ┌─────────────────────────────────────────────────┐
+        │ <Tool name="code_execution">                    │
+        │   ⚙️ Running code...                            │
+        │                                                 │
+        │   <CodeBlock language="python">                 │
+        │   def fibonacci(n):                             │
+        │       if n <= 1:                                │
+        │           return n                              │
+        │       return fibonacci(n-1) + fibonacci(n-2)    │
+        │                                                 │
+        │   for i in range(10):                           │
+        │       print(f"F({i}) = {fibonacci(i)}")         │
+        │   </CodeBlock>                                  │
+        │                                                 │
+        │   Output:                                       │
+        │   F(0) = 0                                      │
+        │   F(1) = 1                                      │
+        │   F(2) = 1                                      │
+        │   F(3) = 2                                      │
+        │   ...                                           │
+        │ </Tool>                                         │
+        └─────────────────────────────────────────────────┘
+
+        EXAMPLES:
+        - Data analysis with pandas
+        - Mathematical calculations
+        - File processing
+        - Script execution
+        - Testing code snippets
+      </code_execution>
+
+      <web_search>
+        WEB SEARCH TOOL:
+        
+        CAPABILITIES:
+        - Real-time web search
+        - Returns top results with snippets
+        - Provides source URLs
+        - Supports complex queries
+        - Returns citations for attribution
+        
+        SETUP REQUIRED:
+        - Enable in AWS Bedrock console
+        - Per-model configuration
+        - May have additional costs (check AWS pricing)
+        
+        DISPLAY (Prompt Kit TextShimmer + Source):
+        
+        DURING SEARCH:
+        ┌─────────────────────────────────────────────────┐
+        │ <TextShimmer text="Searching web..." />         │
+        └─────────────────────────────────────────────────┘
+
+        RESULTS:
+        ┌─────────────────────────────────────────────────┐
+        │ Found 3 sources:                                │
+        │                                                 │
+        │ <Source                                         │
+        │   title="AWS Bedrock Documentation"            │
+        │   url="https://docs.aws.amazon.com/bedrock/"   │
+        │   snippet="Amazon Bedrock is a fully managed   │
+        │            service that offers..."              │
+        │ />                                              │
+        │                                                 │
+        │ <Source                                         │
+        │   title="Anthropic Claude Models"              │
+        │   url="https://anthropic.com/claude"           │
+        │   snippet="Claude 4.5 family includes..."      │
+        │ />                                              │
+        └─────────────────────────────────────────────────┘
+
+        EXAMPLES:
+        - Current events research
+        - Fact checking
+        - Technical documentation lookup
+        - Product information
+        - Recent news
+      </web_search>
+
+      <tool_enablement>
+        AUTOMATIC INCLUSION:
+        
+        Tools are ALWAYS enabled by default when:
+        - User has valid AWS Bedrock credentials
+        - Tools are available for the selected Claude model
+        - Web search is enabled in AWS console (for web search)
+        
+        NO TOGGLE NEEDED:
+        - Tools automatically included in API calls
+        - Claude decides when to use them
+        - No user configuration required
+        - Just works out of the box
+      </tool_enablement>
+
+      <ai_sdk_integration>
+        VERCEL AI SDK IMPLEMENTATION:
+        
+        ```typescript
+        import { bedrock } from '@ai-sdk/amazon-bedrock';
+        import { generateText } from 'ai';
+
+        const result = await generateText({
+          model: bedrock('anthropic.claude-sonnet-4-5-v2'),
+          tools: {
+            // Code execution automatically included
+            // Web search automatically included
+          },
+          prompt: userMessage,
+        });
+        ```
+        
+        The AI SDK handles:
+        - Tool availability detection
+        - Tool call formatting
+        - Result parsing
+        - Error handling
+        - Streaming support
+      </ai_sdk_integration>
+    </provider_native_tools>
+
+    <!-- ============================================================ -->
+    <!-- USER INTERFACE                                               -->
+    <!-- ============================================================ -->
+
+    <user_interface>
+      <layout>
+        TWO-PANE LAYOUT (three when artifact panel open):
+        
+        ┌────────────────────────────────────────────────────────┐
+        │ ┌──────────┐ ┌────────────────────┐ ┌──────────────┐  │
+        │ │          │ │                    │ │              │  │
+        │ │ Sidebar  │ │   Main Chat Area   │ │   Artifact   │  │
+        │ │          │ │                    │ │   Panel      │  │
+        │ │  (20%)   │ │       (60%)        │ │   (40%)      │  │
+        │ │          │ │                    │ │   (on demand)│  │
+        │ │          │ │                    │ │              │  │
+        │ └──────────┘ └────────────────────┘ └──────────────┘  │
+        └────────────────────────────────────────────────────────┘
+
+        RESPONSIVE BEHAVIOR:
+        - Desktop: Three columns when artifact open
+        - Tablet: Two columns (sidebar + chat, artifact as overlay)
+        - Mobile: Single column (sidebar as drawer, sticky input)
+
+        NO TOP BAR:
+        - Conversation title in chat area header
+        - All controls in sidebar or chat area
+        - Clean, distraction-free design
+      </layout>
+
+      <sidebar>
+        SIDEBAR CONTENT:
+        
+        ┌────────────────────┐
+        │ ✱  Claude          │  ← Logo/brand
+        │                    │
+        │ + New chat         │  ← Primary action
+        │                    │
+        │ Recent             │  ← Section header
+        │ • Conversation 1   │
+        │ • Conversation 2   │
+        │ • Conversation 3   │
+        │ • Conversation 4   │
+        │ • Conversation 5   │
+        │                    │
+        │ (scroll for more)  │
+        │                    │
+        ├────────────────────┤
+        │ 👤 User Name       │  ← User profile
+        │    ⚙️ Settings      │  ← Settings link
+        │    🚪 Logout        │  ← Logout
+        └────────────────────┘
+
+        FEATURES:
+        - Fixed width (260px on desktop)
+        - Scrollable conversation list
+        - Hover effects on items
+        - Active conversation highlighted
+        - Delete on hover (trash icon)
+        - Collapsible on mobile
+      </sidebar>
+
+      <prompt_kit_component_map>
+        COMPLETE COMPONENT USAGE:
+
+        CHAT INTERFACE:
+        - PromptInput: Main chat input, welcome screen input
+        - Message: User and assistant message bubbles
+        - Markdown: Rendering assistant responses
+        - CodeBlock: Code snippets with syntax highlighting
+        - Reasoning: Extended thinking display
+        - Tool: Tool execution visualization
+        - TextShimmer: Loading states (web search, etc.)
+        - Source: Web search result citations
+        - PulseLoader: Streaming/loading indicator
+        - ScrollButton: Scroll-to-bottom floating button
+        - PromptSuggestion: Welcome screen suggestion chips
+
+        ARTIFACTS:
+        - CodeBlock: HTML code view with syntax highlighting
+        - Custom iframe: Live HTML preview
+
+        NAVIGATION:
+        - Button: All action buttons
+        - Dialog: Modals and confirmations
+        - DropdownMenu: Context menus, model selector
+        - Badge: MCP active count indicator
+
+        SETTINGS:
+        - Form components: Input, Select, Textarea
+        - Tabs: Settings page navigation
+        - Switch: Toggle switches
+        - Card: Content containers
+
+        AUTHENTICATION:
+        - Form components: Login, registration forms
+        - Button: Submit buttons
+        - Input: Text fields with validation
+        - Label: Form labels
+
+        ALL COMPONENTS:
+        Follow Prompt Kit design system for consistency.
+        Reference: https://prompt-kit.com/components
+      </prompt_kit_component_map>
+
+      <design_principles>
+        VISUAL DESIGN:
+        - Clean, minimal interface
+        - Plenty of whitespace
+        - Clear typography hierarchy
+        - Consistent spacing (8px grid)
+        - Smooth transitions (150-300ms)
+        - Hover states on interactive elements
+        - Focus states for accessibility
+
+        COLOR SYSTEM:
+        - Light mode (default)
+        - Dark mode (toggle in settings)
+        - Accent color: Claude orange/coral
+        - Neutral grays for UI chrome
+        - Semantic colors (success, error, warning)
+
+        TYPOGRAPHY:
+        - Sans-serif: Inter or system font stack
+        - Monospace: JetBrains Mono for code
+        - Heading sizes: 32px, 24px, 20px, 16px
+        - Body: 16px with 1.5 line height
+        - Code: 14px with 1.4 line height
+
+        ANIMATIONS:
+        - Message fade-in
+        - Sidebar slide
+        - Panel transitions
+        - Loading spinners
+        - Skeleton loaders for content
+      </design_principles>
+    </user_interface>
+
+    <!-- ============================================================ -->
+    <!-- SETTINGS                                                     -->
+    <!-- ============================================================ -->
+
+    <settings>
+      <settings_page>
+        SETTINGS NAVIGATION (Prompt Kit Tabs):
+        
+        ┌─────────────────────────────────────────────────┐
+        │  Settings                                       │
+        ├─────────────────────────────────────────────────┤
+        │                                                  │
+        │  [Profile] [AWS Bedrock] [MCP] [Appearance]     │
+        │  ────────                                        │
+        │                                                  │
+        │  (Tab content here)                              │
+        │                                                  │
+        └─────────────────────────────────────────────────┘
+      </settings_page>
+
+      <profile_tab>
+        PROFILE SETTINGS:
+        
+        - Name (text input)
+        - Email (read-only, verified)
+        - Avatar image (upload)
+        - Change password
+        - Delete account (with confirmation)
+      </profile_tab>
+
+      <aws_bedrock_tab>
+        AWS BEDROCK CREDENTIALS:
+        
+        ┌─────────────────────────────────────────────────┐
+        │  AWS Bedrock Configuration                       │
+        ├─────────────────────────────────────────────────┤
+        │                                                  │
+        │  Access Key ID:                                  │
+        │  [AKIAIOSFODNN7EXAMPLE___________]              │
+        │                                                  │
+        │  Secret Access Key:                              │
+        │  [wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY]     │
+        │  👁️ Show/Hide                                    │
+        │                                                  │
+        │  Region:                                         │
+        │  [us-east-1 ▼]                                  │
+        │                                                  │
+        │  [Test Connection] [Save Changes]                │
+        │                                                  │
+        │  ℹ️ How to get AWS credentials                   │
+        │  (Link to documentation)                         │
+        └─────────────────────────────────────────────────┘
+
+        FEATURES:
+        - Validate credentials before saving
+        - Test connection to Bedrock
+        - Show/hide secret key
+        - Region selector
+        - Encrypted storage
+        - Help documentation link
+      </aws_bedrock_tab>
+
+      <mcp_tab>
+        MCP CONNECTIONS:
+        (See MCP Tools section above for full details)
+        
+        - List of configured MCP servers
+        - Add new server
+        - Edit existing servers
+        - Test connections
+        - Remove servers
+        - View available tools per server
+      </mcp_tab>
+
+      <appearance_tab>
+        APPEARANCE SETTINGS:
+        
+        ┌─────────────────────────────────────────────────┐
+        │  Theme:                                          │
+        │  (○) Light  (●) Dark  (○) System                │
+        │                                                  │
+        │  Font Size:                                      │
+        │  [────●────] 16px                               │
+        │  (14px to 20px slider)                          │
+        │                                                  │
+        │  Code Theme:                                     │
+        │  [GitHub Dark ▼]                                │
+        │  (Dracula, Monokai, Nord, etc.)                 │
+        │                                                  │
+        │  Message Density:                                │
+        │  (○) Compact  (●) Comfortable  (○) Spacious     │
+        │                                                  │
+        └─────────────────────────────────────────────────┘
+
+        OPTIONS:
+        - Light/Dark/System theme
+        - Font size adjustment
+        - Code syntax highlighting theme
+        - Message spacing density
+      </appearance_tab>
+    </settings>
+
+  </core_features>
+
+  <!-- ============================================================== -->
+  <!-- DATABASE SCHEMA                                                -->
+  <!-- ============================================================== -->
+
+  <database_schema>
+    <tables>
+      
+      <!-- Users -->
+      <users>
+        users {
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+          email TEXT UNIQUE NOT NULL
+          password_hash TEXT NOT NULL
+          name TEXT
+          avatar_url TEXT
+          aws_access_key_encrypted TEXT
+          aws_secret_key_encrypted TEXT
+          aws_region TEXT DEFAULT 'us-east-1'
+          preferences JSON DEFAULT '{
+            "theme": "system",
+            "fontSize": 16,
+            "codeTheme": "github-dark",
+            "messageDensity": "comfortable"
+          }'
+          created_at TIMESTAMP DEFAULT NOW()
+          last_login TIMESTAMP
+          email_verified BOOLEAN DEFAULT FALSE
+        }
+        
+        INDEXES:
+        - CREATE INDEX idx_users_email ON users(email);
+      </users>
+
+      <!-- Conversations -->
+      <conversations>
+        conversations {
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
+          title TEXT DEFAULT 'New Conversation'
+          model TEXT NOT NULL
+          active_mcp_ids JSON DEFAULT '[]'
+          created_at TIMESTAMP DEFAULT NOW()
+          updated_at TIMESTAMP DEFAULT NOW()
+          last_message_at TIMESTAMP
+        }
+        
+        INDEXES:
+        - CREATE INDEX idx_conversations_user ON conversations(user_id);
+        - CREATE INDEX idx_conversations_updated ON conversations(user_id, updated_at DESC);
+      </conversations>
+
+      <!-- Messages -->
+      <messages>
+        messages {
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+          conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE
+          role TEXT NOT NULL
+          content TEXT NOT NULL
+          metadata JSON DEFAULT '{}'
+          created_at TIMESTAMP DEFAULT NOW()
+          edited_at TIMESTAMP
+        }
+        
+        role: 'user' | 'assistant' | 'tool'
+        
+        metadata structure:
+        {
+          "reasoning": "...",           // Extended thinking content
+          "tool_calls": [...],          // Tool execution records
+          "sources": [...],             // Web search sources
+          "finish_reason": "stop"       // Completion reason
+        }
+        
+        INDEXES:
+        - CREATE INDEX idx_messages_conversation ON messages(conversation_id, created_at);
+      </messages>
+
+      <!-- Artifacts -->
+      <artifacts>
+        artifacts {
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+          conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE
+          message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
+          type TEXT DEFAULT 'html'
+          title TEXT NOT NULL
+          content TEXT NOT NULL
+          created_at TIMESTAMP DEFAULT NOW()
+          updated_at TIMESTAMP DEFAULT NOW()
+        }
+        
+        INDEXES:
+        - CREATE INDEX idx_artifacts_conversation ON artifacts(conversation_id);
+        - CREATE INDEX idx_artifacts_message ON artifacts(message_id);
+      </artifacts>
+
+      <!-- MCP Connections -->
+      <mcp_connections>
+        mcp_connections {
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
+          name TEXT NOT NULL
+          server_url TEXT NOT NULL
+          auth_type TEXT DEFAULT 'none'
+          auth_credentials_encrypted TEXT
+          available_tools JSON DEFAULT '[]'
+          is_active BOOLEAN DEFAULT TRUE
+          status TEXT DEFAULT 'disconnected'
+          last_error TEXT
+          created_at TIMESTAMP DEFAULT NOW()
+          updated_at TIMESTAMP DEFAULT NOW()
+          last_connected_at TIMESTAMP
+        }
+        
+        auth_type: 'none' | 'api_key' | 'oauth'
+        status: 'connected' | 'disconnected' | 'error'
+        
+        available_tools structure:
+        [
+          {
+            "name": "github_get_prs",
+            "description": "Get pull requests",
+            "parameters": {...}
+          },
+          ...
+        ]
+        
+        INDEXES:
+        - CREATE INDEX idx_mcp_user ON mcp_connections(user_id);
+      </mcp_connections>
+
+    </tables>
+
+    <encryption>
+      ENCRYPTED FIELDS:
+      - users.aws_access_key_encrypted
+      - users.aws_secret_key_encrypted
+      - mcp_connections.auth_credentials_encrypted
+      
+      METHOD:
+      - AES-256-GCM encryption
+      - Encryption key stored in environment variable
+      - Never exposed to client
+      - Decrypted only when needed for API calls
+    </encryption>
+
+    <foreign_keys>
+      CASCADE DELETE BEHAVIOR:
+      - Delete user → deletes all conversations, artifacts, MCP connections
+      - Delete conversation → deletes all messages and artifacts
+      - Delete message → deletes associated artifacts
+      
+      This ensures data integrity and automatic cleanup.
+    </foreign_keys>
+  </database_schema>
+
+  <!-- ============================================================== -->
+  <!-- API ENDPOINTS                                                  -->
+  <!-- ============================================================== -->
+
+  <api_endpoints>
+    
+    <authentication>
+      POST /api/auth/register
+      - Body: { email, password, name }
+      - Returns: { user, session }
+      - Creates new user account
+      
+      POST /api/auth/login
+      - Body: { email, password }
+      - Returns: { user, session }
+      - Authenticates user
+      
+      POST /api/auth/logout
+      - Clears session
+      - Returns: { success: true }
+      
+      GET /api/auth/me
+      - Returns current user data
+      - Requires authentication
+      
+      POST /api/auth/forgot-password
+      - Body: { email }
+      - Sends password reset email
+      
+      POST /api/auth/reset-password
+      - Body: { token, newPassword }
+      - Resets password via token
+    </authentication>
+
+    <user_profile>
+      GET /api/user/profile
+      - Returns user profile data
+      
+      PATCH /api/user/profile
+      - Body: { name?, avatar_url? }
+      - Updates user profile
+      
+      PATCH /api/user/aws-credentials
+      - Body: { accessKeyId, secretAccessKey, region }
+      - Encrypts and saves AWS credentials
+      - Validates before saving
+      
+      POST /api/user/test-aws
+      - Tests AWS Bedrock connection
+      - Returns: { success: boolean, error? }
+      
+      PATCH /api/user/preferences
+      - Body: { theme?, fontSize?, codeTheme?, messageDensity? }
+      - Updates user preferences
+      
+      DELETE /api/user/account
+      - Deletes user account
+      - Requires password confirmation
+    </user_profile>
+
+    <conversations>
+      GET /api/conversations
+      - Returns list of user's conversations
+      - Sorted by last_message_at DESC
+      - Includes: id, title, model, updated_at, message preview
+      
+      POST /api/conversations
+      - Body: { model }
+      - Creates new conversation
+      - Returns: { conversation }
+      
+      GET /api/conversations/:id
+      - Returns conversation with all messages
+      - Includes artifacts
+      
+      PATCH /api/conversations/:id
+      - Body: { title?, active_mcp_ids? }
+      - Updates conversation
+      
+      DELETE /api/conversations/:id
+      - Deletes conversation
+      - Cascade deletes messages and artifacts
+      
+      POST /api/conversations/:id/title
+      - Auto-generates conversation title
+      - Uses first few messages
+      - Returns: { title }
+    </conversations>
+
+    <messages>
+      GET /api/conversations/:id/messages
+      - Returns paginated messages
+      - Query params: limit, offset
+      
+      POST /api/chat/stream
+      - Body: { conversationId, message, model, activeMcpIds? }
+      - Returns: Server-Sent Events stream
+      - Streams AI response in real-time
+      - Updates conversation and saves messages
+      
+      DELETE /api/messages/:id
+      - Deletes specific message
+      - Requires message ownership
+    </messages>
+
+    <artifacts>
+      GET /api/conversations/:id/artifacts
+      - Returns all artifacts for conversation
+      
+      GET /api/artifacts/:id
+      - Returns specific artifact
+      - Includes full content
+      
+      DELETE /api/artifacts/:id
+      - Deletes artifact
+      - Requires ownership
+    </artifacts>
+
+    <mcp_connections>
+      GET /api/mcp/connections
+      - Returns user's MCP connections
+      - Includes status and available tools
+      
+      POST /api/mcp/connections
+      - Body: { name, serverUrl, authType, credentials? }
+      - Creates new MCP connection
+      - Tests connection and discovers tools
+      - Returns: { connection, tools }
+      
+      GET /api/mcp/connections/:id
+      - Returns specific connection
+      
+      PATCH /api/mcp/connections/:id
+      - Body: { name?, serverUrl?, credentials?, is_active? }
+      - Updates connection
+      - Re-discovers tools if URL changed
+      
+      DELETE /api/mcp/connections/:id
+      - Deletes MCP connection
+      
+      POST /api/mcp/connections/:id/test
+      - Tests MCP connection
+      - Returns: { success, error?, tools }
+      
+      POST /api/mcp/connections/:id/discover
+      - Re-discovers available tools
+      - Updates available_tools field
+      - Returns: { tools }
+    </mcp_connections>
+
+  </api_endpoints>
+
+  <!-- ============================================================== -->
+  <!-- AI SDK IMPLEMENTATION                                          -->
+  <!-- ============================================================== -->
+
+  <ai_sdk_implementation>
+    
+    <streaming_endpoint>
+      ROUTE: /api/chat/stream
+      
+      ```typescript
+      // app/api/chat/stream/route.ts
+      import { bedrock } from '@ai-sdk/amazon-bedrock';
+      import { streamText } from 'ai';
+      
+      export async function POST(req: Request) {
+        const { conversationId, message, model, activeMcpIds } = await req.json();
+        
+        // Get user's AWS credentials (decrypted)
+        const credentials = await getUserAwsCredentials(userId);
+        
+        // Load conversation history
+        const messages = await loadConversationMessages(conversationId);
+        
+        // Load active MCP tools
+        const mcpTools = await loadMcpTools(activeMcpIds);
+        
+        // Stream response
+        const result = streamText({
+          model: bedrock(model, {
+            credentials: credentials,
+          }),
+          messages: [
+            ...messages,
+            { role: 'user', content: message }
+          ],
+          tools: {
+            // MCP tools automatically included
+            ...mcpTools,
+            // Provider-native tools automatically available
+          },
+          onFinish: async ({ text, toolCalls, reasoning }) => {
+            // Save assistant message to database
+            await saveMessage({
+              conversationId,
+              role: 'assistant',
+              content: text,
+              metadata: {
+                reasoning,
+                toolCalls,
+              }
+            });
+            
+            // Detect and save artifacts
+            const artifacts = detectArtifacts(text);
+            for (const artifact of artifacts) {
+              await saveArtifact({
+                conversationId,
+                messageId,
+                ...artifact,
+              });
+            }
+          }
+        });
+        
+        return result.toDataStreamResponse();
+      }
+      ```
+    </streaming_endpoint>
+
+    <mcp_tool_integration>
+      MCP TOOLS LOADING:
+      
+      ```typescript
+      async function loadMcpTools(mcpIds: string[]) {
+        const connections = await db.mcp_connections.findMany({
+          where: { id: { in: mcpIds }, is_active: true }
+        });
+        
+        const tools = {};
+        
+        for (const conn of connections) {
+          // Connect to MCP server
+          const client = await connectMcpServer(conn.server_url, conn.auth_credentials);
+          
+          // Get tools from server
+          const serverTools = await client.getTools();
+          
+          // Add to tools object
+          for (const tool of serverTools) {
+            tools[tool.name] = {
+              description: tool.description,
+              parameters: tool.parameters,
+              execute: async (params) => {
+                return await client.executeTool(tool.name, params);
+              }
+            };
+          }
+        }
+        
+        return tools;
+      }
+      ```
+    </mcp_tool_integration>
+
+    <artifact_detection>
+      ARTIFACT PARSING:
+      
+      ```typescript
+      function detectArtifacts(text: string): Artifact[] {
+        const artifactRegex = /<artifact(?:\s+type="([^"]+)")?(?:\s+title="([^"]+)")?>([^]*?)<\/artifact>/gi;
+        const artifacts: Artifact[] = [];
+        let match;
+        
+        while ((match = artifactRegex.exec(text)) !== null) {
+          const [, type, title, content] = match;
+          
+          // Validate type (only html supported)
+          const artifactType = type?.toLowerCase() === 'html' ? 'html' : 
+                              autoDetectType(content);
+          
+          if (artifactType === 'html') {
+            artifacts.push({
+              type: 'html',
+              title: title || 'Untitled HTML',
+              content: content.trim(),
+            });
+          }
+        }
+        
+        return artifacts;
+      }
+      
+      function autoDetectType(content: string): string {
+        // Check for HTML markers
+        if (content.includes('<!DOCTYPE html>') || 
+            content.includes('<html>') ||
+            /<html[\s>]/.test(content)) {
+          return 'html';
+        }
+        
+        return 'code'; // Fallback to code block
+      }
+      ```
+    </artifact_detection>
+
+  </ai_sdk_implementation>
+
+  <!-- ============================================================== -->
+  <!-- SECURITY CONSIDERATIONS                                        -->
+  <!-- ============================================================== -->
+
+  <security_considerations>
+    
+    <authentication_security>
+      PASSWORD HASHING:
+      - bcrypt with 12 rounds
+      - Salt automatically generated
+      - Never store plain passwords
+      
+      SESSION MANAGEMENT:
+      - HTTP-only cookies
+      - Secure flag in production
+      - SameSite=Strict
+      - 30-day expiration
+      - Session invalidated on logout or password change
+      
+      PASSWORD RESET:
+      - Cryptographically random tokens
+      - 24-hour expiration
+      - One-time use only
+      - Token invalidated after use
+    </authentication_security>
+
+    <api_key_encryption>
+      AWS CREDENTIALS ENCRYPTION:
+      - AES-256-GCM encryption
+      - Encryption key in environment variable (KEY_ENCRYPTION_SECRET)
+      - Unique IV per encrypted value
+      - Authentication tag for integrity
+      - Never exposed to client
+      - Decrypted only in backend for API calls
+      
+      IMPLEMENTATION:
+      ```typescript
+      import crypto from 'crypto';
+      
+      const ALGORITHM = 'aes-256-gcm';
+      const KEY = Buffer.from(process.env.KEY_ENCRYPTION_SECRET!, 'hex');
+      
+      function encrypt(text: string): string {
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv);
+        
+        let encrypted = cipher.update(text, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        
+        const authTag = cipher.getAuthTag();
+        
+        return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+      }
+      
+      function decrypt(encryptedText: string): string {
+        const parts = encryptedText.split(':');
+        const iv = Buffer.from(parts[0], 'hex');
+        const authTag = Buffer.from(parts[1], 'hex');
+        const encrypted = parts[2];
+        
+        const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv);
+        decipher.setAuthTag(authTag);
+        
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        
+        return decrypted;
+      }
+      ```
+    </api_key_encryption>
+
+    <html_artifact_security>
+      IFRAME SANDBOXING:
+      - Sandboxed iframe for HTML preview
+      - Restricts dangerous capabilities
+      - Isolates from parent window
+      
+      SANDBOX ATTRIBUTES:
+      ```html
+      <iframe
+        sandbox="allow-scripts allow-same-origin"
+        srcDoc={htmlContent}
+      />
+      ```
+      
+      WHAT'S BLOCKED:
+      - Top-level navigation
+      - Access to parent window
+      - Form submission to external URLs
+      - Downloads
+      - Popups
+      
+      WHAT'S ALLOWED:
+      - JavaScript execution (within iframe)
+      - CSS styling
+      - Local interactions
+      
+      NO SANITIZATION NEEDED:
+      - User's own generated content
+      - Iframe provides isolation
+      - Running in isolated context
+    </html_artifact_security>
+
+    <api_security>
+      AUTHENTICATION MIDDLEWARE:
+      - All API routes require valid session
+      - Public routes explicitly whitelisted
+      - User ID extracted from session
+      - All queries filtered by user_id
+      
+      AUTHORIZATION:
+      - Users can only access their own data
+      - Database queries include user_id filter
+      - Foreign keys enforce data ownership
+      
+      RATE LIMITING:
+      - Limit requests per IP
+      - Limit concurrent streams per user
+      - Prevent abuse of streaming endpoints
+      
+      INPUT VALIDATION:
+      - Validate all request bodies
+      - Sanitize user inputs
+      - Type checking with TypeScript
+      - Schema validation with Zod
+    </api_security>
+
+    <mcp_security>
+      CONNECTION SECURITY:
+      - HTTPS required for MCP server URLs
+      - Credentials encrypted at rest
+      - Each user's connections isolated
+      - Connection testing before saving
+      
+      TOOL EXECUTION:
+      - Tools run in MCP server's environment (not local)
+      - User controls which MCPs are active
+      - MCP servers responsible for their own security
+      - No direct access to user's local system
+    </mcp_security>
+
+  </security_considerations>
+
+  <!-- ============================================================== -->
+  <!-- IMPLEMENTATION STEPS                                           -->
+  <!-- ============================================================== -->
+
+  <implementation_steps>
+    
+    <step number="1">
+      <title>Project Setup</title>
+      <tasks>
+        - Initialize Next.js 15 project with App Router
+        - Install dependencies:
+          * @ai-sdk/amazon-bedrock
+          * ai (Vercel AI SDK)
+          * @supabase/supabase-js
+          * tailwindcss
+          * Install Prompt Kit via shadcn CLI
+        - Set up Supabase project
+        - Create database schema and run migrations
+        - Configure environment variables
+        - Set up base layout and routing structure
+      </tasks>
+      <deliverables>
+        - Working Next.js app
+        - Database connected
+        - Environment configured
+        - Base UI layout
+      </deliverables>
+    </step>
+
+    <step number="2">
+      <title>Authentication System</title>
+      <tasks>
+        - Implement Supabase Auth integration
+        - Create login page with Prompt Kit form components
+        - Create registration page
+        - Create password reset flow
+        - Set up session management
+        - Create protected route middleware
+        - Build user profile page
+      </tasks>
+      <deliverables>
+        - Working login/registration
+        - Password reset functional
+        - Session persistence
+        - Protected routes
+      </deliverables>
+    </step>
+
+    <step number="3">
+      <title>AWS Bedrock Integration</title>
+      <tasks>
+        - Create AWS credentials settings page
+        - Implement encryption for API keys
+        - Build connection testing functionality
+        - Integrate @ai-sdk/amazon-bedrock
+        - Test Claude model access
+        - Handle AWS credential errors gracefully
+      </tasks>
+      <deliverables>
+        - Users can save AWS credentials
+        - Credentials encrypted and tested
+        - Can call Bedrock API
+      </deliverables>
+    </step>
+
+    <step number="4">
+      <title>Basic Chat Interface</title>
+      <tasks>
+        - Build sidebar with Prompt Kit components
+        - Create welcome state with greeting and suggestions
+        - Implement PromptInput component for chat
+        - Build Message components for user/assistant
+        - Create conversation list in sidebar
+        - Implement new conversation creation
+        - Add model selector dropdown
+        - Build basic conversation CRUD
+      </tasks>
+      <deliverables>
+        - Working sidebar navigation
+        - Can create conversations
+        - Can select Claude models
+        - Basic message display
+      </deliverables>
+    </step>
+
+    <step number="5">
+      <title>Streaming Chat Responses</title>
+      <tasks>
+        - Create /api/chat/stream endpoint
+        - Implement AI SDK streamText integration
+        - Build streaming UI with PulseLoader
+        - Add stop generation button
+        - Save messages to database
+        - Handle streaming errors
+        - Implement message regeneration
+      </tasks>
+      <deliverables>
+        - Streaming responses work
+        - Messages saved to DB
+        - Can stop generation
+        - Can regenerate responses
+      </deliverables>
+    </step>
+
+    <step number="6">
+      <title>Provider-Native Tools</title>
+      <tasks>
+        - Enable code execution tool in Bedrock
+        - Enable web search tool in Bedrock
+        - Build Tool component for execution display
+        - Build TextShimmer for loading states
+        - Build Source component for web results
+        - Implement CodeBlock for code display
+        - Handle tool execution errors
+        - Display tool results in chat
+      </tasks>
+      <deliverables>
+        - Code execution works
+        - Web search works
+        - Tool execution visualized
+        - Results displayed properly
+      </deliverables>
+    </step>
+
+    <step number="7">
+      <title>Reasoning Display</title>
+      <tasks>
+        - Implement Reasoning component from Prompt Kit
+        - Parse reasoning from AI SDK response
+        - Display reasoning in collapsible section
+        - Handle streaming reasoning content
+        - Add toggle to collapse/expand
+        - Save reasoning in message metadata
+      </tasks>
+      <deliverables>
+        - Reasoning displayed when available
+        - Collapsible UI works
+        - Reasoning persisted in DB
+      </deliverables>
+    </step>
+
+    <step number="8">
+      <title>HTML Artifacts</title>
+      <tasks>
+        - Implement artifact detection regex
+        - Parse artifact tags from responses
+        - Build artifact panel component
+        - Create sandboxed iframe preview
+        - Add code view with CodeBlock
+        - Implement copy and download actions
+        - Save artifacts to database
+        - Build inline artifact reference cards
+        - Handle multiple artifacts
+      </tasks>
+      <deliverables>
+        - Artifacts detected and parsed
+        - Live preview works
+        - Code view functional
+        - Download works
+        - Artifacts saved to DB
+      </deliverables>
+    </step>
+
+    <step number="9">
+      <title>MCP Connections</title>
+      <tasks>
+        - Create MCP connections settings page
+        - Build add/edit/delete connection UI
+        - Implement MCP server connectivity
+        - Build tool discovery mechanism
+        - Save connections to database
+        - Encrypt MCP credentials
+        - Test connection functionality
+      </tasks>
+      <deliverables>
+        - Can add MCP servers
+        - Tool discovery works
+        - Connections saved securely
+        - Test connection functional
+      </deliverables>
+    </step>
+
+    <step number="10">
+      <title>MCP Tool Integration</title>
+      <tasks>
+        - Build MCP toggle UI in chat input
+        - Load MCP tools based on active connections
+        - Integrate MCP tools with AI SDK
+        - Display MCP tool execution
+        - Handle MCP tool errors
+        - Save active MCP state per conversation
+      </tasks>
+      <deliverables>
+        - MCP tools available in chat
+        - Can toggle MCPs per conversation
+        - MCP execution works
+        - State persisted
+      </deliverables>
+    </step>
+
+    <step number="11">
+      <title>Settings Pages</title>
+      <tasks>
+        - Create settings layout with tabs
+        - Build profile settings page
+        - Build AWS Bedrock settings (already done in step 3)
+        - Build MCP settings (already done in step 9)
+        - Build appearance settings
+        - Implement theme switching (light/dark)
+        - Add font size adjustment
+        - Add code theme selector
+        - Save preferences to database
+      </tasks>
+      <deliverables>
+        - Complete settings UI
+        - All preferences saveable
+        - Theme switching works
+        - Preferences persisted
+      </deliverables>
+    </step>
+
+    <step number="12">
+      <title>Polish and UX Improvements</title>
+      <tasks>
+        - Add keyboard shortcuts
+        - Implement ScrollButton for chat
+        - Add message actions (copy, regenerate)
+        - Improve error messaging
+        - Add loading states everywhere
+        - Implement responsive design
+        - Mobile optimization
+        - Add tooltips and help text
+        - Improve conversation title generation
+        - Add confirmation dialogs
+      </tasks>
+      <deliverables>
+        - Smooth user experience
+        - Mobile responsive
+        - Good error handling
+        - Helpful UI feedback
+      </deliverables>
+    </step>
+
+    <step number="13">
+      <title>Testing and Bug Fixes</title>
+      <tasks>
+        - Test all user flows
+        - Test edge cases
+        - Fix bugs
+        - Test on multiple browsers
+        - Test mobile experience
+        - Performance optimization
+        - Database query optimization
+        - Security audit
+      </tasks>
+      <deliverables>
+        - Bug-free application
+        - Good performance
+        - Secure implementation
+      </deliverables>
+    </step>
+
+    <step number="14">
+      <title>Deployment</title>
+      <tasks>
+        - Set up production environment
+        - Configure production database
+        - Set up environment variables
+        - Deploy to Vercel (or chosen platform)
+        - Configure custom domain
+        - Set up monitoring
+        - Set up error tracking
+        - Create backup strategy
+      </tasks>
+      <deliverables>
+        - Live production app
+        - Monitoring in place
+        - Backups configured
+      </deliverables>
+    </step>
+
+  </implementation_steps>
+
+  <!-- ============================================================== -->
+  <!-- SUCCESS CRITERIA                                               -->
+  <!-- ============================================================== -->
+
+  <success_criteria>
+    
+    <functionality>
+      ✅ Users can register and login
+      ✅ Users can add AWS Bedrock credentials
+      ✅ Can create and manage conversations
+      ✅ Streaming chat responses work reliably
+      ✅ All three Claude models accessible (Opus, Sonnet, Haiku)
+      ✅ Code execution tool works
+      ✅ Web search tool works
+      ✅ Reasoning display works
+      ✅ HTML artifacts detected and displayed
+      ✅ Live HTML preview works in sandboxed iframe
+      ✅ MCP connections can be added and managed
+      ✅ MCP tools can be toggled per conversation
+      ✅ MCP tool execution works
+      ✅ All Prompt Kit components integrated properly
+    </functionality>
+
+    <user_experience>
+      ✅ Clean, intuitive interface
+      ✅ Matches claude.ai design aesthetic
+      ✅ Smooth streaming experience
+      ✅ Fast response times
+      ✅ Mobile responsive
+      ✅ Good error messages
+      ✅ Helpful loading states
+      ✅ Keyboard shortcuts work
+      ✅ Theme switching works
+    </user_experience>
+
+    <technical_quality>
+      ✅ Clean, maintainable code
+      ✅ Proper TypeScript types
+      ✅ Secure API key management
+      ✅ Proper error handling
+      ✅ Optimized database queries
+      ✅ Fast page loads
+      ✅ No memory leaks
+      ✅ Follows Next.js best practices
+    </technical_quality>
+
+    <security>
+      ✅ AWS credentials encrypted
+      ✅ MCP credentials encrypted
+      ✅ Session security implemented
+      ✅ HTML artifacts sandboxed
+      ✅ Input validation everywhere
+      ✅ No XSS vulnerabilities
+      ✅ Rate limiting in place
+      ✅ SQL injection prevented
+    </security>
+
+  </success_criteria>
+
+  <!-- ============================================================== -->
+  <!-- ESTIMATED EFFORT                                               -->
+  <!-- ============================================================== -->
+
+  <estimated_effort>
+    
+    <timeline>
+      TOTAL ESTIMATED TIME: 2-4 weeks (single developer)
+      
+      Week 1:
+      - Project setup
+      - Authentication
+      - AWS Bedrock integration
+      - Basic chat interface
+      - Streaming responses
+      
+      Week 2:
+      - Provider-native tools
+      - Reasoning display
+      - HTML artifacts
+      - Artifact panel
+      
+      Week 3:
+      - MCP connections
+      - MCP tool integration
+      - Settings pages
+      - Appearance customization
+      
+      Week 4:
+      - Polish and UX
+      - Testing
+      - Bug fixes
+      - Deployment
+    </timeline>
+
+    <complexity_breakdown>
+      SIMPLE (1-2 days each):
+      - Project setup
+      - Authentication UI
+      - Basic conversation CRUD
+      - Settings pages
+      - Appearance customization
+      
+      MEDIUM (2-4 days each):
+      - Streaming chat integration
+      - Reasoning display
+      - HTML artifact detection
+      - Artifact panel UI
+      - MCP connection management
+      
+      COMPLEX (4-7 days each):
+      - Complete streaming implementation with tools
+      - MCP tool integration with AI SDK
+      - Security implementation (encryption, sandboxing)
+      - Polish and responsive design
+    </complexity_breakdown>
+
+  </estimated_effort>
+
+  <!-- ============================================================== -->
+  <!-- DEPLOYMENT RECOMMENDATIONS                                     -->
+  <!-- ============================================================== -->
+
+  <deployment>
+    
+    <recommended_stack>
+      HOSTING: Vercel
+      - Optimized for Next.js
+      - Free tier available
+      - Automatic deployments from Git
+      - Built-in edge functions
+      - Global CDN
+      
+      DATABASE: Supabase
+      - Generous free tier
+      - Built-in auth
+      - Real-time capabilities
+      - Automatic backups
+      - Easy to scale
+      
+      DOMAIN: Custom domain via Vercel
+      - HTTPS automatic
+      - DNS management
+      - Custom SSL certificates
+    </recommended_stack>
+
+    <environment_variables>
+      REQUIRED:
+      - NEXT_PUBLIC_SUPABASE_URL
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY
+      - SUPABASE_SERVICE_ROLE_KEY
+      - KEY_ENCRYPTION_SECRET (32-byte hex string for AES-256)
+      - AWS credentials are user-provided (stored encrypted in DB)
+    </environment_variables>
+
+    <monitoring>
+      RECOMMENDED TOOLS:
+      - Vercel Analytics (built-in)
+      - Sentry (error tracking)
+      - LogRocket (session replay)
+      - Supabase Dashboard (database monitoring)
+    </monitoring>
+
+  </deployment>
+
+</project_specification>

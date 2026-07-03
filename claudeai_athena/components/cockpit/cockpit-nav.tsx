@@ -1,0 +1,130 @@
+"use client"
+
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { LogOut } from "lucide-react"
+import type { AuthedUser } from "@/app/home/page"
+
+const AUTH_SESSION_KEY = "llmatscale_auth_session"
+const AUTH_TOKEN_KEY = "llmatscale_auth_token"
+
+const sv = (children: React.ReactNode, size = 16) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        {children}
+    </svg>
+)
+
+const NAV_ITEMS: { label: string; active?: boolean; icon: React.ReactNode }[] = [
+    { label: "Cockpit", active: true, icon: sv(<><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></>) },
+    { label: "Agents", icon: sv(<><circle cx="12" cy="8" r="3.2" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /></>) },
+    { label: "Workflows", icon: sv(<><circle cx="6" cy="6" r="2.2" /><circle cx="6" cy="18" r="2.2" /><circle cx="18" cy="12" r="2.2" /><path d="M8.2 6H13a3 3 0 0 1 3 3v.4" /><path d="M8.2 18H13a3 3 0 0 0 3-3v-.4" /></>) },
+    { label: "Sites", icon: sv(<><path d="M4 21V6a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v15" /><path d="M15 9h4a1 1 0 0 1 1 1v11" /><line x1="7.5" y1="9" x2="11" y2="9" /></>) },
+    { label: "Reports", icon: sv(<><line x1="6" y1="20" x2="6" y2="13" /><line x1="12" y1="20" x2="12" y2="8" /><line x1="18" y1="20" x2="18" y2="11" /></>) },
+]
+
+function getInitials(name: string | null, email: string): string {
+    if (name) {
+        const parts = name.trim().split(/\s+/)
+        return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || email[0]!.toUpperCase()
+    }
+    return email[0]!.toUpperCase()
+}
+
+export function CockpitNav({ user }: { user: AuthedUser | null }) {
+    const router = useRouter()
+    const initials = user ? getInitials(user.name, user.email) : "—"
+    const displayName = user?.name || user?.email || "—"
+    const roleName = user?.role?.name || "Business User"
+
+    const handleLogout = async () => {
+        if (typeof window === "undefined") return
+        const token = window.localStorage.getItem(AUTH_TOKEN_KEY)
+        if (token) {
+            try {
+                await fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+            } catch {
+                // Ignore — still clear local storage and redirect.
+            }
+        }
+        window.localStorage.removeItem(AUTH_SESSION_KEY)
+        window.localStorage.removeItem(AUTH_TOKEN_KEY)
+        window.localStorage.removeItem("llmatscale_user")
+        router.push("/")
+    }
+
+    return (
+        <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b bg-white px-[26px] py-[14px]" style={{ borderColor: "#e7e9f4" }}>
+            {/* brand */}
+            <div className="mr-[22px] flex items-center gap-2.5">
+                <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg text-[15px] font-extrabold text-white" style={{ background: "linear-gradient(135deg,#5b54e8,#4842d4)" }}>
+                    A
+                </div>
+                <div style={{ lineHeight: 1.05 }}>
+                    <div className="text-[14.5px] font-bold">FabOrchestrator</div>
+                    <div className="text-[9.5px] font-semibold tracking-[0.14em]" style={{ color: "#8b93b0" }}>ATHENATEC</div>
+                </div>
+            </div>
+
+            {/* nav links */}
+            <nav className="hidden items-center gap-1.5 md:flex">
+                {NAV_ITEMS.map((item) => (
+                    <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => router.push("/home")}
+                        className="flex items-center gap-[7px] rounded-[9px] px-[14px] py-2 text-[13.5px] font-semibold transition-colors"
+                        style={item.active ? { background: "#1a2150", color: "#fff" } : { color: "#5d6680" }}
+                    >
+                        <span className="flex">{item.icon}</span>
+                        {item.label}
+                    </button>
+                ))}
+            </nav>
+
+            <div className="flex-1" />
+
+            {/* util */}
+            <div className="flex items-center gap-1.5">
+                <button type="button" aria-label="Search" className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] transition-colors hover:bg-[#f2f3fb]" style={{ color: "#5d6680" }}>
+                    {sv(<><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></>, 18)}
+                </button>
+                <button type="button" aria-label="Notifications" className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] transition-colors hover:bg-[#f2f3fb]" style={{ color: "#5d6680" }}>
+                    {sv(<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></>, 18)}
+                </button>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button type="button" className="ml-2 flex items-center gap-[9px] border-l pl-[14px] focus:outline-none" style={{ borderColor: "#e7e9f4" }}>
+                            <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg text-[12px] font-bold text-white" style={{ background: "linear-gradient(135deg,#6f73ff,#4842d4)" }}>
+                                {initials}
+                            </span>
+                            <span className="hidden text-left md:block" style={{ lineHeight: 1.1 }}>
+                                <span className="block text-[12.5px] font-bold">{displayName}</span>
+                                <span className="block text-[10px] font-semibold" style={{ color: "#8b93b0" }}>{roleName}</span>
+                            </span>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel className="leading-tight">
+                            <div className="text-sm font-semibold text-foreground">{displayName}</div>
+                            {user?.email && <div className="text-xs font-normal text-muted-foreground">{user.email}</div>}
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                            <LogOut className="mr-2 size-4" />
+                            Log out
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </div>
+    )
+}

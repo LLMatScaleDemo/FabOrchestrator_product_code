@@ -1,0 +1,16 @@
+{
+    "//": "Type-checking context for Jest/Playwright test files. These files are excluded from the main tsconfig (and therefore the Next.js build) so test-only type globals never leak into the production type-check. Editors/IDEs and `tsc -p tsconfig.test.json` use this config for test files.",
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "types": ["node", "jest", "@testing-library/jest-dom"]
+    },
+    "include": [
+        "jest.config.ts",
+        "jest.setup.ts",
+        "playwright.config.ts",
+        "__tests__/**/*.ts",
+        "__tests__/**/*.tsx",
+        "e2e/**/*.ts"
+    ],
+    "exclude": ["node_modules"]
+}
