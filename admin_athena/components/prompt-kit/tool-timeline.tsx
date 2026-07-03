@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import type { ToolPart } from "@/components/prompt-kit/tool"
 import type { Artifact } from "@/lib/artifacts"
 import { TextShimmer } from "@/components/prompt-kit/text-shimmer"
@@ -166,21 +167,24 @@ export function ToolTimeline({
           className="mt-1 flex flex-wrap gap-1.5"
         >
           {artifacts.map((a) => (
-            <button
+            <Button
               key={a.id}
               type="button"
+              variant="outline"
               onClick={() => onOpenArtifact(a)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2 py-0.5",
+                "inline-flex h-auto items-center gap-1.5 rounded-md px-2 py-0.5",
+                "whitespace-normal transition-none",
                 "text-xs font-medium text-blue-600 dark:text-blue-400",
                 "border border-blue-200 dark:border-blue-800",
                 "bg-blue-50 dark:bg-blue-950/30",
-                "hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                "hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/40 dark:hover:text-blue-400",
+                "[&_svg]:size-3"
               )}
             >
               <FileText className="size-3" />
               {a.title}
-            </button>
+            </Button>
           ))}
         </motion.div>
       )}

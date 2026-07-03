@@ -92,3 +92,8 @@ export type UsageRecord = Prisma.UsageRecordModel
  * 
  */
 export type PlatformSettings = Prisma.PlatformSettingsModel
+/**
+ * Model ModelRegistry
+ * 
+ */
+export type ModelRegistry = Prisma.ModelRegistryModel

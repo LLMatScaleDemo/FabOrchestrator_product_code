@@ -131,7 +131,7 @@ export async function createConversation(data: {
     data: {
       userId: data.userId,
       title: data.title || 'New Chat',
-      model: data.model || 'claude-sonnet-4-5-20250929',
+      model: data.model || 'claude-opus-4-8',
     },
   });
 }

@@ -6,7 +6,6 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
 } from 'ai';
-import type { ModelMessage } from 'ai';
 import { anthropic, type AnthropicLanguageModelOptions } from '@ai-sdk/anthropic';
 import { requireAdmin } from '@/lib/auth-middleware';
 import { ADMIN_SYSTEM_PROMPT } from '@/lib/admin-system-prompt';
@@ -25,76 +24,6 @@ import { costForTurn, hasPricing } from '@/lib/model-pricing';
 import { bumpActivityIfActive } from '@/lib/session-audit';
 
 export const maxDuration = 120;
-
-/**
- * Ensure every tool-call in an assistant message has a matching tool-result
- * in the immediately following message. Synthesize missing results.
- * (Ported from ai-master's lib/context-window.ts ensureToolResultPairing)
- */
-function ensureToolResultPairing(messages: ModelMessage[]): ModelMessage[] {
-  if (messages.length === 0) return messages;
-
-  const result: ModelMessage[] = [];
-
-  for (let i = 0; i < messages.length; i++) {
-    const msg = messages[i];
-    result.push(msg);
-
-    // Only check assistant messages with array content
-    if (msg.role !== 'assistant' || !Array.isArray(msg.content)) continue;
-
-    // Collect tool-call IDs from this assistant message
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const toolCallIds: Array<{ toolCallId: string; toolName: string }> = [];
-    for (const part of msg.content) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p = part as any;
-      if (p?.type === 'tool-call' && p.toolCallId) {
-        toolCallIds.push({
-          toolCallId: p.toolCallId,
-          toolName: p.toolName || 'unknown',
-        });
-      }
-    }
-
-    if (toolCallIds.length === 0) continue;
-
-    // Check if the NEXT message already has matching tool-results
-    const nextMsg = messages[i + 1];
-    const existingResultIds = new Set<string>();
-    if (nextMsg && Array.isArray(nextMsg.content)) {
-      for (const part of nextMsg.content) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const p = part as any;
-        if (p?.type === 'tool-result' && p.toolCallId) {
-          existingResultIds.add(p.toolCallId);
-        }
-      }
-    }
-
-    // Find unpaired tool-call IDs
-    const unpaired = toolCallIds.filter((tc) => !existingResultIds.has(tc.toolCallId));
-
-    if (unpaired.length === 0) continue;
-
-    // Synthesize a tool-result message for unpaired calls
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const toolResultParts: any[] = unpaired.map((tc) => ({
-      type: 'tool-result',
-      toolCallId: tc.toolCallId,
-      toolName: tc.toolName,
-      result: { type: 'text', value: '[Tool result from previous session]' },
-    }));
-
-    // Insert a synthetic tool message right after the assistant message
-    result.push({
-      role: 'tool',
-      content: toolResultParts,
-    } as ModelMessage);
-  }
-
-  return result;
-}
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);

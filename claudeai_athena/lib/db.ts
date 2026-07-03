@@ -2,12 +2,6 @@ import { PrismaClient } from './generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-// Determine SSL settings based on DATABASE_URL
-// - localhost/127.0.0.1: no SSL (local development)
-// - AWS RDS: no SSL (rds.force_ssl=0 for POC)
-const dbUrl = process.env.DATABASE_URL || '';
-const isLocalhost = dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1');
-
 // Create PostgreSQL connection pool
 // SSL is disabled for both local and AWS RDS (POC mode)
 const connectionPool = new Pool({

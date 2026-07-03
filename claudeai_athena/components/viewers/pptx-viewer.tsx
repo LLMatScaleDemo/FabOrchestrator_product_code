@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Loader2, AlertCircle, Download } from "lucide-react"
+import { AlertCircle, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface PptxViewerProps {
@@ -58,8 +58,6 @@ interface ParsedSlide {
 // --- Constants ---
 
 const EMU_PER_PIXEL = 9525         // 914400 EMU/inch / 96 px/inch
-const DEFAULT_SLIDE_WIDTH = 9144000  // 10 inches in EMU (standard 16:9 uses 12192000)
-const DEFAULT_SLIDE_HEIGHT = 6858000 // 7.5 inches in EMU
 
 // Scheme color → fallback hex mapping (common PowerPoint theme colors)
 const SCHEME_COLOR_FALLBACKS: Record<string, string> = {
@@ -71,13 +69,6 @@ const SCHEME_COLOR_FALLBACKS: Record<string, string> = {
 }
 
 // --- XML Parsing Helpers ---
-
-function getAttr(xml: string, tag: string, attr: string): string | null {
-  // Finds <tag ... attr="value" and returns value
-  const tagRegex = new RegExp(`<${tag}[^>]*?\\s${attr}="([^"]*)"`, "s")
-  const m = xml.match(tagRegex)
-  return m ? m[1] : null
-}
 
 function emuToPx(emu: string | number | null): number {
   if (emu == null) return 0

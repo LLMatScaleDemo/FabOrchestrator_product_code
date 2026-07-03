@@ -185,6 +185,59 @@
   --icon-afternoon: #f97316;
   --icon-evening: #a855f7;
   --icon-night: #818cf8;
+
+  /* ==========================================================================
+     Brand / cockpit / login palette (tokenized from components)
+     Fixed brand colours lifted verbatim from login-page, cockpit/* and
+     full-chat-app. Single value by design (they were hardcoded, identical in
+     light/dark), so no theme/dark variants — relocated, never re-valued.
+     ========================================================================== */
+  /* Indigo family */
+  --brand-indigo: #5b54e8;
+  --cockpit-indigo: #4842d4;
+  --brand-indigo-light: #6f73ff;
+  --brand-indigo-soft: #7d82ff;
+  --brand-indigo-pale: #aeb2ff;
+  --chat-indigo: #5566e8;
+  --brand-indigo-bg: #edecfd;
+  /* Login navy branding panel */
+  --login-navy-1: #1d2660;
+  --login-navy-2: #161d4a;
+  --login-navy-3: #10153a;
+  --cockpit-nav-active: #1a2150;
+  /* Surfaces & borders */
+  --cockpit-surface: #f2f3fb;
+  --login-sso-bg: #f3f4fb;
+  --page-surface: #f6f7fc;
+  --login-field-bg: #eef0fa;
+  --border-light: #e7e9f4;
+  --chat-chip-border: #e7eaf5;
+  /* Ink / dark text */
+  --text-ink: #161c34;
+  --chat-ink: #1a2240;
+  /* Muted text */
+  --text-subtle: #8b93b0;
+  --text-muted-cool: #5d6680;
+  --text-muted-login: #6b7185;
+  --chat-text-muted: #6b7596;
+  --chat-text-copyright: #9aa3c0;
+  --chat-chevron: #8a96c4;
+  /* Login brand-panel text (on navy) */
+  --login-brand-label: #aab2dd;
+  --login-brand-body: #c3c9e8;
+  --login-brand-prop: #e6e9f7;
+  --login-brand-copyright: #7f88b8;
+  /* Chat sidebar brand blues */
+  --chat-brand-blue: #5b8cff;
+  --chat-avatar-blue: #3a5fd9;
+  /* Neutral */
+  --pure-white: #fff;
+  /* Status accents */
+  --status-green: #1fa971;
+  --status-green-bg: #e7f7ef;
+  --status-amber: #d6841f;
+  --cockpit-error-bg: #fef2f2;
+  --cockpit-error-border: #fecaca;
 }
 
 .dark {
@@ -1819,9 +1872,9 @@ pre[class*="language-"] span.linenumber {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* Assistant message */
+/* Assistant message — no bubble background; blends with the main chat background */
 .message-assistant {
-  background-color: var(--color-background);
+  background-color: transparent;
   color: var(--color-foreground);
 }
 

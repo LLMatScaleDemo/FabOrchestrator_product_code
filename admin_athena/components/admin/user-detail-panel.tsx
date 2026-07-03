@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,15 +99,16 @@ function UserMcpSection({ userId }: { userId: string }) {
             </div>
           )}
           <div className="flex flex-col gap-2 pt-1 sm:flex-row">
-            <select
-              value={pick}
-              onChange={(e) => setPick(e.target.value)}
-              aria-label="Assign MCP connector to user"
-              className="flex h-9 w-full flex-1 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="">{available.length ? "Assign a connector..." : "All active connectors assigned"}</option>
-              {available.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}
-            </select>
+            <Select value={pick} onValueChange={setPick} disabled={available.length === 0}>
+              <SelectTrigger aria-label="Assign MCP connector to user" className="h-9 w-full flex-1">
+                <SelectValue placeholder={available.length ? "Assign a connector..." : "All active connectors assigned"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {available.map((c) => <SelectItem key={c.id} value={c.id}>{c.displayName}</SelectItem>)}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
             <Button size="sm" disabled={!pick || busy} onClick={assign} aria-label="Assign connector">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
             </Button>
@@ -291,15 +293,19 @@ export function UserDetailPanel({
 
             <Separator />
 
-            {/* Delete */}
-            <Button
-              variant="outline"
-              className="w-full justify-start text-red-600 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={handleDelete}
-            >
-              <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-              Delete User
-            </Button>
+            {/* Danger zone */}
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-destructive">Danger Zone</p>
+              <p className="mt-1 text-xs text-muted-foreground">Permanently deletes this account and all its data. This cannot be undone.</p>
+              <Button
+                variant="destructive"
+                className="mt-3 w-full cursor-pointer justify-start"
+                onClick={handleDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                Delete User
+              </Button>
+            </div>
           </div>
         </div>
       </SheetContent>

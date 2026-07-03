@@ -11,6 +11,7 @@ import {
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { LogOut } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { AuthedUser } from "@/app/home/page"
 
 const AUTH_SESSION_KEY = "llmatscale_auth_session"
@@ -61,31 +62,32 @@ export function CockpitNav({ user }: { user: AuthedUser | null }) {
     }
 
     return (
-        <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b bg-white px-[26px] py-[14px]" style={{ borderColor: "#e7e9f4" }}>
+        <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b bg-white px-[26px] py-[14px]" style={{ borderColor: "var(--border-light)" }}>
             {/* brand */}
             <div className="mr-[22px] flex items-center gap-2.5">
-                <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg text-[15px] font-extrabold text-white" style={{ background: "linear-gradient(135deg,#5b54e8,#4842d4)" }}>
+                <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg text-[15px] font-extrabold text-white" style={{ background: "linear-gradient(135deg,var(--brand-indigo),var(--cockpit-indigo))" }}>
                     A
                 </div>
                 <div style={{ lineHeight: 1.05 }}>
                     <div className="text-[14.5px] font-bold">FabOrchestrator</div>
-                    <div className="text-[9.5px] font-semibold tracking-[0.14em]" style={{ color: "#8b93b0" }}>ATHENATEC</div>
+                    <div className="text-[9.5px] font-semibold tracking-[0.14em]" style={{ color: "var(--text-[var(--text-subtle)])" }}>ATHENATEC</div>
                 </div>
             </div>
 
             {/* nav links */}
             <nav className="hidden items-center gap-1.5 md:flex">
                 {NAV_ITEMS.map((item) => (
-                    <button
+                    <Button
                         key={item.label}
                         type="button"
+                        variant="ghost"
                         onClick={() => router.push("/home")}
-                        className="flex items-center gap-[7px] rounded-[9px] px-[14px] py-2 text-[13.5px] font-semibold transition-colors"
-                        style={item.active ? { background: "#1a2150", color: "#fff" } : { color: "#5d6680" }}
+                        className="flex h-auto items-center gap-[7px] rounded-[9px] border-0 bg-transparent px-[14px] py-2 text-[13.5px] font-semibold transition-colors hover:bg-transparent active:scale-100 dark:hover:bg-transparent"
+                        style={item.active ? { background: "var(--cockpit-nav-active)", color: "var(--pure-white)" } : { color: "var(--text-muted-cool)" }}
                     >
                         <span className="flex">{item.icon}</span>
                         {item.label}
-                    </button>
+                    </Button>
                 ))}
             </nav>
 
@@ -93,24 +95,24 @@ export function CockpitNav({ user }: { user: AuthedUser | null }) {
 
             {/* util */}
             <div className="flex items-center gap-1.5">
-                <button type="button" aria-label="Search" className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] transition-colors hover:bg-[#f2f3fb]" style={{ color: "#5d6680" }}>
+                <Button type="button" variant="ghost" aria-label="Search" className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border-0 bg-transparent p-0 transition-colors hover:bg-[var(--cockpit-surface)] active:scale-100" style={{ color: "var(--text-muted-cool)" }}>
                     {sv(<><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></>, 18)}
-                </button>
-                <button type="button" aria-label="Notifications" className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] transition-colors hover:bg-[#f2f3fb]" style={{ color: "#5d6680" }}>
+                </Button>
+                <Button type="button" variant="ghost" aria-label="Notifications" className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] border-0 bg-transparent p-0 transition-colors hover:bg-[var(--cockpit-surface)] active:scale-100" style={{ color: "var(--text-muted-cool)" }}>
                     {sv(<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></>, 18)}
-                </button>
+                </Button>
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <button type="button" className="ml-2 flex items-center gap-[9px] border-l pl-[14px] focus:outline-none" style={{ borderColor: "#e7e9f4" }}>
-                            <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg text-[12px] font-bold text-white" style={{ background: "linear-gradient(135deg,#6f73ff,#4842d4)" }}>
+                        <Button type="button" variant="ghost" className="ml-2 flex h-auto items-center gap-[9px] rounded-none border-0 bg-transparent border-l p-0 pl-[14px] hover:bg-transparent active:scale-100 dark:hover:bg-transparent focus:outline-none" style={{ borderColor: "var(--border-light)" }}>
+                            <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg text-[12px] font-bold text-white" style={{ background: "linear-gradient(135deg,var(--brand-indigo-light),var(--cockpit-indigo))" }}>
                                 {initials}
                             </span>
                             <span className="hidden text-left md:block" style={{ lineHeight: 1.1 }}>
                                 <span className="block text-[12.5px] font-bold">{displayName}</span>
-                                <span className="block text-[10px] font-semibold" style={{ color: "#8b93b0" }}>{roleName}</span>
+                                <span className="block text-[10px] font-semibold" style={{ color: "var(--text-[var(--text-subtle)])" }}>{roleName}</span>
                             </span>
-                        </button>
+                        </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                         <DropdownMenuLabel className="leading-tight">

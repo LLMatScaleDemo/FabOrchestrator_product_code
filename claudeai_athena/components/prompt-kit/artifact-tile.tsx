@@ -165,20 +165,22 @@ export function ArtifactTile({
 
           {/* Download button */}
           <div className="flex min-w-0 items-center justify-center gap-2 shrink-0">
-            <button
+            <Button
+              variant="ghost"
+              size="lg"
               className={cn(
-                "inline-flex items-center justify-center relative shrink-0 select-none",
-                "border border-border bg-transparent text-foreground font-medium",
-                "h-9 px-4 py-2 rounded-lg min-w-[5rem]",
+                "relative shrink-0 select-none",
+                "border-border bg-transparent text-foreground font-medium",
+                "px-4 min-w-[5rem]",
                 "active:scale-[0.985] whitespace-nowrap transition-transform duration-100 text-sm",
-                "hover:bg-muted/80"
+                "hover:bg-muted/80 dark:hover:bg-muted/80"
               )}
               type="button"
               aria-label="Download"
               onClick={handleDownload}
             >
               Download
-            </button>
+            </Button>
           </div>
         </div>
       </div>

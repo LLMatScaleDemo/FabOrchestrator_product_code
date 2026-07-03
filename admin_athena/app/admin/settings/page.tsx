@@ -97,15 +97,16 @@ export default function SettingsPage() {
               {PLATFORM_THEMES.map((t) => {
                 const selected = theme === t.id;
                 return (
-                  <button
+                  <Button
                     key={t.id}
+                    variant="ghost"
                     type="button"
                     disabled={savingTheme}
                     onClick={() => handleThemeChange(t.id)}
                     aria-pressed={selected}
                     aria-label={`${t.label} theme${selected ? " (current)" : ""}`}
-                    className={`relative flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 ${
-                      selected ? "border-primary bg-primary/5" : "border-border"
+                    className={`relative flex h-auto cursor-pointer flex-col items-center gap-1.5 rounded-lg border-2 p-3 transition-colors hover:border-primary/50 disabled:opacity-60 ${
+                      selected ? "border-primary bg-primary/5 hover:bg-primary/5" : "border-border hover:bg-transparent"
                     }`}
                   >
                     {selected && (
@@ -119,7 +120,7 @@ export default function SettingsPage() {
                     />
                     <span className="text-[12px] font-medium text-foreground leading-tight">{t.label}</span>
                     <span className="text-[10px] text-muted-foreground leading-tight text-center">{t.description}</span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -144,15 +145,15 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total Users</span>
-              <span className="text-sm font-medium">{stats?.totalUsers ?? "—"}</span>
+              <span className="text-sm font-medium tabular-nums">{stats?.totalUsers ?? "—"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total Roles</span>
-              <span className="text-sm font-medium">{stats?.totalRoles ?? "—"}</span>
+              <span className="text-sm font-medium tabular-nums">{stats?.totalRoles ?? "—"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total Conversations</span>
-              <span className="text-sm font-medium">{stats?.totalConversations ?? "—"}</span>
+              <span className="text-sm font-medium tabular-nums">{stats?.totalConversations ?? "—"}</span>
             </div>
           </CardContent>
         </Card>

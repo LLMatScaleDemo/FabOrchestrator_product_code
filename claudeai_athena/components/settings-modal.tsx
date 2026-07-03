@@ -13,7 +13,6 @@ import {
   EyeOff,
   Check,
   AlertCircle,
-  Plus,
   Moon,
   Sun,
   Monitor,
@@ -24,7 +23,17 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { Slider } from "@/components/ui/slider"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { McpConnectionCard, type McpConnectionData } from "@/components/mcp/mcp-connection-card"
 import { McpAddDialog } from "@/components/mcp/mcp-add-dialog"
 import { cn } from "@/lib/utils"
@@ -51,12 +60,9 @@ const SETTINGS_TABS: { id: SettingsTab; label: string; icon: React.ElementType }
 ]
 
 const CLAUDE_MODELS = [
-  { id: "claude-opus-4-6", name: "Claude 4.6 Opus" },
-  { id: "claude-sonnet-4-6", name: "Claude 4.6 Sonnet" },
-  { id: "claude-sonnet-4-5-20250929", name: "Claude 4.5 Sonnet" },
-  { id: "claude-haiku-4-5-20251001", name: "Claude 4.5 Haiku" },
-  { id: "claude-opus-4-5-20251101", name: "Claude 4.5 Opus" },
-  { id: "claude-sonnet-4-20250514", name: "Claude 4 Sonnet" },
+  { id: "claude-opus-4-7", name: "FabOrchestrator 1.0" },
+  { id: "claude-sonnet-5", name: "FabOrchestrator 1.1" },
+  { id: "claude-opus-4-8", name: "FabOrchestrator 2.0" },
 ]
 
 interface SettingsModalProps {
@@ -103,7 +109,7 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
   const [codeTheme, setCodeTheme] = useState<CodeTheme>("github-dark")
 
   // General settings
-  const [defaultModel, setDefaultModel] = useState(currentModel || "claude-sonnet-4-5-20250929")
+  const [defaultModel, setDefaultModel] = useState(currentModel || "claude-opus-4-8")
 
   // Sync defaultModel when currentModel prop changes (e.g. model changed from chat)
   useEffect(() => {
@@ -506,19 +512,20 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
             <h2 className="mb-4 px-3 pt-1 text-lg font-semibold text-foreground">Settings</h2>
             <nav className="flex flex-col gap-0.5">
               {SETTINGS_TABS.map((tab) => (
-                <button
+                <Button
                   key={tab.id}
+                  variant="ghost"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex h-auto items-center justify-start gap-3 rounded-lg border-0 px-3 py-2 text-sm font-medium transition-colors active:scale-100",
                     activeTab === tab.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground dark:hover:bg-primary dark:hover:text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted"
                   )}
                 >
                   <tab.icon className="size-4" />
                   {tab.label}
-                </button>
+                </Button>
               ))}
             </nav>
           </div>
@@ -527,14 +534,15 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
           <div className="flex flex-1 flex-col min-w-0">
             {/* Header with close button */}
             <div className="flex items-center justify-end p-3">
-              <button
+              <Button
+                variant="ghost"
                 onClick={onClose}
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                className="h-auto rounded-md border-0 p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted transition-colors active:scale-100"
                 type="button"
                 aria-label="Close settings"
               >
                 <X className="size-4" aria-hidden="true" />
-              </button>
+              </Button>
             </div>
 
             {/* Scrollable content */}
@@ -550,18 +558,24 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
                     {/* Default Model */}
                     <div className="mb-6">
                       <label className="text-sm font-medium text-foreground mb-2 block">Default Model</label>
-                      <select
+                      <Select
                         value={defaultModel}
-                        onChange={(e) => {
-                          setDefaultModel(e.target.value)
-                          onDefaultModelChange?.(e.target.value)
+                        onValueChange={(value) => {
+                          setDefaultModel(value)
+                          onDefaultModelChange?.(value)
                         }}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       >
-                        {CLAUDE_MODELS.map((m) => (
-                          <option key={m.id} value={m.id}>{m.name}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full h-auto rounded-lg border-border bg-background px-3 py-2.5 text-sm text-foreground">
+                          <SelectValue placeholder="Select a model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {CLAUDE_MODELS.map((m) => (
+                              <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {/* Default Reasoning Level */}
@@ -569,17 +583,18 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
                       <label className="text-sm font-medium text-foreground mb-2 block">Default Reasoning Level</label>
                       <div className="flex rounded-lg border border-border overflow-hidden">
                         {["Low", "Medium", "High"].map((level) => (
-                          <button
+                          <Button
                             key={level}
+                            variant="ghost"
                             className={cn(
-                              "flex-1 py-2.5 text-sm font-medium transition-colors",
+                              "h-auto flex-1 rounded-none border-0 py-2.5 text-sm font-medium transition-colors active:scale-100",
                               level === "Medium"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-background text-foreground hover:bg-muted"
+                                ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground dark:hover:bg-primary dark:hover:text-primary-foreground"
+                                : "bg-background text-foreground hover:bg-muted dark:hover:bg-muted"
                             )}
                           >
                             {level}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </div>
@@ -587,17 +602,21 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
                     {/* Language */}
                     <div className="mb-6">
                       <label className="text-sm font-medium text-foreground mb-2 block">Language</label>
-                      <select
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        defaultValue="en-US"
-                      >
-                        <option value="en-US">English (US)</option>
-                        <option value="en-GB">English (UK)</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
-                        <option value="ja">Japanese</option>
-                      </select>
+                      <Select defaultValue="en-US">
+                        <SelectTrigger className="w-full h-auto rounded-lg border-border bg-background px-3 py-2.5 text-sm text-foreground">
+                          <SelectValue placeholder="Select a language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="en-US">English (US)</SelectItem>
+                            <SelectItem value="en-GB">English (UK)</SelectItem>
+                            <SelectItem value="es">Spanish</SelectItem>
+                            <SelectItem value="fr">French</SelectItem>
+                            <SelectItem value="de">German</SelectItem>
+                            <SelectItem value="ja">Japanese</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -684,15 +703,16 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
                           />
-                          <button
+                          <Button
                             type="button"
-                            className="absolute right-0 top-0 flex h-full items-center px-3 text-muted-foreground hover:text-foreground"
+                            variant="ghost"
+                            className="absolute right-0 top-0 flex h-full items-center rounded-none border-0 px-3 text-muted-foreground hover:bg-transparent hover:text-foreground active:scale-100 transition-none dark:hover:bg-transparent"
                             onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                             aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
                             aria-pressed={showCurrentPassword}
                           >
                             {showCurrentPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                       <div>
@@ -703,15 +723,16 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
                           />
-                          <button
+                          <Button
                             type="button"
-                            className="absolute right-0 top-0 flex h-full items-center px-3 text-muted-foreground hover:text-foreground"
+                            variant="ghost"
+                            className="absolute right-0 top-0 flex h-full items-center rounded-none border-0 px-3 text-muted-foreground hover:bg-transparent hover:text-foreground active:scale-100 transition-none dark:hover:bg-transparent"
                             onClick={() => setShowNewPassword(!showNewPassword)}
                             aria-label={showNewPassword ? "Hide new password" : "Show new password"}
                             aria-pressed={showNewPassword}
                           >
                             {showNewPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                       <div>
@@ -762,19 +783,20 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
                           { id: "dark" as Theme, label: "Dark", icon: Moon },
                           { id: "system" as Theme, label: "System", icon: Monitor },
                         ]).map((t) => (
-                          <button
+                          <Button
                             key={t.id}
+                            variant="ghost"
                             onClick={() => handleThemeChange(t.id)}
                             className={cn(
-                              "flex flex-1 items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors",
+                              "flex h-auto flex-1 items-center justify-center gap-2 rounded-none border-0 py-2.5 text-sm font-medium transition-colors active:scale-100",
                               theme === t.id
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-background text-foreground hover:bg-muted"
+                                ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground dark:hover:bg-primary dark:hover:text-primary-foreground"
+                                : "bg-background text-foreground hover:bg-muted dark:hover:bg-muted"
                             )}
                           >
                             <t.icon className="size-4" />
                             {t.label}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </div>
@@ -796,13 +818,13 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
                           <span className="font-medium text-foreground">{fontSize}px</span>
                           <span>Large (20px)</span>
                         </div>
-                        <input
-                          type="range"
-                          min="14"
-                          max="20"
-                          value={fontSize}
-                          onChange={(e) => handleFontSizeChange(parseInt(e.target.value))}
-                          className="w-full accent-primary"
+                        <Slider
+                          min={14}
+                          max={20}
+                          step={1}
+                          value={[fontSize]}
+                          onValueChange={(vals) => handleFontSizeChange(vals[0])}
+                          className="w-full"
                         />
                         <p className="text-center text-sm text-muted-foreground" style={{ fontSize: `${fontSize}px` }}>
                           Sample text at {fontSize}px
@@ -819,18 +841,19 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
                           { id: "one-dark-pro" as CodeTheme, label: "One Dark Pro" },
                           { id: "dracula" as CodeTheme, label: "Dracula" },
                         ]).map((ct) => (
-                          <button
+                          <Button
                             key={ct.id}
+                            variant="ghost"
                             onClick={() => handleCodeThemeChange(ct.id)}
                             className={cn(
-                              "flex-1 py-2.5 text-sm font-medium transition-colors",
+                              "h-auto flex-1 rounded-none border-0 py-2.5 text-sm font-medium transition-colors active:scale-100",
                               codeTheme === ct.id
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-background text-foreground hover:bg-muted"
+                                ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground dark:hover:bg-primary dark:hover:text-primary-foreground"
+                                : "bg-background text-foreground hover:bg-muted dark:hover:bg-muted"
                             )}
                           >
                             {ct.label}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </div>
@@ -980,11 +1003,11 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
                         <label className="text-sm font-medium text-foreground mb-1.5 block">
                           Custom Instructions
                         </label>
-                        <textarea
+                        <Textarea
                           value={customInstructions}
                           onChange={(e) => setCustomInstructions(e.target.value)}
                           placeholder="e.g., Always respond in a concise manner. Use code examples when explaining technical concepts. Prefer TypeScript over JavaScript..."
-                          className="w-full min-h-[200px] rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+                          className="field-sizing-fixed min-h-[200px] resize-y rounded-lg border-border bg-background px-3 py-2.5 text-sm text-foreground shadow-none transition-none focus:outline-none focus:ring-2 focus:ring-ring focus-visible:border-border focus-visible:ring-2 focus-visible:ring-ring dark:bg-background"
                           rows={8}
                         />
                         <p className="text-xs text-muted-foreground mt-1.5">

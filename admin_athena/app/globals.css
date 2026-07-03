@@ -100,6 +100,19 @@
   --status-error: #ef4444;
   --status-error-foreground: #b91c1c;
   --status-error-muted: #fee2e2;
+
+  /* Brand palette (tokenized from components) */
+  --auth-grad-from: #5b21b6;
+  --auth-grad-via: #7c3aed;
+  --auth-grad-to: #c026d3;
+  --auth-grad-from-2: #4c1d95;
+  --auth-grad-via-2: #6d28d9;
+  --auth-grad-to-2: #a21caf;
+  --sidebar-active-navy: #1e2545;
+  --divider-cool: #E7EAF2;
+  --brand-indigo: #4258de;
+  --chat-heading-ink: #1E233A;
+  --chat-subtle-ink: #6B7185;
 }
 
 .dark {
@@ -698,6 +711,26 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-auth-grad-from: var(--auth-grad-from);
+  --color-auth-grad-via: var(--auth-grad-via);
+  --color-auth-grad-to: var(--auth-grad-to);
+  --color-auth-grad-from-2: var(--auth-grad-from-2);
+  --color-auth-grad-via-2: var(--auth-grad-via-2);
+  --color-auth-grad-to-2: var(--auth-grad-to-2);
+  --color-sidebar-active-navy: var(--sidebar-active-navy);
+  /* FabOrch chat-input palette — mirrored so the bg-bg and text-text utilities
+     (used by the shared claude-style-chat-input) resolve to the tokens below. */
+  --color-bg-0: var(--bg-0);
+  --color-bg-000: var(--bg-000);
+  --color-bg-100: var(--bg-100);
+  --color-bg-200: var(--bg-200);
+  --color-bg-300: var(--bg-300);
+  --color-text-100: var(--text-100);
+  --color-text-200: var(--text-200);
+  --color-text-300: var(--text-300);
+  --color-text-400: var(--text-400);
+  --color-text-500: var(--text-500);
+  --color-divider-cool: var(--divider-cool);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

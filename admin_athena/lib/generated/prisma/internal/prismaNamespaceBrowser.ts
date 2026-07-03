@@ -65,7 +65,8 @@ export const ModelName = {
   AuditLog: 'AuditLog',
   UserSessionLog: 'UserSessionLog',
   UsageRecord: 'UsageRecord',
-  PlatformSettings: 'PlatformSettings'
+  PlatformSettings: 'PlatformSettings',
+  ModelRegistry: 'ModelRegistry'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -321,6 +322,27 @@ export const PlatformSettingsScalarFieldEnum = {
 } as const
 
 export type PlatformSettingsScalarFieldEnum = (typeof PlatformSettingsScalarFieldEnum)[keyof typeof PlatformSettingsScalarFieldEnum]
+
+
+export const ModelRegistryScalarFieldEnum = {
+  id: 'id',
+  modelId: 'modelId',
+  displayName: 'displayName',
+  description: 'description',
+  inputCostPer1M: 'inputCostPer1M',
+  outputCostPer1M: 'outputCostPer1M',
+  cacheReadCostPer1M: 'cacheReadCostPer1M',
+  cacheWriteCostPer1M: 'cacheWriteCostPer1M',
+  thinkingType: 'thinkingType',
+  thinkingBudget: 'thinkingBudget',
+  isActive: 'isActive',
+  isDefault: 'isDefault',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ModelRegistryScalarFieldEnum = (typeof ModelRegistryScalarFieldEnum)[keyof typeof ModelRegistryScalarFieldEnum]
 
 
 export const SortOrder = {

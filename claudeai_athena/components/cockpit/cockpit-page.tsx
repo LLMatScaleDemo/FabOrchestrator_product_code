@@ -16,7 +16,7 @@ export function CockpitPage({ user }: { user: AuthedUser | null }) {
     return (
         <div
             className="cockpit-v2 h-full overflow-y-auto"
-            style={{ fontFamily: COCKPIT_FONT, background: "#f6f7fc", color: "#161c34", lineHeight: "normal" }}
+            style={{ fontFamily: COCKPIT_FONT, background: "var(--page-surface)", color: "var(--text-ink)", lineHeight: "normal" }}
         >
             <CockpitNav user={user} />
             <div className="mx-auto w-full max-w-[1180px] px-[26px] pb-[48px] pt-[38px]">

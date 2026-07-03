@@ -20,6 +20,8 @@ export interface ModelRates {
 }
 
 const MODEL_PRICING: Record<string, ModelRates> = {
+  "claude-opus-4-8":            { input: 15, output: 75, cacheRead: 1.5,  cacheWrite: 18.75 },
+  "claude-sonnet-5":           { input:  3, output: 15, cacheRead: 0.30, cacheWrite:  3.75 },
   "claude-opus-4-7":            { input: 15, output: 75, cacheRead: 1.5,  cacheWrite: 18.75 },
   "claude-opus-4-6":            { input: 15, output: 75, cacheRead: 1.5,  cacheWrite: 18.75 },
   "claude-opus-4-5-20251101":   { input: 15, output: 75, cacheRead: 1.5,  cacheWrite: 18.75 },
@@ -72,4 +74,45 @@ export function costForTurn(modelId: string | undefined | null, usage: TurnUsage
 
 export function hasPricing(modelId: string | undefined | null): boolean {
   return !!(modelId && MODEL_PRICING[modelId]);
+}
+
+/**
+ * Compute a turn cost from an explicit rate table (e.g. loaded from the
+ * ModelRegistry) instead of the hardcoded MODEL_PRICING map. Same math as
+ * `costForTurn`. Callers pass registry rates when available.
+ */
+export function costForTurnWithRates(rates: ModelRates, usage: TurnUsage): TurnCost {
+  const inTok    = usage.inputTokens               ?? 0;
+  const outTok   = usage.outputTokens              ?? 0;
+  const readTok  = usage.cachedInputTokens         ?? 0;
+  const writeTok = usage.cacheCreationInputTokens  ?? 0;
+
+  const inputCost =
+    (inTok    * rates.input)      / 1_000_000 +
+    (readTok  * rates.cacheRead)  / 1_000_000 +
+    (writeTok * rates.cacheWrite) / 1_000_000;
+  const outputCost = (outTok * rates.output) / 1_000_000;
+
+  return { inputCost, outputCost, total: inputCost + outputCost };
+}
+
+/**
+ * Async cost: prefer per-token rates from the shared ModelRegistry table;
+ * fall back to the hardcoded MODEL_PRICING via `costForTurn` when the
+ * registry has no rate for this model (table empty / missing / unknown id).
+ */
+export async function costForTurnAsync(
+  modelId: string | undefined | null,
+  usage: TurnUsage
+): Promise<TurnCost> {
+  if (modelId) {
+    try {
+      const { getRegistryRates } = await import('@/lib/model-registry');
+      const rates = await getRegistryRates(modelId);
+      if (rates) return costForTurnWithRates(rates, usage);
+    } catch {
+      // Registry unavailable — fall through to the hardcoded map.
+    }
+  }
+  return costForTurn(modelId, usage);
 }

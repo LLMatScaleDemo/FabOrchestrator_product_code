@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
-import { Plus, ChevronDown, ChevronRight, ArrowUp, ArrowRight, X, FileText, Loader2, Check, Archive, Globe, Plug, Paperclip, Settings, LayoutGrid, Square } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, ArrowUp, ArrowRight, X, FileText, Loader2, Check, Archive, Globe, Paperclip, LayoutGrid, Square } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatFileSize } from "@/lib/file-utils";
 
@@ -165,7 +165,7 @@ interface ModelSelectorProps {
 }
 
 // Latest model IDs shown in main menu
-const LATEST_MODEL_IDS = new Set(['claude-opus-4-6', 'claude-sonnet-4-6']);
+const LATEST_MODEL_IDS = new Set(['claude-opus-4-7', 'claude-sonnet-5', 'claude-opus-4-8']);
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({ models, selectedModel, onSelect }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -339,12 +339,9 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
     const [isMcpSubmenuOpen, setIsMcpSubmenuOpen] = useState(false);
 
     const defaultModels: Model[] = [
-        { id: "claude-opus-4-6", name: "Opus 4.6", description: "Most powerful, adaptive thinking" },
-        { id: "claude-sonnet-4-6", name: "Sonnet 4.6", description: "Fast and intelligent" },
-        { id: "claude-sonnet-4-5-20250929", name: "Sonnet 4.5", description: "Best for everyday tasks" },
-        { id: "claude-haiku-4-5-20251001", name: "Haiku 4.5", description: "Fastest for quick answers" },
-        { id: "claude-opus-4-5-20251101", name: "Opus 4.5", description: "Most capable for complex work" },
-        { id: "claude-sonnet-4-20250514", name: "Sonnet 4", description: "Balanced performance" },
+        { id: "claude-opus-4-7", name: "FabOrchestrator 1.0", description: "Powerful reasoning, adaptive thinking" },
+        { id: "claude-sonnet-5", name: "FabOrchestrator 1.1", description: "Fast and intelligent" },
+        { id: "claude-opus-4-8", name: "FabOrchestrator 2.0", description: "Most capable for complex work" },
     ];
 
     const models = modelsProp || defaultModels;
@@ -693,7 +690,7 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
                                 ) : hasContent ? (
                                     <button
                                         onClick={handleSend}
-                                        className="inline-flex items-center justify-center relative shrink-0 transition-[transform,opacity,background-color] duration-200 h-8 w-8 rounded-xl active:scale-95 bg-[#445bde] text-white hover:bg-[#3a4fd0] shadow-md"
+                                        className="inline-flex items-center justify-center relative shrink-0 transition-[transform,opacity,background-color] duration-200 h-8 w-8 rounded-xl active:scale-95 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                                         type="button"
                                         aria-label="Send message"
                                     >

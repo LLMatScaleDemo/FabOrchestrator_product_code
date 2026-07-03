@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { classifyFile, type RenderStrategy, getFileExtensionLabel } from '@/lib/file-classifier';
+import { classifyFile, type RenderStrategy } from '@/lib/file-classifier';
 
 // Artifact types
 export const ARTIFACT_TYPES = [

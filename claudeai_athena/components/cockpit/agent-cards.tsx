@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
 
 const sv = (children: React.ReactNode, size: number, sw = 2) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
@@ -74,12 +75,12 @@ export function AgentCards() {
             {/* section head */}
             <div className="mb-[18px] mt-[58px] flex items-center gap-[11px]">
                 <span className="text-[18px] font-extrabold tracking-[-0.3px]">The Nucleus</span>
-                <span className="rounded-[7px] px-[9px] py-[3px] text-[10.5px] font-bold tracking-[0.06em]" style={{ color: "#5b54e8", background: "#edecfd" }}>
+                <span className="rounded-[7px] px-[9px] py-[3px] text-[10.5px] font-bold tracking-[0.06em]" style={{ color: "var(--brand-indigo)", background: "var(--brand-indigo-bg)" }}>
                     4 AGENTS
                 </span>
-                <button type="button" onClick={() => router.push("/home")} className="ml-auto flex items-center gap-[5px] text-[13px] font-semibold" style={{ color: "#5b54e8" }}>
+                <Button type="button" variant="ghost" onClick={() => router.push("/home")} className="ml-auto flex h-auto items-center gap-[5px] rounded-none border-0 bg-transparent p-0 text-[13px] font-semibold hover:bg-transparent active:scale-100 dark:hover:bg-transparent" style={{ color: "var(--brand-indigo)" }}>
                     Manage agents {ARROW}
-                </button>
+                </Button>
             </div>
 
             {/* nucleus */}
@@ -89,30 +90,30 @@ export function AgentCards() {
                         key={a.num}
                         onClick={() => router.push("/chat")}
                         className="group flex cursor-pointer flex-col rounded-2xl border bg-white p-[18px] transition-all hover:-translate-y-[3px]"
-                        style={{ borderColor: "#e7e9f4", boxShadow: "0 2px 10px rgba(22,28,52,.05)" }}
+                        style={{ borderColor: "var(--border-light)", boxShadow: "0 2px 10px rgba(22,28,52,.05)" }}
                     >
-                        <div className="text-[9.5px] font-bold tracking-[0.14em]" style={{ color: "#8b93b0" }}>{a.num}</div>
+                        <div className="text-[9.5px] font-bold tracking-[0.14em]" style={{ color: "var(--text-[var(--text-subtle)])" }}>{a.num}</div>
 
-                        <div className="my-[10px] mb-[14px] flex h-[42px] w-[42px] items-center justify-center rounded-xl text-white" style={{ background: "linear-gradient(135deg,#5b54e8,#4842d4)", boxShadow: "0 5px 14px rgba(91,84,232,.3)", marginTop: 10, marginBottom: 14 }}>
+                        <div className="my-[10px] mb-[14px] flex h-[42px] w-[42px] items-center justify-center rounded-xl text-white" style={{ background: "linear-gradient(135deg,var(--brand-indigo),var(--cockpit-indigo))", boxShadow: "0 5px 14px rgba(91,84,232,.3)", marginTop: 10, marginBottom: 14 }}>
                             {a.icon}
                         </div>
 
                         <div className="text-[16px] font-bold">{a.name}</div>
-                        <div className="mt-[3px] text-[9.5px] font-bold uppercase tracking-[0.1em]" style={{ color: "#5b54e8" }}>{a.cat}</div>
-                        <div className="mt-2.5 min-h-[54px] text-[12.5px] leading-[1.5]" style={{ color: "#5d6680" }}>{a.desc}</div>
+                        <div className="mt-[3px] text-[9.5px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--brand-indigo)" }}>{a.cat}</div>
+                        <div className="mt-2.5 min-h-[54px] text-[12.5px] leading-[1.5]" style={{ color: "var(--text-muted-cool)" }}>{a.desc}</div>
 
-                        <div className="mt-1.5 rounded-[11px] px-[13px] py-[11px]" style={{ background: "#f2f3fb" }}>
-                            <div className="text-[9.5px] font-bold uppercase tracking-[0.1em]" style={{ color: "#8b93b0" }}>{a.ml}</div>
+                        <div className="mt-1.5 rounded-[11px] px-[13px] py-[11px]" style={{ background: "var(--cockpit-surface)" }}>
+                            <div className="text-[9.5px] font-bold uppercase tracking-[0.1em]" style={{ color: "var(--text-[var(--text-subtle)])" }}>{a.ml}</div>
                             <div className="mt-[5px] flex items-baseline gap-2">
                                 <span className="text-[23px] font-extrabold tracking-[-0.5px]">{a.num2}</span>
-                                <span className="flex items-center gap-0.5 text-[12px] font-bold" style={{ color: "#1fa971" }}>
+                                <span className="flex items-center gap-0.5 text-[12px] font-bold" style={{ color: "var(--status-green)" }}>
                                     {UPCHEV}
                                     {a.delta}
                                 </span>
                             </div>
                         </div>
 
-                        <div className="mt-[14px] flex items-center gap-1.5 text-[13px] font-bold transition-colors group-hover:text-[#4842d4]" style={{ color: "#5b54e8" }}>
+                        <div className="mt-[14px] flex items-center gap-1.5 text-[13px] font-bold transition-colors group-hover:text-[var(--cockpit-indigo)]" style={{ color: "var(--brand-indigo)" }}>
                             Open
                             <span className="flex transition-transform group-hover:translate-x-[3px]">{ARROW}</span>
                         </div>

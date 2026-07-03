@@ -186,14 +186,15 @@ export function McpAddDialog({ open, onOpenChange, onAdd, editData }: McpAddDial
 
           {authType !== "none" && (
             <div className="space-y-4">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex w-full items-center justify-between text-sm font-medium"
+                className="flex h-auto w-full items-center justify-between rounded-none border-0 bg-transparent p-0 text-sm font-medium hover:bg-transparent active:scale-100 dark:hover:bg-transparent"
               >
                 <span>Authentication Settings</span>
                 {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
+              </Button>
 
               {showAdvanced && (
                 <div className="space-y-4 rounded-md border p-4">

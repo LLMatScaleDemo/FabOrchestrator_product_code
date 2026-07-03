@@ -662,21 +662,22 @@ export function ArtifactPreview({
       {hasMultipleArtifacts && (
         <div className="flex items-center gap-0 px-2 py-1.5 border-b overflow-x-auto scrollbar-thin shrink-0">
           {artifacts.map((art, idx) => (
-            <button
+            <Button
               key={art.id}
+              variant="ghost"
               onClick={() => onNavigate?.(idx)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors duration-200 ease-out shrink-0",
+                "flex h-auto items-center gap-1.5 rounded-md border-0 px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors duration-200 ease-out shrink-0 active:scale-100",
                 idx === currentIndex
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/10"
+                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-muted"
               )}
             >
               {getTabIcon(art)}
               <span className="max-w-[120px] truncate">
                 {art.source === 'file' ? art.filename : art.title}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -686,29 +687,35 @@ export function ArtifactPreview({
         {/* Left: Preview/Code toggle icons */}
         <div className="flex items-center gap-0.5 rounded-full border bg-muted p-0.5 shrink-0">
           {showPreviewButton && (
-            <button
+            <Button
+              variant="ghost"
               onClick={() => { setMode("preview"); setIframeKey((prev) => prev + 1) }}
               disabled={isStreaming || (isFileArtifact && fileLoading)}
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
-                mode === "preview" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                "flex h-7 w-7 items-center justify-center rounded-full border-0 p-0 transition-colors active:scale-100",
+                mode === "preview"
+                  ? "bg-background shadow-sm text-foreground hover:bg-background hover:text-foreground dark:hover:bg-background"
+                  : "bg-transparent text-muted-foreground hover:bg-transparent hover:text-foreground dark:hover:bg-transparent"
               )}
               title="Preview"
             >
               <Eye className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           )}
           {!isDocumentStrategy && (
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setMode("code")}
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
-                mode === "code" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                "flex h-7 w-7 items-center justify-center rounded-full border-0 p-0 transition-colors active:scale-100",
+                mode === "code"
+                  ? "bg-background shadow-sm text-foreground hover:bg-background hover:text-foreground dark:hover:bg-background"
+                  : "bg-transparent text-muted-foreground hover:bg-transparent hover:text-foreground dark:hover:bg-transparent"
               )}
               title="Code"
             >
               <Code2 className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -791,14 +798,16 @@ export function ArtifactPreview({
 
           {/* Close */}
           {onClose && (
-            <button
+            <Button
               type="button"
-              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              variant="ghost"
+              size="icon-sm"
+              className="flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-muted transition-colors active:scale-100 [&_svg:not([class*='size-'])]:size-3.5"
               onClick={onClose}
               aria-label="Close"
             >
               <X className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

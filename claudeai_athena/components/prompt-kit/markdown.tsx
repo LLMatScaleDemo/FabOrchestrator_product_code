@@ -5,6 +5,14 @@ import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import { cn } from "@/lib/utils"
 import { CodeBlock, CodeBlockCode } from "@/components/prompt-kit/code-block"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 // Import KaTeX CSS for math rendering
 import "katex/dist/katex.min.css"
@@ -22,12 +30,27 @@ function extractLanguage(className?: string): string {
 }
 
 const DEFAULT_COMPONENTS: Partial<Components> = {
-  table: function TableComponent({ children, ...props }) {
+  table: function TableComponent({ children, node: _node, ...props }) {
     return (
       <div className="table-wrapper">
-        <table {...props}>{children}</table>
+        <Table {...props}>{children}</Table>
       </div>
     )
+  },
+  thead: function TableHeadComponent({ children, node: _node, ...props }) {
+    return <TableHeader {...props}>{children}</TableHeader>
+  },
+  tbody: function TableBodyComponent({ children, node: _node, ...props }) {
+    return <TableBody {...props}>{children}</TableBody>
+  },
+  tr: function TableRowComponent({ children, node: _node, ...props }) {
+    return <TableRow {...props}>{children}</TableRow>
+  },
+  th: function TableHeadCellComponent({ children, node: _node, ...props }) {
+    return <TableHead {...props}>{children}</TableHead>
+  },
+  td: function TableCellComponent({ children, node: _node, ...props }) {
+    return <TableCell {...props}>{children}</TableCell>
   },
   code: function CodeComponent({ className, children, node, ...props }) {
     const startLine = node?.position?.start?.line

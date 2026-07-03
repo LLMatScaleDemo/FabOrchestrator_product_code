@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
-import { Plus, ChevronDown, ChevronRight, ArrowUp, ArrowRight, X, FileText, Loader2, Check, Archive, Globe, Plug, Paperclip, Settings, LayoutGrid, Square } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, ArrowUp, ArrowRight, X, FileText, Loader2, Check, Archive, Globe, Paperclip, LayoutGrid, Square } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatFileSize } from "@/lib/file-utils";
 
@@ -543,10 +543,10 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
         >
             {/* Main Container */}
             <div className={`
-                !box-content flex flex-col items-stretch transition-colors duration-200 relative z-10 rounded-2xl cursor-text border border-bg-300 dark:border-transparent
+                !box-content flex flex-col items-stretch transition-colors duration-200 relative z-10 rounded-2xl cursor-text border border-border
                 shadow-lg hover:shadow-xl
                 focus-within:shadow-xl
-                bg-white dark:bg-bg-200 font-sans antialiased
+                bg-card font-sans antialiased
             `}>
 
                 <div className="flex flex-col px-3 pt-3 pb-2 gap-2">
@@ -730,10 +730,10 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
                                     </button>
                                 ) : hasContent ? (
                                     /* Blue right-arrow send button — appears once the user types
-                                       (matches FabOrch). Solid #445ADD with white arrow. */
+                                       (matches FabOrch). Uses the theme primary token. */
                                     <button
                                         onClick={handleSend}
-                                        className="inline-flex items-center justify-center relative shrink-0 transition-[transform,opacity,background-color] duration-200 h-8 w-8 rounded-xl active:scale-95 bg-[#445add] text-white shadow-md hover:bg-[#3a4fcf]"
+                                        className="inline-flex items-center justify-center relative shrink-0 transition-[transform,opacity,background-color] duration-200 h-8 w-8 rounded-xl active:scale-95 bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
                                         type="button"
                                         aria-label="Send message"
                                     >
@@ -746,7 +746,7 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
                                                 className={`inline-flex items-center justify-center relative shrink-0 transition-[transform,opacity] duration-200 h-8 w-8 rounded-xl active:scale-95 cursor-pointer ${
                                                     isRecording
                                                         ? 'bg-red-500 text-white animate-pulse'
-                                                        : 'bg-bg-200 dark:bg-sidebar-border text-text-300 hover:text-text-200 hover:bg-bg-300 dark:hover:bg-bg-300'
+                                                        : 'bg-bg-200 text-text-300 hover:text-text-200 hover:bg-bg-300'
                                                 }`}
                                                 type="button"
                                                 aria-label={isRecording ? "Stop recording" : "Voice input"}

@@ -132,14 +132,16 @@ export function AdminLoginPage() {
                   autoComplete="current-password"
                   className="h-11 rounded-lg border-border bg-background pr-11 text-sm"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="icon"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 h-auto w-auto -translate-y-1/2 text-muted-foreground transition-none hover:text-foreground [&_svg]:size-5"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
+                </Button>
               </div>
               <div className="flex justify-end">
                 <a href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground hover:underline">
@@ -151,7 +153,7 @@ export function AdminLoginPage() {
             <Button
               type="submit"
               disabled={isSubmitting || !email || !password}
-              className="h-11 w-full rounded-lg bg-gradient-to-r from-[#5b21b6] via-[#7c3aed] to-[#c026d3] text-base font-medium text-white shadow-lg shadow-purple-800/30 hover:from-[#4c1d95] hover:via-[#6d28d9] hover:to-[#a21caf]"
+              className="h-11 w-full rounded-lg bg-gradient-to-r from-auth-grad-from via-auth-grad-via to-auth-grad-to text-base font-medium text-white shadow-lg shadow-purple-800/30 hover:from-auth-grad-from-2 hover:via-auth-grad-via-2 hover:to-auth-grad-to-2"
             >
               {isSubmitting ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

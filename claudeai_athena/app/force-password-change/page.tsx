@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function ForcePasswordChangePage() {
   const router = useRouter();
@@ -77,42 +79,43 @@ export default function ForcePasswordChangePage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium">Current Password</label>
-            <input
+            <Input
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
-              className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="mt-1 h-10 bg-background py-2 text-sm shadow-none transition-none"
             />
           </div>
           <div>
             <label className="block text-sm font-medium">New Password</label>
-            <input
+            <Input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
               minLength={8}
-              className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="mt-1 h-10 bg-background py-2 text-sm shadow-none transition-none"
             />
           </div>
           <div>
             <label className="block text-sm font-medium">Confirm New Password</label>
-            <input
+            <Input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="mt-1 h-10 bg-background py-2 text-sm shadow-none transition-none"
             />
           </div>
-          <button
+          <Button
             type="submit"
+            variant="default"
             disabled={submitting}
-            className="flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 hover:shadow-none active:scale-100 transition-none disabled:opacity-50"
           >
             {submitting ? "Changing..." : "Change Password"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

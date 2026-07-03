@@ -4,8 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { Loader2, Wrench, Plus, X } from "lucide-react";
 import { ALL_MODELS } from "@/lib/constants/role-templates";
@@ -87,15 +90,16 @@ function RoleMcpSection({ roleId }: { roleId: string }) {
             </div>
           )}
           <div className="flex flex-col gap-2 pt-1 sm:flex-row">
-            <select
-              value={pick}
-              onChange={(e) => setPick(e.target.value)}
-              aria-label="Attach MCP connector to role"
-              className="flex h-9 w-full flex-1 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="">{available.length ? "Attach a connector..." : "All active connectors attached"}</option>
-              {available.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}
-            </select>
+            <Select value={pick} onValueChange={setPick} disabled={available.length === 0}>
+              <SelectTrigger aria-label="Attach MCP connector to role" className="h-9 w-full flex-1">
+                <SelectValue placeholder={available.length ? "Attach a connector..." : "All active connectors attached"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {available.map((c) => <SelectItem key={c.id} value={c.id}>{c.displayName}</SelectItem>)}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
             <Button type="button" size="sm" disabled={!pick || busy} onClick={assign} aria-label="Attach connector">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
             </Button>
@@ -149,6 +153,7 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
   const [form, setForm] = useState<RoleFormData>(defaultForm);
   const [submitting, setSubmitting] = useState(false);
   const [tab, setTab] = useState<"general" | "models" | "limits" | "tools">("general");
+  const [errors, setErrors] = useState<{ name?: string; models?: string }>({});
 
   useEffect(() => {
     if (editRole) {
@@ -169,9 +174,11 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
       setForm(defaultForm);
     }
     setTab("general");
+    setErrors({});
   }, [editRole, open]);
 
   const toggleModel = (m: string) => {
+    setErrors((p) => ({ ...p, models: undefined }));
     setForm((f) => ({
       ...f,
       allowedModels: f.allowedModels.includes(m)
@@ -181,8 +188,12 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
   };
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { toast.error("Role name is required"); return; }
-    if (form.allowedModels.length === 0) { toast.error("Select at least one model"); return; }
+    const nextErrors: { name?: string; models?: string } = {};
+    if (!form.name.trim()) nextErrors.name = "Role name is required.";
+    if (form.allowedModels.length === 0) nextErrors.models = "Select at least one model.";
+    setErrors(nextErrors);
+    if (nextErrors.name) { setTab("general"); toast.error("Please fix the highlighted fields"); return; }
+    if (nextErrors.models) { setTab("models"); toast.error("Select at least one model"); return; }
 
     setSubmitting(true);
     const token = localStorage.getItem("admin_athena_token");
@@ -231,16 +242,17 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
         {/* Tabs */}
         <div className="mt-4 flex gap-1 rounded-lg bg-muted p-1">
           {tabs.map((t) => (
-            <button
+            <Button
               key={t.id}
+              variant="ghost"
               onClick={() => setTab(t.id)}
               aria-pressed={tab === t.id}
-              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                tab === t.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              className={`h-auto flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                tab === t.id ? "bg-background text-foreground shadow-sm hover:bg-background" : "text-muted-foreground hover:bg-transparent hover:text-foreground"
               }`}
             >
               {t.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -249,8 +261,9 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
           {tab === "general" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="role-name">Name</Label>
-                <Input id="role-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Data Analyst" />
+                <Label htmlFor="role-name">Name <span className="text-destructive" aria-hidden="true">*</span></Label>
+                <Input id="role-name" value={form.name} onChange={(e) => { setForm({ ...form, name: e.target.value }); if (errors.name) setErrors((p) => ({ ...p, name: undefined })); }} placeholder="e.g. Data Analyst" aria-required="true" aria-invalid={!!errors.name} aria-describedby={errors.name ? "role-name-error" : undefined} />
+                {errors.name && <p id="role-name-error" className="text-sm text-destructive">{errors.name}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role-description">Description</Label>
@@ -258,12 +271,12 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role-system-instructions">System Instructions</Label>
-                <textarea
+                <Textarea
                   id="role-system-instructions"
                   value={form.systemInstructions}
                   onChange={(e) => setForm({ ...form, systemInstructions: e.target.value })}
                   placeholder="Instructions appended to the system prompt for users in this role..."
-                  className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="field-sizing-fixed min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm shadow-none transition-none placeholder:text-muted-foreground focus-visible:border-input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-background"
                   maxLength={2000}
                 />
                 <p className="text-xs text-muted-foreground">{form.systemInstructions.length}/2000 characters</p>
@@ -274,7 +287,8 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
           {/* Models Tab */}
           {tab === "models" && (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">Select which Claude models users with this role can access:</p>
+              <p className="text-sm text-muted-foreground">Select which Claude models users with this role can access: <span className="text-destructive" aria-hidden="true">*</span></p>
+              {errors.models && <p className="text-sm text-destructive">{errors.models}</p>}
               <div className="flex justify-between">
                 <Button variant="outline" size="sm" onClick={() => setForm({ ...form, allowedModels: [...ALL_MODELS] })}>Select All</Button>
                 <Button variant="outline" size="sm" onClick={() => setForm({ ...form, allowedModels: [] })}>Clear All</Button>
@@ -282,11 +296,9 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
               <Separator />
               {ALL_MODELS.map((m) => (
                 <label key={m} className="flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors hover:bg-muted/50">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={form.allowedModels.includes(m)}
-                    onChange={() => toggleModel(m)}
-                    className="h-4 w-4 rounded border-input"
+                    onCheckedChange={() => toggleModel(m)}
                   />
                   <span className="text-sm font-medium">{MODEL_LABELS[m] || m}</span>
                 </label>
@@ -324,7 +336,7 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
               <Separator />
               <div className="space-y-2">
                 <label className="flex items-center gap-3">
-                  <input type="checkbox" checked={form.customInstructionsEnabled} onChange={(e) => setForm({ ...form, customInstructionsEnabled: e.target.checked })} className="h-4 w-4 rounded" />
+                  <Checkbox checked={form.customInstructionsEnabled} onCheckedChange={(v) => setForm({ ...form, customInstructionsEnabled: v === true })} />
                   <span className="text-sm">Allow custom instructions</span>
                 </label>
                 {form.customInstructionsEnabled && (
@@ -350,7 +362,7 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
               <Separator />
               <p className="text-sm text-muted-foreground">Control whether users in this role can add their own MCP connections.</p>
               <label className="flex items-center gap-3">
-                <input type="checkbox" checked={form.personalMcpEnabled} onChange={(e) => setForm({ ...form, personalMcpEnabled: e.target.checked })} className="h-4 w-4 rounded" />
+                <Checkbox checked={form.personalMcpEnabled} onCheckedChange={(v) => setForm({ ...form, personalMcpEnabled: v === true })} />
                 <span className="text-sm font-medium">Allow Personal MCP Connections</span>
               </label>
               {form.personalMcpEnabled && (
@@ -366,7 +378,7 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
         {/* Submit */}
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row">
           <Button onClick={handleSubmit} disabled={submitting} className="flex-1">
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : editRole ? "Update Role" : "Create Role"}
+            {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> Saving…</> : editRole ? "Update Role" : "Create Role"}
           </Button>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
         </div>

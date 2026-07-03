@@ -361,3 +361,31 @@ model PlatformSettings {
 
   @@map("platform_settings")
 }
+
+// ============================================================================
+// MODEL REGISTRY — admin-configurable AI models + per-token pricing.
+// Managed by admin_athena; read by both apps for the model picker, RBAC gate,
+// and USD cost attribution (prompt_audit_logs / usage). Replaces the hardcoded
+// model lists + model-pricing map. Costs are USD per 1,000,000 tokens.
+// ============================================================================
+model ModelRegistry {
+  id                  String   @id @default(uuid())
+  modelId             String   @unique @map("model_id")               // Anthropic API id, e.g. "claude-opus-4-8"
+  displayName         String   @map("display_name")                   // user-facing label, e.g. "FabOrchestrator 2.0"
+  description         String?
+  inputCostPer1M      Float    @default(0) @map("input_cost_per_1m")   // USD / 1M input tokens
+  outputCostPer1M     Float    @default(0) @map("output_cost_per_1m")  // USD / 1M output tokens
+  cacheReadCostPer1M  Float    @default(0) @map("cache_read_cost_per_1m")
+  cacheWriteCostPer1M Float    @default(0) @map("cache_write_cost_per_1m")
+  thinkingType        String   @default("adaptive") @map("thinking_type") // none | adaptive | manual
+  thinkingBudget      Int?     @map("thinking_budget")                 // token budget for manual thinking
+  isActive            Boolean  @default(true) @map("is_active")        // false = shown but not selectable ("coming soon")
+  isDefault           Boolean  @default(false) @map("is_default")      // the default selected model
+  sortOrder           Int      @default(0) @map("sort_order")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("model_registry")
+}

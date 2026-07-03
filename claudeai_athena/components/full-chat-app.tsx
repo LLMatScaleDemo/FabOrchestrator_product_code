@@ -42,35 +42,19 @@ import { cn } from "@/lib/utils"
 import { useChat } from "@ai-sdk/react"
 import { type UIMessage, DefaultChatTransport } from "ai"
 import {
-  BarChart3,
-  BookOpen,
-  Building2,
   ChevronUp,
-  Code2,
   Copy,
-  FolderOpen,
-  GitBranch,
-  Home,
-  Layers,
-  UserRound,
-  History,
   LogOut,
-  MessageSquare,
   MoreHorizontal,
   Pencil,
   Pin,
   PinOff,
-  Plug,
-  Plus,
   Settings,
   Share2,
-  ShieldCheck,
   ThumbsDown,
   ThumbsUp,
   Trash,
-  User2,
   FileIcon,
-  ImageIcon,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -82,7 +66,6 @@ import { ArtifactTile } from "@/components/prompt-kit/artifact-tile"
 import { isPreviewableFile } from "@/lib/file-classifier"
 import { useFileContent } from "@/hooks/use-file-content"
 // ArtifactTile removed — artifacts now open directly in preview panel
-import { ArtifactPreview } from "@/components/artifact-preview"
 import { ArtifactPanelWrapper } from "@/components/artifact-panel-wrapper"
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels"
 import { extractToolParts, type ToolPart } from "@/components/prompt-kit/tool"
@@ -93,7 +76,6 @@ import { FeedbackBar } from "@/components/prompt-kit/feedback-bar"
 // PromptSuggestion replaced by inline chips in welcome state
 import { SystemMessage } from "@/components/prompt-kit/system-message"
 import { StreamingText } from "@/components/prompt-kit/streaming-text"
-import { Markdown } from "@/components/prompt-kit/markdown"
 import { ToolTimeline } from "@/components/prompt-kit/tool-timeline"
 import { FileCard } from "@/components/prompt-kit/file-card"
 import { ClaudeChatInput, type ClaudeChatInputHandle } from "@/components/ui/claude-style-chat-input"
@@ -112,34 +94,19 @@ function getGreeting(): string {
 // Claude 4.6 and 4.5 series models
 const CLAUDE_MODELS = [
   {
-    id: "claude-opus-4-6",
-    name: "Claude 4.6 Opus",
-    description: "Most powerful with adaptive thinking",
+    id: "claude-opus-4-8",
+    name: "FabOrchestrator 2.0",
+    description: "Most capable with adaptive thinking",
   },
   {
-    id: "claude-sonnet-4-6",
-    name: "Claude 4.6 Sonnet",
+    id: "claude-sonnet-5",
+    name: "FabOrchestrator 1.1",
     description: "Fast and intelligent with adaptive thinking",
   },
   {
-    id: "claude-sonnet-4-5-20250929",
-    name: "Claude 4.5 Sonnet",
-    description: "Most intelligent model, best for complex tasks",
-  },
-  {
-    id: "claude-haiku-4-5-20251001",
-    name: "Claude 4.5 Haiku",
-    description: "Fast and efficient for simple tasks",
-  },
-  {
-    id: "claude-opus-4-5-20251101",
-    name: "Claude 4.5 Opus",
-    description: "Best for complex reasoning and analysis",
-  },
-  {
-    id: "claude-sonnet-4-20250514",
-    name: "Claude 4 Sonnet",
-    description: "Balanced performance and speed",
+    id: "claude-opus-4-7",
+    name: "FabOrchestrator 1.0",
+    description: "Powerful reasoning with adaptive thinking",
   },
 ] as const
 
@@ -271,14 +238,15 @@ function McpConnectionsSubmenu({
           <p className="text-[13px] text-text-500">No connectors configured</p>
         </div>
         <div className="border-t border-border dark:border-sidebar-border" />
-        <button
+        <Button
+          variant="ghost"
           onClick={onManageConnectors}
-          className="flex items-center gap-3 px-3 py-2.5 mx-1 my-1 rounded-lg text-[14px] text-text-200 dark:text-foreground hover:bg-bg-hover dark:hover:bg-bg-hover transition-colors cursor-pointer w-[calc(100%-8px)]"
+          className="flex h-auto items-center justify-start gap-3 border-0 bg-transparent px-3 py-2.5 mx-1 my-1 rounded-lg text-[14px] text-text-200 dark:text-foreground hover:bg-bg-hover dark:hover:bg-bg-hover transition-colors cursor-pointer w-[calc(100%-8px)] active:scale-100"
           type="button"
         >
           <Settings className="h-[18px] w-[18px] text-text-300 dark:text-text-500" />
           Manage connectors
-        </button>
+        </Button>
       </>
     )
   }
@@ -290,14 +258,15 @@ function McpConnectionsSubmenu({
           <p className="text-[13px] text-text-500">No connected servers</p>
         </div>
         <div className="border-t border-border dark:border-sidebar-border" />
-        <button
+        <Button
+          variant="ghost"
           onClick={onManageConnectors}
-          className="flex items-center gap-3 px-3 py-2.5 mx-1 my-1 rounded-lg text-[14px] text-text-200 dark:text-foreground hover:bg-bg-hover dark:hover:bg-bg-hover transition-colors cursor-pointer w-[calc(100%-8px)]"
+          className="flex h-auto items-center justify-start gap-3 border-0 bg-transparent px-3 py-2.5 mx-1 my-1 rounded-lg text-[14px] text-text-200 dark:text-foreground hover:bg-bg-hover dark:hover:bg-bg-hover transition-colors cursor-pointer w-[calc(100%-8px)] active:scale-100"
           type="button"
         >
           <Settings className="h-[18px] w-[18px] text-text-300 dark:text-text-500" />
           Manage connectors
-        </button>
+        </Button>
       </>
     )
   }
@@ -336,14 +305,15 @@ function McpConnectionsSubmenu({
         )
       })}
       <div className="my-1 border-t border-border dark:border-sidebar-border" />
-      <button
+      <Button
+        variant="ghost"
         onClick={onManageConnectors}
-        className="flex items-center gap-3 px-3 py-2.5 mx-1 mb-1 rounded-lg text-[14px] text-text-200 dark:text-foreground hover:bg-bg-hover dark:hover:bg-bg-hover transition-colors cursor-pointer w-[calc(100%-8px)]"
+        className="flex h-auto items-center justify-start gap-3 border-0 bg-transparent px-3 py-2.5 mx-1 mb-1 rounded-lg text-[14px] text-text-200 dark:text-foreground hover:bg-bg-hover dark:hover:bg-bg-hover transition-colors cursor-pointer w-[calc(100%-8px)] active:scale-100"
         type="button"
       >
         <Settings className="h-[18px] w-[18px] text-text-300 dark:text-text-500" />
         Manage connectors
-      </button>
+      </Button>
     </>
   )
 }
@@ -455,7 +425,7 @@ function ChatSidebar({
         <div className="flex w-full items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="text-[16.5px] font-bold tracking-[-0.2px]">
-              FabOrchestrator<span style={{ color: "#5b8cff" }}>.ai</span>
+              FabOrchestrator<span style={{ color: "var(--chat-brand-blue)" }}>.ai</span>
             </span>
           </div>
           <SidebarTrigger className="size-8 shrink-0 border-0 bg-transparent shadow-none hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" />
@@ -691,12 +661,12 @@ function ChatSidebar({
                 >
                   <span
                     className="flex !h-[30px] !w-[30px] shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white"
-                    style={{ background: "linear-gradient(135deg,#5b8cff,#3a5fd9)" }}
+                    style={{ background: "linear-gradient(135deg,var(--chat-brand-blue),var(--chat-avatar-blue))" }}
                   >
                     {userName.charAt(0).toUpperCase()}
                   </span>
                   <span className="truncate text-[13px] font-semibold">{userName}</span>
-                  <ChevronUp className="ml-auto size-4" style={{ color: "#8a96c4" }} />
+                  <ChevronUp className="ml-auto size-4" style={{ color: "var(--chat-chevron)" }} />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -1019,20 +989,6 @@ function ChatContent({
   }, [messages, setMessages, sendMessage, requestBody])
 
   // Auto-generate conversation title after first exchange
-  const generateTitle = useCallback(async (convId: string) => {
-    try {
-      const res = await fetch(`/api/conversations/${convId}/title`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-      })
-      if (!res.ok) {
-        console.error('Failed to generate title: HTTP', res.status)
-      }
-    } catch (error) {
-      console.error('Failed to generate title:', error)
-    }
-  }, [])
-
   // Copy last response to clipboard
   const copyLastResponse = useCallback(() => {
     const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant')
@@ -1204,8 +1160,6 @@ function ChatContent({
 
   // Throttle ref for artifact detection (100ms minimum between updates)
   const lastArtifactUpdateRef = useRef<number>(0)
-  const artifactUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
   // Auto-detect artifacts (both tag-based and file-based) during/after streaming
   // Tag artifacts: always update allArtifacts (inline tiles need data), never auto-open panel
   // File artifacts: auto-open panel after streaming (existing behavior)
@@ -1339,12 +1293,6 @@ function ChatContent({
       return extractTagArtifacts(raw).cleanedText
     }
     return raw
-  }
-
-  // Extract tool parts from message using PromptKit's extractToolParts helper
-  const getToolParts = (message: UIMessage): ToolPart[] => {
-    const parts = Array.isArray(message.parts) ? message.parts : []
-    return extractToolParts(parts)
   }
 
   // Segment message parts into ordered sections for proper rendering
@@ -1724,10 +1672,10 @@ function ChatContent({
                           transition={{ delay: 0.15, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                           className="mb-7"
                         >
-                          <h1 className="text-[34px] font-semibold tracking-[-0.4px]" style={{ color: "#1a2240" }}>
+                          <h1 className="text-[34px] font-semibold tracking-[-0.4px]" style={{ color: "var(--chat-ink)" }}>
                             {getGreeting()}, {userName}
                           </h1>
-                          <p className="mt-2 text-[14.5px] font-medium" style={{ color: "#6b7596" }}>
+                          <p className="mt-2 text-[14.5px] font-medium" style={{ color: "var(--chat-text-muted)" }}>
                             What would you like to orchestrate today?
                           </p>
                         </motion.div>
@@ -1777,15 +1725,17 @@ function ChatContent({
                             { label: "Query a site", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 21V6a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v15"/><path d="M15 9h4a1 1 0 0 1 1 1v11"/><line x1="7.5" y1="9" x2="11" y2="9"/><line x1="7.5" y1="13" x2="11" y2="13"/></svg> },
                             { label: "Compliance check", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9.2 12l2 2 3.6-3.6"/></svg> },
                           ].map((chip) => (
-                            <button
+                            <Button
                               key={chip.label}
+                              type="button"
+                              variant="ghost"
                               onClick={() => chatInputRef.current?.setMessage(chip.label)}
-                              className="login-chip flex items-center gap-2 rounded-[22px] bg-white px-4 py-[9px] text-[13.5px] font-bold transition-all hover:-translate-y-px"
-                              style={{ color: "#1a2240", border: "1px solid #e7eaf5", boxShadow: "0 2px 10px rgba(26,34,64,.05)" }}
+                              className="login-chip flex h-auto items-center gap-2 rounded-[22px] border-0 bg-white px-4 py-[9px] text-[13.5px] font-bold transition-all hover:-translate-y-px hover:bg-white active:scale-100 dark:hover:bg-white"
+                              style={{ color: "var(--chat-ink)", border: "1px solid var(--chat-chip-border)", boxShadow: "0 2px 10px rgba(26,34,64,.05)" }}
                             >
-                              <span className="flex" style={{ color: "#5566e8" }}>{chip.svg}</span>
+                              <span className="flex" style={{ color: "var(--chat-indigo)" }}>{chip.svg}</span>
                               {chip.label}
-                            </button>
+                            </Button>
                           ))}
                         </motion.div>
 
@@ -1797,9 +1747,9 @@ function ChatContent({
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.35, duration: 0.4 }}
                         className="absolute bottom-4 left-0 right-0 text-center text-xs font-medium"
-                        style={{ color: "#9aa3c0" }}
+                        style={{ color: "var(--chat-text-copyright)" }}
                       >
-                        &copy; {new Date().getFullYear()} FabOrchestrator<span style={{ color: "#5566e8" }}>.ai</span> · All rights reserved.
+                        &copy; {new Date().getFullYear()} FabOrchestrator<span style={{ color: "var(--chat-indigo)" }}>.ai</span> · All rights reserved.
                       </motion.p>
                     </motion.div>
                   ) : (
@@ -2277,9 +2227,9 @@ function ChatContent({
 function FullChatApp() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
-  const [selectedModel, setSelectedModel] = useState<ClaudeModelId>("claude-sonnet-4-6" as ClaudeModelId)
+  const [selectedModel, setSelectedModel] = useState<ClaudeModelId>("claude-opus-4-8" as ClaudeModelId)
   const [allowedModels, setAllowedModels] = useState<typeof CLAUDE_MODELS>(CLAUDE_MODELS as unknown as typeof CLAUDE_MODELS)
-  const [isLoading, setIsLoading] = useState(true)
+  const [, setIsLoading] = useState(true)
   const [userName, setUserName] = useState<string>("User")
   const [userEmail, setUserEmail] = useState<string>("")
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -2287,7 +2237,6 @@ function FullChatApp() {
   // Track the chat key separately - stays stable during new conversation creation
   // Only changes when user explicitly selects an existing conversation
   const [chatKey, setChatKey] = useState<string>('new-chat')
-  const router = useRouter()
 
   // Load user name and email from session on mount
   useEffect(() => {

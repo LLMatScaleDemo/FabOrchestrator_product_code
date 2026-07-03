@@ -7,7 +7,6 @@
  */
 
 import {
-  FabOrchError,
   FabOrchErrorEnvelope,
   FabOrchErrorPriority,
   FabOrchErrorType,

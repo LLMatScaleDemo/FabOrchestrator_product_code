@@ -7,7 +7,7 @@ import { RoleFormModal } from "@/components/admin/role-form-modal";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { Plus } from "lucide-react";
+import { Plus, ShieldCheck } from "lucide-react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RoleData = any;
@@ -79,6 +79,17 @@ export default function RolesPage() {
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-48 animate-pulse rounded-lg border bg-muted" />
           ))}
+        </div>
+      ) : roles.length === 0 ? (
+        <div className="mt-12 flex flex-col items-center gap-3 text-center">
+          <ShieldCheck className="h-12 w-12 text-muted-foreground/40" aria-hidden="true" />
+          <div>
+            <h2 className="text-lg font-medium">No roles yet</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Create a role to define model access and usage limits.</p>
+          </div>
+          <Button onClick={() => { setEditRole(null); setShowForm(true); }} className="mt-1 bg-primary">
+            <Plus className="mr-2 h-4 w-4" aria-hidden="true" /> Create Role
+          </Button>
         </div>
       ) : (
         <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

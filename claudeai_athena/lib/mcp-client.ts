@@ -9,7 +9,6 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import {
   FabOrchError,
-  FabOrchErrorType,
   isFabOrchError,
 } from './errors/faborch-errors';
 import { logger } from './logger';

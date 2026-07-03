@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { Loader2, Mail, CheckCircle } from "lucide-react";
 
@@ -23,13 +24,16 @@ export function CreateUserDialog({ roles, open, onClose, onCreated }: CreateUser
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [acceptUrl, setAcceptUrl] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; role?: string }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!roleId) {
-      toast.error("Please select a role");
-      return;
-    }
+    const nextErrors: { email?: string; role?: string } = {};
+    if (!email.trim()) nextErrors.email = "Email address is required.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) nextErrors.email = "Enter a valid email address.";
+    if (!roleId) nextErrors.role = "Please select a role.";
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
     setSubmitting(true);
 
     const token = localStorage.getItem("admin_athena_token");
@@ -64,6 +68,7 @@ export function CreateUserDialog({ roles, open, onClose, onCreated }: CreateUser
     setRoleId("");
     setSent(false);
     setAcceptUrl("");
+    setErrors({});
     onClose();
   };
 
@@ -100,31 +105,36 @@ export function CreateUserDialog({ roles, open, onClose, onCreated }: CreateUser
         ) : (
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="invite-email">Email Address</Label>
+              <Label htmlFor="invite-email">Email Address <span className="text-destructive" aria-hidden="true">*</span></Label>
               <Input
                 id="invite-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors((p) => ({ ...p, email: undefined })); }}
                 required
+                aria-required="true"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "invite-email-error" : undefined}
                 placeholder="user@company.com"
               />
+              {errors.email && <p id="invite-email-error" className="text-sm text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="invite-role">Role</Label>
-              <select
-                id="invite-role"
-                value={roleId}
-                onChange={(e) => setRoleId(e.target.value)}
-                required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">Select a role...</option>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
+              <Label htmlFor="invite-role">Role <span className="text-destructive" aria-hidden="true">*</span></Label>
+              <Select value={roleId} onValueChange={(v) => { setRoleId(v); if (errors.role) setErrors((p) => ({ ...p, role: undefined })); }}>
+                <SelectTrigger id="invite-role" className="h-10 w-full" aria-required="true" aria-invalid={!!errors.role} aria-describedby={errors.role ? "invite-role-error" : undefined}>
+                  <SelectValue placeholder="Select a role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {roles.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              {errors.role && <p id="invite-role-error" className="text-sm text-destructive">{errors.role}</p>}
             </div>
 
             <div className="rounded-lg border bg-muted/30 p-3">
@@ -136,7 +146,7 @@ export function CreateUserDialog({ roles, open, onClose, onCreated }: CreateUser
             <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row">
               <Button type="submit" disabled={submitting} className="flex-1">
                 {submitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> Sending…</>
                 ) : (
                   <>
                     <Mail className="mr-2 h-4 w-4" aria-hidden="true" /> Send Invitation

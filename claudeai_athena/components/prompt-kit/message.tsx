@@ -10,7 +10,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip"
 import { Bot } from "lucide-react"
-import { motion, AnimatePresence } from "motion/react"
+import { motion } from "motion/react"
 
 interface MessageProps extends React.HTMLAttributes<HTMLDivElement> {
   role?: "user" | "assistant" | "system"

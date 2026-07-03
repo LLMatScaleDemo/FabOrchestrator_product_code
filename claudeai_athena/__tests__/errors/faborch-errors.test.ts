@@ -180,7 +180,8 @@ describe('list_parameter_values (REQ-01 #5)', () => {
   it('returns models', () => {
     const r = listParameterValuesSync('model');
     assert.ok(r);
-    assert.ok(r!.validOptions.length >= 7);
+    // FabOrchestrator 1.0 / 1.1 / 2.0 (the current branded model set).
+    assert.ok(r!.validOptions.length >= 3);
   });
   it('returns null for unknown parameters', () => {
     assert.equal(listParameterValuesSync('not_a_param'), null);

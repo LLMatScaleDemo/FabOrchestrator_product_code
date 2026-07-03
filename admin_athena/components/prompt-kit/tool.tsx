@@ -6,6 +6,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import {
   CheckCircle,
@@ -179,24 +187,24 @@ const Tool = ({ toolPart, defaultOpen = false, className }: ToolProps) => {
     const columns = Object.keys(rows[0])
     return (
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr>
+        <Table className="border-collapse">
+          <TableHeader>
+            <TableRow>
               {columns.map((col) => (
-                <th
+                <TableHead
                   key={col}
-                  className="bg-muted border-border whitespace-nowrap border px-3 py-1.5 text-left text-xs font-semibold"
+                  className="bg-muted border-border whitespace-nowrap border px-3 py-1.5 text-left text-xs font-semibold text-foreground"
                 >
                   {col}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.map((row, i) => (
-              <tr key={i} className={i % 2 === 0 ? "" : "bg-muted/30"}>
+              <TableRow key={i} className={i % 2 === 0 ? "" : "bg-muted/30"}>
                 {columns.map((col) => (
-                  <td
+                  <TableCell
                     key={col}
                     className="border-border max-w-xs truncate border px-3 py-1.5"
                     title={String(row[col] ?? "")}
@@ -206,12 +214,12 @@ const Tool = ({ toolPart, defaultOpen = false, className }: ToolProps) => {
                     ) : (
                       String(row[col] ?? "")
                     )}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         <div className="text-muted-foreground mt-1 text-xs">
           {rows.length} row{rows.length !== 1 ? "s" : ""}
         </div>

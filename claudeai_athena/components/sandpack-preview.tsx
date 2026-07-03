@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, memo, Component } from "react"
 import type { ReactNode } from "react"
 import dynamic from "next/dynamic"
 import { Loader2, RefreshCw, AlertTriangle } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { detectDependencies, detectTypeScript } from "@/lib/sandpack-deps"
 
 // Eagerly preload the Sandpack module so it's cached for when we need it
@@ -82,16 +83,17 @@ class SandpackErrorBoundary extends Component<
             <p className="text-xs text-muted-foreground">
               {this.state.error?.message || "An unexpected error occurred"}
             </p>
-            <button
+            <Button
+              variant="default"
               onClick={() => {
                 this.setState({ hasError: false, error: null })
                 this.props.onRetry()
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="flex h-auto items-center gap-1.5 border-0 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-none transition-colors active:scale-100 [&_svg:not([class*='size-'])]:size-3"
             >
               <RefreshCw className="h-3 w-3" />
               Retry
-            </button>
+            </Button>
           </div>
         </div>
       )

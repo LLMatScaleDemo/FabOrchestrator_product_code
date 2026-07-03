@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { ThumbsDown, ThumbsUp, X } from "lucide-react"
 
 type FeedbackBarProps = {
@@ -61,9 +62,11 @@ export function FeedbackBar({
           <span className="text-foreground font-medium">{title}</span>
         </div>
         <div className="flex items-center justify-center gap-0.5 px-3 py-0">
-          <button
+          <Button
             type="button"
-            className="text-muted-foreground hover:text-status-success flex size-8 items-center justify-center rounded-md transition-colors"
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-status-success flex rounded-md transition-colors hover:bg-transparent dark:hover:bg-transparent active:scale-100"
             aria-label="Helpful"
             onClick={() => {
               setFeedback("helpful")
@@ -71,10 +74,12 @@ export function FeedbackBar({
             }}
           >
             <ThumbsUp className="size-4" />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="text-muted-foreground hover:text-status-error flex size-8 items-center justify-center rounded-md transition-colors"
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-status-error flex rounded-md transition-colors hover:bg-transparent dark:hover:bg-transparent active:scale-100"
             aria-label="Not helpful"
             onClick={() => {
               setFeedback("not-helpful")
@@ -82,21 +87,22 @@ export function FeedbackBar({
             }}
           >
             <ThumbsDown className="size-4" />
-          </button>
+          </Button>
         </div>
         {onClose && (
           <div className="border-border flex items-center justify-center border-l">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => {
                 setDismissed(true)
                 onClose?.()
               }}
-              className="text-muted-foreground hover:text-foreground flex items-center justify-center rounded-md p-3"
+              className="text-muted-foreground hover:text-foreground flex h-auto items-center justify-center rounded-md border-0 p-3 hover:bg-transparent dark:hover:bg-transparent active:scale-100 transition-none"
               aria-label="Close"
             >
               <X className="size-5" />
-            </button>
+            </Button>
           </div>
         )}
       </div>

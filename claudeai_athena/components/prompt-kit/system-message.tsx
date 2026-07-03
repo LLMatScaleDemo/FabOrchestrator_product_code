@@ -105,13 +105,15 @@ const SystemMessage = React.forwardRef<HTMLDivElement, SystemMessageProps>(
               </Button>
             )}
             {dismissible && (
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={handleDismiss}
-                className="shrink-0 rounded p-1 opacity-70 transition-opacity hover:opacity-100"
+                className="h-auto w-auto shrink-0 rounded border-0 bg-transparent p-1 opacity-70 transition-opacity hover:bg-transparent hover:opacity-100 active:scale-100 dark:hover:bg-transparent"
               >
                 <X className="h-4 w-4" />
                 <span className="sr-only">Dismiss</span>
-              </button>
+              </Button>
             )}
           </motion.div>
         )}

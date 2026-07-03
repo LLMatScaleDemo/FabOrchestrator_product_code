@@ -10,13 +10,9 @@
 import { FabOrchError } from './faborch-errors';
 
 export const ALLOWED_MODELS: ReadonlyArray<string> = Object.freeze([
-  'claude-opus-4-6',
-  'claude-sonnet-4-6',
-  'claude-sonnet-4-5-20250929',
-  'claude-haiku-4-5-20251001',
-  'claude-opus-4-5-20251101',
-  'claude-opus-4-20250514',
-  'claude-sonnet-4-20250514',
+  'claude-opus-4-7',   // FabOrchestrator 1.0
+  'claude-sonnet-5',   // FabOrchestrator 1.1
+  'claude-opus-4-8',   // FabOrchestrator 2.0
 ]);
 
 export const ALLOWED_THEMES: ReadonlyArray<string> = Object.freeze([

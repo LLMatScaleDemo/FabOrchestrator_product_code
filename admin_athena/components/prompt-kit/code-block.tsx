@@ -33,7 +33,6 @@ export type CodeBlockCodeProps = {
 function CodeBlockCode({
   code,
   language = "plaintext",
-  className,
   ...props
 }: CodeBlockCodeProps) {
   const [copied, setCopied] = React.useState(false)

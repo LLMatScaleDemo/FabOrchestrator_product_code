@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { UserDetailPanel } from "@/components/admin/user-detail-panel";
 import { CreateUserDialog } from "@/components/admin/create-user-dialog";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Users as UsersIcon, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
 interface UserRow {
@@ -34,6 +43,33 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [sortKey, setSortKey] = useState<"name" | "lastLogin">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const toggleSort = (key: "name" | "lastLogin") => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const sortedUsers = useMemo(() => {
+    const arr = [...users];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "name") {
+        cmp = (a.name || a.email).localeCompare(b.name || b.email);
+      } else {
+        const at = a.lastLogin ? new Date(a.lastLogin).getTime() : 0;
+        const bt = b.lastLogin ? new Date(b.lastLogin).getTime() : 0;
+        cmp = at - bt;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return arr;
+  }, [users, sortKey, sortDir]);
 
   const token = typeof window !== "undefined" ? localStorage.getItem("admin_athena_token") : null;
 
@@ -154,33 +190,58 @@ export default function UsersPage() {
 
       {/* Table */}
       <div
-        className="mt-6 overflow-x-auto rounded-lg border"
+        className="mt-6 max-h-[calc(100vh-16rem)] overflow-auto rounded-lg border"
         role="region"
         aria-label="Users"
         tabIndex={0}
       >
-        <table className="w-full min-w-[640px]">
-          <caption className="sr-only">List of user accounts with role, status, and last active date. Select a row to view details.</caption>
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</th>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Role</th>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Last Active</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-[640px] text-base">
+          <TableCaption className="sr-only">List of user accounts with role, status, and last active date. Select a row to view details.</TableCaption>
+          <TableHeader className="sticky top-0 z-10 bg-card">
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead scope="col" aria-sort={sortKey === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"} className="h-auto bg-muted/50 p-0 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <button type="button" onClick={() => toggleSort("name")} className="flex w-full items-center gap-1 px-4 py-3 text-left transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+                  User
+                  {sortKey === "name" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" aria-hidden="true" />}
+                </button>
+              </TableHead>
+              <TableHead scope="col" className="h-auto bg-muted/50 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Role</TableHead>
+              <TableHead scope="col" className="h-auto bg-muted/50 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
+              <TableHead scope="col" aria-sort={sortKey === "lastLogin" ? (sortDir === "asc" ? "ascending" : "descending") : "none"} className="h-auto bg-muted/50 p-0 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <button type="button" onClick={() => toggleSort("lastLogin")} className="flex w-full items-center gap-1 px-4 py-3 text-left transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+                  Last Active
+                  {sortKey === "lastLogin" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" aria-hidden="true" />}
+                </button>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="[&_tr:last-child]:border-b">
             {loading ? (
               [...Array(5)].map((_, i) => (
-                <tr key={i} className="border-b">
-                  <td colSpan={4} className="px-4 py-4"><div className="h-4 w-48 animate-pulse rounded bg-muted" /></td>
-                </tr>
+                <TableRow key={i} className="hover:bg-transparent">
+                  <TableCell colSpan={4} className="whitespace-normal px-4 py-4"><div className="h-4 w-48 animate-pulse rounded bg-muted" /></TableCell>
+                </TableRow>
               ))
-            ) : users.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">No users found</td></tr>
+            ) : sortedUsers.length === 0 ? (
+              <TableRow className="border-b-0! hover:bg-transparent">
+                <TableCell colSpan={4} className="whitespace-normal px-4 py-14 text-center">
+                  <div className="mx-auto flex max-w-sm flex-col items-center gap-3">
+                    <UsersIcon className="h-10 w-10 text-muted-foreground/40" aria-hidden="true" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{search ? "No users match your search" : "No users yet"}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{search ? "Try a different name or email." : "Invite your first user to get started."}</p>
+                    </div>
+                    {!search && (
+                      <Button onClick={() => setShowCreate(true)} size="sm" className="mt-1 bg-primary">
+                        <Plus className="mr-2 h-4 w-4" aria-hidden="true" /> Invite User
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
             ) : (
-              users.map((user) => (
-                <tr
+              sortedUsers.map((user) => (
+                <TableRow
                   key={user.id}
                   onClick={() => setSelectedUser(user)}
                   onKeyDown={(e) => {
@@ -192,15 +253,15 @@ export default function UsersPage() {
                   tabIndex={0}
                   role="button"
                   aria-label={`View details for ${user.name || user.email}`}
-                  className="cursor-pointer border-b transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  className="cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 >
-                  <td className="px-4 py-3">
+                  <TableCell className="whitespace-normal px-4 py-3">
                     <div>
                       <p className="font-medium">{user.name || "—"}</p>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="whitespace-normal px-4 py-3">
                     <div className="flex items-center gap-2">
                       {user.role ? (
                         <Badge variant="secondary">{user.role.name}</Badge>
@@ -209,20 +270,20 @@ export default function UsersPage() {
                       )}
                       {user.isAdmin && <Badge variant="default">Admin</Badge>}
                     </div>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="whitespace-normal px-4 py-3">
                     <Badge variant={user.status === "ACTIVE" ? "success" : "destructive"}>
                       {user.status}
                     </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="whitespace-normal px-4 py-3 text-sm tabular-nums text-muted-foreground">
                     {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Detail Panel */}

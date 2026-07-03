@@ -24,6 +24,7 @@ import {
   LogOut,
   MessageSquare,
   Wrench,
+  Boxes,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -59,6 +60,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Configuration",
     items: [
+      { label: "Models", href: "/admin/models", icon: Boxes },
       { label: "MCP Connections", href: "/admin/mcp", icon: Wrench },
     ],
   },
@@ -83,7 +85,7 @@ interface AdminUser {
 }
 
 // Active item = solid blue (matches the approved design); inactive = muted.
-const ACTIVE_BG = "#4258de";
+const ACTIVE_BG = "var(--brand-indigo)";
 
 function useLogout() {
   const router = useRouter();
@@ -147,27 +149,29 @@ function NavList({
               const Icon = item.icon;
               const active = isActivePath(pathname, item.href);
               const btn = (
-                <button
+                <Button
+                  variant="ghost"
+                  size={collapsed ? "icon" : "default"}
                   onClick={() => go(item.href)}
                   aria-current={active ? "page" : undefined}
                   aria-label={collapsed ? item.label : undefined}
                   className={cn(
-                    "flex items-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                    "flex h-auto items-center justify-start rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 [&_svg]:size-[18px]",
                     collapsed ? "h-10 w-10 justify-center" : "w-full gap-3 px-3 py-2",
                     active
-                      ? "text-white"
+                      ? "text-white hover:text-white"
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
                   style={active ? { backgroundColor: ACTIVE_BG } : undefined}
                 >
                   <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
                   {!collapsed && <span>{item.label}</span>}
-                </button>
+                </Button>
               );
               return collapsed ? (
                 <Tooltip key={item.href}>
                   <TooltipTrigger asChild>{btn}</TooltipTrigger>
-                  <TooltipContent side="right" className="border-0 bg-[#1e2545] font-medium text-white">{item.label}</TooltipContent>
+                  <TooltipContent side="right" className="border-0 bg-sidebar-active-navy font-medium text-white">{item.label}</TooltipContent>
                 </Tooltip>
               ) : (
                 <div key={item.href}>{btn}</div>
@@ -219,30 +223,33 @@ function SidebarFooter({
               {(user.name?.trim()?.[0] || user.email[0]).toUpperCase()}
             </div>
           </TooltipTrigger>
-          <TooltipContent side="right" className="border-0 bg-[#1e2545] font-medium text-white">{user.name || user.email}</TooltipContent>
+          <TooltipContent side="right" className="border-0 bg-sidebar-active-navy font-medium text-white">{user.name || user.email}</TooltipContent>
         </Tooltip>
       )}
       {collapsed ? (
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onLogout}
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 [&_svg]:size-[18px]"
               aria-label="Sign out"
             >
               <LogOut className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
-            </button>
+            </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" className="border-0 bg-[#1e2545] font-medium text-white">Sign out</TooltipContent>
+          <TooltipContent side="right" className="border-0 bg-sidebar-active-navy font-medium text-white">Sign out</TooltipContent>
         </Tooltip>
       ) : (
-        <button
+        <Button
+          variant="ghost"
           onClick={onLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-auto w-full items-center justify-start gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 [&_svg]:size-[18px]"
         >
           <LogOut className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
           <span>Sign out</span>
-        </button>
+        </Button>
       )}
     </div>
   );

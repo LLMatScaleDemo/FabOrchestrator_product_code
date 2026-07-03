@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { formatFileSize, getFileTypeLabel } from "@/lib/file-utils"
 import {
   FileText,
@@ -152,22 +153,25 @@ export function FileCard({ fileId, filename, mimeType, sizeBytes, className, onP
                 <AlertCircle className="size-3.5 shrink-0" />
                 <span className="max-w-[120px] truncate">{error}</span>
               </span>
-              <button
+              <Button
+                type="button"
+                variant="link"
                 onClick={(e) => { e.stopPropagation(); handleDownload(e) }}
-                className="text-muted-foreground hover:text-foreground text-xs underline transition-colors"
+                className="h-auto border-0 p-0 text-muted-foreground hover:text-foreground text-xs underline underline-offset-auto transition-colors"
               >
                 Retry
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
+            <Button
+              variant="ghost"
+              size="lg"
               className={cn(
-                "inline-flex items-center justify-center relative shrink-0 select-none",
-                "border border-border bg-transparent text-foreground font-medium",
-                "h-9 px-4 py-2 rounded-lg min-w-[5rem]",
+                "relative shrink-0 select-none",
+                "border-border bg-transparent text-foreground font-medium",
+                "px-4 min-w-[5rem]",
                 "active:scale-[0.985] whitespace-nowrap transition-transform duration-100 text-sm",
-                "hover:bg-muted/80",
-                "disabled:pointer-events-none disabled:opacity-50"
+                "hover:bg-muted/80 dark:hover:bg-muted/80"
               )}
               type="button"
               aria-label="Download"
@@ -182,7 +186,7 @@ export function FileCard({ fileId, filename, mimeType, sizeBytes, className, onP
               ) : (
                 "Download"
               )}
-            </button>
+            </Button>
           )}
         </div>
       </div>

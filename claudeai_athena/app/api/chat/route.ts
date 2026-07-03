@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { streamText, convertToModelMessages, stepCountIs, createUIMessageStream, createUIMessageStreamResponse } from 'ai';
 import { anthropic, forwardAnthropicContainerIdFromLastStep, createAnthropicWithContainerUploads } from '@/lib/anthropic';
-import { addMessage, getMessages, getMemoryFile, getAllVisibleMemoryFiles, createMemoryFile, updateMemoryFileContent, deleteMemoryFile, renameMemoryFile } from '@/lib/storage';
+import { addMessage, getMessages } from '@/lib/storage';
 import { loadActiveMcpToolsWithDescriptions } from '@/lib/mcp-client';
 import { requireAuth } from '@/lib/auth-middleware';
 import { getAnthropicFilesClient } from '@/lib/anthropic-files';
@@ -20,25 +20,21 @@ import {
   type PromptStartHandle,
   type ToolCallSummary,
 } from '@/lib/prompt-audit';
-import { costForTurn, hasPricing } from '@/lib/model-pricing';
+import { costForTurn, costForTurnWithRates, hasPricing, type ModelRates } from '@/lib/model-pricing';
+import { getAllowedModelIds, getRegistryRates, getThinkingConfig } from '@/lib/model-registry';
 import { bumpActivityIfActive } from '@/lib/session-audit';
 
 export const maxDuration = 300;
 
 // Models that support adaptive thinking (type: "adaptive" + effort)
 const ADAPTIVE_THINKING_MODELS = [
-  'claude-opus-4-6',
-  'claude-sonnet-4-6',
+  'claude-opus-4-7',   // FabOrchestrator 1.0
+  'claude-sonnet-5',   // FabOrchestrator 1.1
+  'claude-opus-4-8',   // FabOrchestrator 2.0
 ];
 
 // Models that support manual thinking (type: "enabled" + budgetTokens)
-const MANUAL_THINKING_MODELS = [
-  'claude-sonnet-4-5-20250929',
-  'claude-haiku-4-5-20251001',
-  'claude-opus-4-5-20251101',
-  'claude-sonnet-4-20250514',
-  'claude-opus-4-20250514',
-];
+const MANUAL_THINKING_MODELS: string[] = [];
 
 function getThinkingMode(modelId: string): 'adaptive' | 'manual' | 'none' {
   if (ADAPTIVE_THINKING_MODELS.includes(modelId)) return 'adaptive';
@@ -165,13 +161,31 @@ export async function POST(req: NextRequest) {
     } = validated;
 
     // Use the model ID directly (frontend sends full Bedrock model IDs)
-    const modelId = requestedModel || 'claude-sonnet-4-5-20250929';
+    const modelId = requestedModel || 'claude-opus-4-8';
 
     // Reject unknown models with INVALID_PARAMETER + valid options (REQ-01 #5).
-    if (!ALLOWED_MODELS.includes(modelId)) {
-      throw FabOrchError.invalidParameter('model', ALLOWED_MODELS, undefined, {
+    // Allow a model if it's active in the shared model_registry OR (fallback)
+    // in the hardcoded ALLOWED_MODELS list. When the registry is empty/missing,
+    // getAllowedModelIds() returns [] and we rely entirely on ALLOWED_MODELS.
+    const registryAllowedIds = await getAllowedModelIds();
+    const isModelAllowed = registryAllowedIds.includes(modelId) || ALLOWED_MODELS.includes(modelId);
+    if (!isModelAllowed) {
+      const validOptions = registryAllowedIds.length > 0 ? registryAllowedIds : ALLOWED_MODELS;
+      throw FabOrchError.invalidParameter('model', validOptions, undefined, {
         badValue: modelId,
       });
+    }
+
+    // REQ-04 — load registry per-token rates ONCE up front so the streaming
+    // onFinish callback can price each step synchronously without blocking the
+    // stream. Empty when the registry is missing/empty → cost math below falls
+    // back to the hardcoded costForTurn/MODEL_PRICING map.
+    const registryRatesByModel = new Map<string, ModelRates>();
+    try {
+      const rates = await getRegistryRates(modelId);
+      if (rates) registryRatesByModel.set(modelId, rates);
+    } catch {
+      // Registry unavailable — fall back to hardcoded pricing.
     }
 
     // ── Role-based model access control (managed by admin_athena) ──
@@ -221,8 +235,14 @@ export async function POST(req: NextRequest) {
     }
     // ── End role-based access control ──
 
-    // Check if reasoning should be enabled for this model
-    const thinkingMode = enableReasoning ? getThinkingMode(modelId) : 'none';
+    // Check if reasoning should be enabled for this model.
+    // Prefer the registry's thinkingType for this model; fall back to the
+    // hardcoded ADAPTIVE_THINKING_MODELS/MANUAL_THINKING_MODELS sets.
+    const registryThinking = await getThinkingConfig(modelId);
+    const resolvedThinkingMode = registryThinking?.type ?? getThinkingMode(modelId);
+    const thinkingMode = enableReasoning ? resolvedThinkingMode : 'none';
+    // Manual-thinking budget: registry value if provided, else the default.
+    const manualThinkingBudget = registryThinking?.budget ?? 16000;
 
     // Get the last user message to save to database
     const lastUserMessage = uiMessages[uiMessages.length - 1];
@@ -653,12 +673,12 @@ export async function POST(req: NextRequest) {
     if (thinkingMode === 'adaptive') {
       anthropicOptions.thinking = { type: 'adaptive' };
       // For Opus 4.6 use 'max', for Sonnet 4.6 use 'high' (max is Opus-only)
-      const effort = modelId === 'claude-opus-4-6' ? 'max' : 'high';
+      const effort = (modelId === 'claude-opus-4-8' || modelId === 'claude-opus-4-7') ? 'max' : 'high';
       anthropicOptions.effort = effort;
       console.log(`[Chat] Adaptive thinking enabled (effort: ${effort})`);
     } else if (thinkingMode === 'manual') {
-      anthropicOptions.thinking = { type: 'enabled', budgetTokens: 16000 };
-      console.log(`[Chat] Manual thinking enabled (budget: 16000)`);
+      anthropicOptions.thinking = { type: 'enabled', budgetTokens: manualThinkingBudget };
+      console.log(`[Chat] Manual thinking enabled (budget: ${manualThinkingBudget})`);
     }
 
     // Agent skills for code execution (always enabled)
@@ -876,7 +896,7 @@ export async function POST(req: NextRequest) {
             dbParts.push({ type: 'text', text });
           }
 
-          const message = await addMessage(conversationId, {
+          await addMessage(conversationId, {
             role: 'assistant',
             content: text || '',
             parts: dbParts.length > 0 ? dbParts : [{ type: 'text', text: text || '' }],
@@ -965,19 +985,24 @@ export async function POST(req: NextRequest) {
                   const readTok  = s.usage.cachedInputTokens         ?? 0;
                   const writeTok = s.usage.cacheCreationInputTokens  ?? 0;
                   const stepModel = s.response?.modelId || s.modelId || modelId;
-                  if (!hasPricing(stepModel) && !unknownModelLogged) {
+                  // Prefer registry rates loaded once up front; else hardcoded.
+                  const registryRate = registryRatesByModel.get(stepModel);
+                  if (!registryRate && !hasPricing(stepModel) && !unknownModelLogged) {
                     logger.fabOrchError(
                       new Error(`No pricing for model "${stepModel}" — cost will be 0`),
                       { route: '/api/chat' }
                     );
                     unknownModelLogged = true;
                   }
-                  const cost = costForTurn(stepModel, {
+                  const stepUsage = {
                     inputTokens: inTok,
                     outputTokens: outTok,
                     cachedInputTokens: readTok,
                     cacheCreationInputTokens: writeTok,
-                  });
+                  };
+                  const cost = registryRate
+                    ? costForTurnWithRates(registryRate, stepUsage)
+                    : costForTurn(stepModel, stepUsage);
                   const stepInputTokens = inTok + readTok + writeTok;
                   if (idx === 0) {
                     requestTokens += stepInputTokens;
@@ -1078,51 +1103,27 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   const models = [
     {
-      id: 'claude-opus-4-6',
-      name: 'Claude 4.6 Opus',
-      description: 'Most powerful model with adaptive thinking',
+      id: 'claude-opus-4-7',
+      name: 'FabOrchestrator 1.0',
+      description: 'Powerful reasoning with adaptive thinking',
       supportsReasoning: true,
     },
     {
-      id: 'claude-sonnet-4-6',
-      name: 'Claude 4.6 Sonnet',
+      id: 'claude-sonnet-5',
+      name: 'FabOrchestrator 1.1',
       description: 'Fast and intelligent with adaptive thinking',
       supportsReasoning: true,
     },
     {
-      id: 'claude-sonnet-4-5-20250929',
-      name: 'Claude 4.5 Sonnet',
-      description: 'Most intelligent, best for complex tasks with extended thinking',
-      supportsReasoning: true,
-    },
-    {
-      id: 'claude-haiku-4-5-20251001',
-      name: 'Claude 4.5 Haiku',
-      description: 'Fast and efficient with thinking capabilities',
-      supportsReasoning: true,
-    },
-    {
-      id: 'claude-opus-4-5-20251101',
-      name: 'Claude 4.5 Opus',
-      description: 'Most capable model for complex reasoning and analysis',
-      supportsReasoning: true,
-    },
-    {
-      id: 'claude-opus-4-20250514',
-      name: 'Claude 4 Opus',
-      description: 'Advanced reasoning and deep analysis',
-      supportsReasoning: true,
-    },
-    {
-      id: 'claude-sonnet-4-20250514',
-      name: 'Claude 4 Sonnet',
-      description: 'Balanced performance with reasoning support',
+      id: 'claude-opus-4-8',
+      name: 'FabOrchestrator 2.0',
+      description: 'Most capable model with adaptive thinking',
       supportsReasoning: true,
     },
   ];
 
   return Response.json({
     models,
-    defaultModel: 'claude-sonnet-4-5-20250929'
+    defaultModel: 'claude-opus-4-8'
   });
 }

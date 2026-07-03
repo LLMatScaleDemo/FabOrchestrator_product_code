@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -51,9 +53,9 @@ export default function ForgotPasswordPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               If an account exists with <strong>{email}</strong>, we&apos;ve sent password reset instructions.
             </p>
-            <button onClick={() => setSent(false)} className="mt-4 text-sm text-primary underline">
+            <Button variant="link" onClick={() => setSent(false)} className="mt-4 h-auto border-0 p-0 text-sm text-primary underline underline-offset-auto active:scale-100 transition-none">
               Try another email
-            </button>
+            </Button>
           </div>
         ) : (
           <>
@@ -71,23 +73,24 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
               <div>
                 <label className="block text-sm font-medium">Email Address</label>
-                <input
+                <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="you@company.com"
                   autoFocus
-                  className="mt-1 flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="mt-1 h-11 bg-background py-2 text-sm shadow-none transition-none focus-visible:ring-2"
                 />
               </div>
-              <button
+              <Button
                 type="submit"
+                variant="default"
                 disabled={submitting || !email}
-                className="flex h-11 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                className="flex h-11 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 hover:shadow-none active:scale-100 transition-none disabled:opacity-50"
               >
                 {submitting ? "Sending..." : "Send Reset Link"}
-              </button>
+              </Button>
             </form>
           </>
         )}

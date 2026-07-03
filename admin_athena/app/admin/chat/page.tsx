@@ -15,6 +15,7 @@ import { Markdown } from "@/components/prompt-kit/markdown";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/prompt-kit/reasoning";
 import { ToolTimeline } from "@/components/prompt-kit/tool-timeline";
 import { extractToolParts } from "@/components/prompt-kit/tool";
+import { Button } from "@/components/ui/button";
 import { Users, FileText, LineChart, Shield } from "lucide-react";
 
 // Inter, scoped to the Admin Assistant hero to match the approved design.
@@ -92,11 +93,11 @@ export default function AdminChatPage() {
               >
                 <h1
                   className="text-[30px] md:text-[38px] font-bold tracking-tight"
-                  style={{ color: "#1E233A" }}
+                  style={{ color: "var(--chat-heading-ink)" }}
                 >
                   Admin Assistant
                 </h1>
-                <p className="mt-2.5 text-[15px] md:text-[17px]" style={{ color: "#6B7185" }}>
+                <p className="mt-2.5 text-[15px] md:text-[17px]" style={{ color: "var(--chat-subtle-ink)" }}>
                   Manage your platform through conversation
                 </p>
               </motion.div>
@@ -129,7 +130,7 @@ export default function AdminChatPage() {
               >
                 <div
                   className="mb-3.5 text-[11px] font-bold uppercase tracking-[0.16em]"
-                  style={{ color: "#6B7185" }}
+                  style={{ color: "var(--chat-subtle-ink)" }}
                 >
                   Try asking
                 </div>
@@ -140,15 +141,16 @@ export default function AdminChatPage() {
                     { label: "Token usage this month", icon: LineChart, prompt: "Show token usage this month" },
                     { label: "Admin roles",            icon: Shield,    prompt: "Show all admin roles and their permissions" },
                   ].map((chip) => (
-                    <button
+                    <Button
                       key={chip.label}
+                      variant="ghost"
                       onClick={() => chatInputRef.current?.setMessage(chip.prompt)}
-                      className="inline-flex items-center gap-2 rounded-full border border-[#E7EAF2] bg-white px-3.5 py-2 text-[13px] font-medium shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-                      style={{ color: "#1E233A" }}
+                      className="inline-flex h-auto items-center gap-2 rounded-full border border-divider-cool bg-white px-3.5 py-2 text-[13px] font-medium shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-md"
+                      style={{ color: "var(--chat-heading-ink)" }}
                     >
-                      <chip.icon className="size-[15px]" style={{ color: "#4258DE" }} aria-hidden="true" />
+                      <chip.icon className="size-[15px]" style={{ color: "var(--brand-indigo)" }} aria-hidden="true" />
                       {chip.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </motion.div>
@@ -176,7 +178,7 @@ export default function AdminChatPage() {
                 renders normally with the streaming text. */}
             <ChatContainerRoot className="flex-1">
               <ChatContainerContent className="mx-auto max-w-3xl px-4 py-6">
-                <div className="space-y-1">
+                <div className="space-y-4" role="log" aria-live="polite" aria-label="Conversation messages">
                   {(() => {
                     const lastIdx = messages.length - 1;
                     const lastMsg = messages[lastIdx];

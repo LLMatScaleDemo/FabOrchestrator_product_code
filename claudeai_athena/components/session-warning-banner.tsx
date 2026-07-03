@@ -74,14 +74,15 @@ export function SessionWarningBanner({
               Stay logged in
             </Button>
             {onDismiss && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={onDismiss}
                 aria-label="Dismiss"
-                className="rounded-md p-1 text-amber-800/70 hover:bg-amber-100 dark:text-amber-300/70 dark:hover:bg-amber-900/40"
+                className="h-auto w-auto rounded-md border-0 bg-transparent p-1 text-amber-800/70 hover:bg-amber-100 active:scale-100 dark:text-amber-300/70 dark:hover:bg-amber-900/40"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             )}
           </div>
         </motion.div>

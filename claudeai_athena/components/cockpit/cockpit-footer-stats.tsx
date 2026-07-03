@@ -9,10 +9,10 @@ const sv = (children: React.ReactNode, size: number, sw = 2) => (
 )
 
 const KPIS: { label: string; icon: React.ReactNode; value: string; delta: string; tone: string }[] = [
-    { label: "Workflows", icon: sv(<><circle cx="6" cy="6" r="2" /><circle cx="18" cy="12" r="2" /><circle cx="6" cy="18" r="2" /><path d="M8 6h5a3 3 0 0 1 3 3v.4M8 18h5a3 3 0 0 0 3-3v-.4" /></>, 13), value: "142", delta: "↑ 12%", tone: "#1fa971" },
-    { label: "Automated", icon: sv(<><circle cx="12" cy="12" r="9" /><polyline points="9 12 11 14 15 9" /></>, 13), value: "8,394", delta: "↑ 23%", tone: "#1fa971" },
-    { label: "Alerts", icon: sv(<path d="M10.3 3.2a9 9 0 1 0 10.5 10.5A7 7 0 0 1 10.3 3.2z" />, 13), value: "7", delta: "3 to review", tone: "#d6841f" },
-    { label: "Time saved", icon: sv(<><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 16 14" /></>, 13), value: "62%", delta: "vs Q3", tone: "#8b93b0" },
+    { label: "Workflows", icon: sv(<><circle cx="6" cy="6" r="2" /><circle cx="18" cy="12" r="2" /><circle cx="6" cy="18" r="2" /><path d="M8 6h5a3 3 0 0 1 3 3v.4M8 18h5a3 3 0 0 0 3-3v-.4" /></>, 13), value: "142", delta: "↑ 12%", tone: "var(--status-green)" },
+    { label: "Automated", icon: sv(<><circle cx="12" cy="12" r="9" /><polyline points="9 12 11 14 15 9" /></>, 13), value: "8,394", delta: "↑ 23%", tone: "var(--status-green)" },
+    { label: "Alerts", icon: sv(<path d="M10.3 3.2a9 9 0 1 0 10.5 10.5A7 7 0 0 1 10.3 3.2z" />, 13), value: "7", delta: "3 to review", tone: "var(--status-amber)" },
+    { label: "Time saved", icon: sv(<><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 16 14" /></>, 13), value: "62%", delta: "vs Q3", tone: "var(--text-[var(--text-subtle)])" },
 ]
 
 const ACTIVITY: { icon: React.ReactNode; name: string; desc: string; ago: string; pulse?: boolean }[] = [
@@ -26,18 +26,18 @@ export function CockpitFooterStats() {
     return (
         <div className="mt-[34px] grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
             {/* Live ops */}
-            <div className="rounded-2xl border bg-white px-5 py-[18px]" style={{ borderColor: "#e7e9f4", boxShadow: "0 2px 10px rgba(22,28,52,.05)" }}>
+            <div className="rounded-2xl border bg-white px-5 py-[18px]" style={{ borderColor: "var(--border-light)", boxShadow: "0 2px 10px rgba(22,28,52,.05)" }}>
                 <div className="mb-[14px] flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[14.5px] font-bold">
-                        <span className="flex" style={{ color: "#5b54e8" }}>{sv(<path d="M22 12h-4l-3 9L9 3l-3 9H2" />, 17)}</span>
+                        <span className="flex" style={{ color: "var(--brand-indigo)" }}>{sv(<path d="M22 12h-4l-3 9L9 3l-3 9H2" />, 17)}</span>
                         Live ops
                     </span>
-                    <span className="text-[12.5px] font-semibold" style={{ color: "#5b54e8" }}>Dashboard →</span>
+                    <span className="text-[12.5px] font-semibold" style={{ color: "var(--brand-indigo)" }}>Dashboard →</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                     {KPIS.map((k) => (
-                        <div key={k.label} className="rounded-xl px-[15px] py-[14px]" style={{ background: "#f2f3fb" }}>
-                            <div className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.06em]" style={{ color: "#5d6680" }}>
+                        <div key={k.label} className="rounded-xl px-[15px] py-[14px]" style={{ background: "var(--cockpit-surface)" }}>
+                            <div className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--text-muted-cool)" }}>
                                 {k.icon}
                                 {k.label}
                             </div>
@@ -49,26 +49,26 @@ export function CockpitFooterStats() {
             </div>
 
             {/* Recent activity */}
-            <div className="rounded-2xl border bg-white px-5 py-[18px]" style={{ borderColor: "#e7e9f4", boxShadow: "0 2px 10px rgba(22,28,52,.05)" }}>
+            <div className="rounded-2xl border bg-white px-5 py-[18px]" style={{ borderColor: "var(--border-light)", boxShadow: "0 2px 10px rgba(22,28,52,.05)" }}>
                 <div className="mb-[14px] flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[14.5px] font-bold">
-                        <span className="flex" style={{ color: "#5b54e8" }}>{sv(<><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" /></>, 17)}</span>
+                        <span className="flex" style={{ color: "var(--brand-indigo)" }}>{sv(<><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" /></>, 17)}</span>
                         Recent activity
                     </span>
-                    <span className="text-[12.5px] font-semibold" style={{ color: "#5b54e8" }}>All →</span>
+                    <span className="text-[12.5px] font-semibold" style={{ color: "var(--brand-indigo)" }}>All →</span>
                 </div>
                 <div className="flex flex-col gap-[3px]">
                     {ACTIVITY.map((a, i) => (
-                        <div key={i} className="flex cursor-pointer items-center gap-3 rounded-[10px] px-2 py-[9px] transition-colors hover:bg-[#f2f3fb]">
-                            <span className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-[9px] text-white" style={{ background: "linear-gradient(135deg,#5b54e8,#4842d4)" }}>
+                        <div key={i} className="flex cursor-pointer items-center gap-3 rounded-[10px] px-2 py-[9px] transition-colors hover:bg-[var(--cockpit-surface)]">
+                            <span className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-[9px] text-white" style={{ background: "linear-gradient(135deg,var(--brand-indigo),var(--cockpit-indigo))" }}>
                                 {a.icon}
                             </span>
                             <span className="flex-1" style={{ lineHeight: 1.3 }}>
                                 <span className="block text-[13px] font-bold">{a.name}</span>
-                                <span className="block text-[12px]" style={{ color: "#5d6680" }}>{a.desc}</span>
+                                <span className="block text-[12px]" style={{ color: "var(--text-muted-cool)" }}>{a.desc}</span>
                             </span>
-                            {a.pulse && <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full" style={{ background: "#1fa971", boxShadow: "0 0 0 3px rgba(31,169,113,.16)" }} />}
-                            <span className="whitespace-nowrap text-[11px] font-semibold" style={{ color: "#8b93b0" }}>{a.ago}</span>
+                            {a.pulse && <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full" style={{ background: "var(--status-green)", boxShadow: "0 0 0 3px rgba(31,169,113,.16)" }} />}
+                            <span className="whitespace-nowrap text-[11px] font-semibold" style={{ color: "var(--text-[var(--text-subtle)])" }}>{a.ago}</span>
                         </div>
                     ))}
                 </div>

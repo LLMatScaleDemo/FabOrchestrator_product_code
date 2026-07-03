@@ -116,11 +116,11 @@ export default function McpPage() {
                     <CardTitle className="truncate text-base">{c.displayName}</CardTitle>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditing(c); setDialogOpen(true); }} title="Edit">
-                      <Pencil className="h-3.5 w-3.5" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 cursor-pointer" onClick={() => { setEditing(c); setDialogOpen(true); }} title="Edit" aria-label={`Edit ${c.displayName}`}>
+                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" disabled={busyId === c.id} onClick={() => handleDelete(c)} title="Delete">
-                      <Trash2 className="h-3.5 w-3.5" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 cursor-pointer text-destructive hover:text-destructive" disabled={busyId === c.id} onClick={() => handleDelete(c)} title="Delete" aria-label={`Delete ${c.displayName}`}>
+                      {busyId === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
                     </Button>
                   </div>
                 </div>
@@ -137,17 +137,20 @@ export default function McpPage() {
                 </div>
                 <div className="mt-auto flex items-center justify-between pt-2">
                   <span className="text-xs text-muted-foreground">Status</span>
-                  <button
+                  <Button
+                    variant="ghost"
                     type="button"
                     disabled={busyId === c.id}
                     onClick={() => toggleActive(c)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                      c.isActive ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400" : "bg-muted text-muted-foreground"
+                    aria-pressed={c.isActive}
+                    aria-label={`${c.isActive ? "Deactivate" : "Activate"} ${c.displayName}`}
+                    className={`inline-flex h-auto cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                      c.isActive ? "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-400 dark:hover:bg-green-950" : "bg-muted text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     <span className={`h-1.5 w-1.5 rounded-full ${c.isActive ? "bg-green-500" : "bg-muted-foreground"}`} />
                     {c.isActive ? "Active" : "Inactive"}
-                  </button>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -180,6 +183,7 @@ function ConnectorDialog({ open, editing, token, onClose, onSaved }: {
   const [authType, setAuthType] = useState<"none" | "api_key" | "oauth">("none");
   const [apiKey, setApiKey] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; url?: string }>({});
 
   useEffect(() => {
     if (open) {
@@ -188,12 +192,17 @@ function ConnectorDialog({ open, editing, token, onClose, onSaved }: {
       setDescription(editing?.description || "");
       setAuthType((editing?.authType as "none" | "api_key" | "oauth") || "none");
       setApiKey("");
+      setErrors({});
     }
   }, [open, editing]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !url.trim()) { toast.error("Name and server URL are required"); return; }
+    const nextErrors: { name?: string; url?: string } = {};
+    if (!name.trim()) nextErrors.name = "Name is required.";
+    if (!url.trim()) nextErrors.url = "Server URL is required.";
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) { toast.error("Please fix the highlighted fields"); return; }
     setSubmitting(true);
     try {
       const body: Record<string, unknown> = { displayName: name.trim(), serverUrl: url.trim(), authType, description: description.trim() };
@@ -219,38 +228,42 @@ function ConnectorDialog({ open, editing, token, onClose, onSaved }: {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="My MCP Server" required />
+            <Label htmlFor="mcp-name">Name <span className="text-destructive" aria-hidden="true">*</span></Label>
+            <Input id="mcp-name" value={name} onChange={(e) => { setName(e.target.value); if (errors.name) setErrors((p) => ({ ...p, name: undefined })); }} placeholder="My MCP Server" required aria-required="true" aria-invalid={!!errors.name} aria-describedby={errors.name ? "mcp-name-error" : undefined} />
+            {errors.name && <p id="mcp-name-error" className="text-sm text-destructive">{errors.name}</p>}
           </div>
           <div className="space-y-2">
-            <Label>Remote MCP Server URL</Label>
-            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://mcp.example.com/api" required />
+            <Label htmlFor="mcp-url">Remote MCP Server URL <span className="text-destructive" aria-hidden="true">*</span></Label>
+            <Input id="mcp-url" type="url" value={url} onChange={(e) => { setUrl(e.target.value); if (errors.url) setErrors((p) => ({ ...p, url: undefined })); }} placeholder="https://mcp.example.com/api" required aria-required="true" aria-invalid={!!errors.url} aria-describedby={errors.url ? "mcp-url-error" : "mcp-url-help"} />
+            {errors.url ? <p id="mcp-url-error" className="text-sm text-destructive">{errors.url}</p> : <p id="mcp-url-help" className="text-xs text-muted-foreground">The HTTPS endpoint of the remote MCP server.</p>}
           </div>
           <div className="space-y-2">
-            <Label>Description (optional)</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this connector provides" />
+            <Label htmlFor="mcp-description">Description <span className="text-muted-foreground">(optional)</span></Label>
+            <Input id="mcp-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this connector provides" />
           </div>
           <div className="space-y-2">
             <Label>Authentication Type</Label>
             <div className="flex gap-1 rounded-lg bg-muted p-1">
               {(["none", "api_key", "oauth"] as const).map((t) => (
-                <button
+                <Button
                   key={t}
+                  variant="ghost"
                   type="button"
                   onClick={() => setAuthType(t)}
-                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    authType === t ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  className={`h-auto flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    authType === t ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground hover:bg-transparent hover:text-foreground"
                   }`}
                 >
                   {AUTH_LABELS[t]}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
           {authType === "api_key" && (
             <div className="space-y-2">
-              <Label>API Key</Label>
-              <Input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={editing?.hasCredentials ? "Leave blank to keep existing key" : "Enter API key"} />
+              <Label htmlFor="mcp-api-key">API Key</Label>
+              <Input id="mcp-api-key" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={editing?.hasCredentials ? "Leave blank to keep existing key" : "Enter API key"} aria-describedby="mcp-api-key-help" />
+              <p id="mcp-api-key-help" className="text-xs text-muted-foreground">Stored encrypted (AES-256-GCM). {editing?.hasCredentials ? "Leave blank to keep the existing key." : ""}</p>
             </div>
           )}
 
@@ -265,7 +278,7 @@ function ConnectorDialog({ open, editing, token, onClose, onSaved }: {
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={submitting} className="bg-primary">
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Save Changes" : "Add Connector"}
+              {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> Saving…</> : editing ? "Save Changes" : "Add Connector"}
             </Button>
           </div>
         </form>

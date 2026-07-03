@@ -100,7 +100,7 @@ export default function ForgotPasswordPage() {
                 />
               </div>
 
-              <Button type="submit" disabled={submitting || !email} className="h-11 w-full rounded-lg bg-gradient-to-r from-[#5b21b6] via-[#7c3aed] to-[#c026d3] text-white shadow-lg shadow-purple-800/30 hover:from-[#4c1d95] hover:via-[#6d28d9] hover:to-[#a21caf]">
+              <Button type="submit" disabled={submitting || !email} className="h-11 w-full rounded-lg bg-gradient-to-r from-auth-grad-from via-auth-grad-via to-auth-grad-to text-white shadow-lg shadow-purple-800/30 hover:from-auth-grad-from-2 hover:via-auth-grad-via-2 hover:to-auth-grad-to-2">
                 {submitting ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (

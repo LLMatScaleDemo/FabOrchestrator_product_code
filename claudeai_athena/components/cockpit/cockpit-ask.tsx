@@ -6,9 +6,10 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
 import { Loader2 } from "lucide-react"
 import { Markdown } from "@/components/prompt-kit/markdown"
+import { Button } from "@/components/ui/button"
 
 const AUTH_TOKEN_KEY = "llmatscale_auth_token"
-const DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
+const DEFAULT_MODEL = "claude-opus-4-8"
 
 const sv = (children: React.ReactNode, size = 14) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -73,7 +74,7 @@ export function CockpitAsk() {
                 <div
                     ref={scrollRef}
                     className="mx-auto mt-[26px] max-h-[380px] w-full max-w-[780px] overflow-y-auto rounded-2xl border bg-white p-5 text-left"
-                    style={{ borderColor: "#e7e9f4", boxShadow: "0 10px 34px rgba(22,28,52,.07)" }}
+                    style={{ borderColor: "var(--border-light)", boxShadow: "0 10px 34px rgba(22,28,52,.07)" }}
                 >
                     {messages.map((m) => {
                         const text = getMessageText(m)
@@ -81,7 +82,7 @@ export function CockpitAsk() {
                         if (m.role === "user") {
                             return (
                                 <div key={m.id} className="mb-4 flex justify-end">
-                                    <div className="max-w-[85%] rounded-2xl px-4 py-2.5 text-[14px]" style={{ background: "#edecfd", color: "#161c34" }}>
+                                    <div className="max-w-[85%] rounded-2xl px-4 py-2.5 text-[14px]" style={{ background: "var(--brand-indigo-bg)", color: "var(--text-ink)" }}>
                                         {text}
                                     </div>
                                 </div>
@@ -89,23 +90,23 @@ export function CockpitAsk() {
                         }
                         return (
                             <div key={m.id} className="mb-4 flex gap-3">
-                                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-white" style={{ background: "linear-gradient(135deg,#5b54e8,#4842d4)" }}>
+                                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-white" style={{ background: "linear-gradient(135deg,var(--brand-indigo),var(--cockpit-indigo))" }}>
                                     {sv(<path d="M3 12h4l3 8 4-16 3 8h4" />)}
                                 </div>
-                                <div className="prose prose-sm max-w-none flex-1" style={{ color: "#161c34" }}>
+                                <div className="prose prose-sm max-w-none flex-1" style={{ color: "var(--text-ink)" }}>
                                     <Markdown>{text}</Markdown>
                                 </div>
                             </div>
                         )
                     })}
                     {isStreaming && messages[messages.length - 1]?.role === "user" && (
-                        <div className="flex items-center gap-2 px-2 text-sm" style={{ color: "#5d6680" }}>
+                        <div className="flex items-center gap-2 px-2 text-sm" style={{ color: "var(--text-muted-cool)" }}>
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Thinking…
                         </div>
                     )}
                     {error && (
-                        <div className="mt-2 rounded-lg px-3 py-2 text-sm text-red-600" style={{ background: "#fef2f2", border: "1px solid #fecaca" }}>
+                        <div className="mt-2 rounded-lg px-3 py-2 text-sm text-red-600" style={{ background: "var(--cockpit-error-bg)", border: "1px solid var(--cockpit-error-border)" }}>
                             {error.message || "Something went wrong."}
                         </div>
                     )}
@@ -116,33 +117,35 @@ export function CockpitAsk() {
             <form
                 onSubmit={onSubmit}
                 className="cockpit-askbar mx-auto mt-[26px] flex max-w-[780px] items-center gap-3 rounded-2xl border bg-white py-2.5 pl-5 pr-2.5"
-                style={{ borderColor: "#e7e9f4", boxShadow: "0 10px 34px rgba(22,28,52,.07)" }}
+                style={{ borderColor: "var(--border-light)", boxShadow: "0 10px 34px rgba(22,28,52,.07)" }}
             >
                 <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Ask anything, or describe a task to orchestrate…"
-                    className="flex-1 border-0 bg-transparent text-[15px] outline-none placeholder:text-[#8b93b0]"
-                    style={{ color: "#161c34" }}
+                    className="flex-1 border-0 bg-transparent text-[15px] outline-none placeholder:text-[var(--text-subtle)]"
+                    style={{ color: "var(--text-ink)" }}
                 />
                 {isStreaming ? (
-                    <button
+                    <Button
                         type="button"
+                        variant="ghost"
                         onClick={stop}
-                        className="flex items-center gap-[7px] rounded-[11px] px-[18px] py-[11px] text-[13.5px] font-bold"
-                        style={{ background: "#f2f3fb", color: "#161c34" }}
+                        className="flex h-auto items-center gap-[7px] rounded-[11px] border-0 px-[18px] py-[11px] text-[13.5px] font-bold hover:opacity-90 active:scale-100"
+                        style={{ background: "var(--cockpit-surface)", color: "var(--text-ink)" }}
                     >
                         Stop
-                    </button>
+                    </Button>
                 ) : (
-                    <button
+                    <Button
                         type="submit"
-                        className="flex items-center gap-[7px] rounded-[11px] px-[18px] py-[11px] text-[13.5px] font-bold text-white transition-transform hover:-translate-y-px"
-                        style={{ background: "linear-gradient(135deg,#5b54e8,#4842d4)", boxShadow: "0 4px 12px rgba(91,84,232,.32)" }}
+                        variant="ghost"
+                        className="flex h-auto items-center gap-[7px] rounded-[11px] border-0 px-[18px] py-[11px] text-[13.5px] font-bold text-white transition-transform hover:-translate-y-px hover:bg-transparent active:scale-100 dark:hover:bg-transparent"
+                        style={{ background: "linear-gradient(135deg,var(--brand-indigo),var(--cockpit-indigo))", boxShadow: "0 4px 12px rgba(91,84,232,.32)" }}
                     >
                         Ask
                         {sv(<><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></>, 15)}
-                    </button>
+                    </Button>
                 )}
             </form>
 
@@ -150,16 +153,17 @@ export function CockpitAsk() {
             {!hasMessages && (
                 <div className="mt-4 flex flex-wrap justify-center gap-2.5">
                     {CHIPS.map((c) => (
-                        <button
+                        <Button
                             key={c.label}
                             type="button"
+                            variant="ghost"
                             onClick={() => submit(c.label)}
-                            className="cockpit-chip flex items-center gap-[7px] rounded-[20px] border bg-white px-[15px] py-2 text-[13px] font-bold transition-all hover:-translate-y-px"
-                            style={{ color: "#161c34", borderColor: "#e7e9f4", boxShadow: "0 2px 10px rgba(22,28,52,.05)" }}
+                            className="cockpit-chip flex h-auto items-center gap-[7px] rounded-[20px] border bg-white px-[15px] py-2 text-[13px] font-bold transition-all hover:-translate-y-px hover:bg-white active:scale-100 dark:hover:bg-white"
+                            style={{ color: "var(--text-ink)", borderColor: "var(--border-light)", boxShadow: "0 2px 10px rgba(22,28,52,.05)" }}
                         >
-                            <span className="flex" style={{ color: "#5b54e8" }}>{c.icon}</span>
+                            <span className="flex" style={{ color: "var(--brand-indigo)" }}>{c.icon}</span>
                             {c.label}
-                        </button>
+                        </Button>
                     ))}
                 </div>
             )}

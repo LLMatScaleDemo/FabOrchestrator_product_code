@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { ChevronDownIcon } from "lucide-react"
 import React, {
   createContext,
@@ -83,8 +84,12 @@ function ReasoningTrigger({
   const { isOpen, onOpenChange } = useReasoningContext()
 
   return (
-    <button
-      className={cn("flex cursor-pointer items-center gap-2", className)}
+    <Button
+      variant="ghost"
+      className={cn(
+        "flex h-auto w-fit cursor-pointer items-center justify-start gap-2 rounded-none border-0 bg-transparent p-0 hover:bg-transparent active:scale-100 dark:hover:bg-transparent",
+        className
+      )}
       onClick={() => onOpenChange(!isOpen)}
       {...props}
     >
@@ -97,7 +102,7 @@ function ReasoningTrigger({
       >
         <ChevronDownIcon className="size-4" />
       </div>
-    </button>
+    </Button>
   )
 }
 

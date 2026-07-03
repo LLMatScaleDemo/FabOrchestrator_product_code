@@ -174,13 +174,14 @@ export function McpConnectionCard({
 
         {connection.availableTools && connection.availableTools.length > 0 && (
           <div className="space-y-2">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setShowTools(!showTools)}
-              className="flex w-full items-center justify-between text-sm font-medium hover:text-primary"
+              className="flex h-auto w-full items-center justify-between rounded-none border-0 bg-transparent p-0 text-sm font-medium hover:bg-transparent hover:text-primary active:scale-100 dark:hover:bg-transparent"
             >
               <span>Available Tools ({connection.availableTools.length})</span>
               {showTools ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
+            </Button>
             {showTools && (
               <div className="max-h-48 overflow-y-auto space-y-1.5 rounded-md bg-muted/50 p-2">
                 {connection.availableTools.map((tool) => (

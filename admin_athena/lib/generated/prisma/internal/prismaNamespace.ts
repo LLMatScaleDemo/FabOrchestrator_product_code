@@ -398,7 +398,8 @@ export const ModelName = {
   AuditLog: 'AuditLog',
   UserSessionLog: 'UserSessionLog',
   UsageRecord: 'UsageRecord',
-  PlatformSettings: 'PlatformSettings'
+  PlatformSettings: 'PlatformSettings',
+  ModelRegistry: 'ModelRegistry'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -414,7 +415,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "session" | "conversation" | "message" | "artifact" | "mcpConnection" | "memoryFile" | "passwordResetToken" | "invitation" | "mcpRegistry" | "auditLog" | "userSessionLog" | "usageRecord" | "platformSettings"
+    modelProps: "role" | "user" | "session" | "conversation" | "message" | "artifact" | "mcpConnection" | "memoryFile" | "passwordResetToken" | "invitation" | "mcpRegistry" | "auditLog" | "userSessionLog" | "usageRecord" | "platformSettings" | "modelRegistry"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1528,6 +1529,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ModelRegistry: {
+      payload: Prisma.$ModelRegistryPayload<ExtArgs>
+      fields: Prisma.ModelRegistryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ModelRegistryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ModelRegistryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload>
+        }
+        findFirst: {
+          args: Prisma.ModelRegistryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ModelRegistryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload>
+        }
+        findMany: {
+          args: Prisma.ModelRegistryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload>[]
+        }
+        create: {
+          args: Prisma.ModelRegistryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload>
+        }
+        createMany: {
+          args: Prisma.ModelRegistryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ModelRegistryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload>[]
+        }
+        delete: {
+          args: Prisma.ModelRegistryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload>
+        }
+        update: {
+          args: Prisma.ModelRegistryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload>
+        }
+        deleteMany: {
+          args: Prisma.ModelRegistryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ModelRegistryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ModelRegistryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload>[]
+        }
+        upsert: {
+          args: Prisma.ModelRegistryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ModelRegistryPayload>
+        }
+        aggregate: {
+          args: Prisma.ModelRegistryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateModelRegistry>
+        }
+        groupBy: {
+          args: Prisma.ModelRegistryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ModelRegistryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ModelRegistryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ModelRegistryCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1806,6 +1881,27 @@ export const PlatformSettingsScalarFieldEnum = {
 export type PlatformSettingsScalarFieldEnum = (typeof PlatformSettingsScalarFieldEnum)[keyof typeof PlatformSettingsScalarFieldEnum]
 
 
+export const ModelRegistryScalarFieldEnum = {
+  id: 'id',
+  modelId: 'modelId',
+  displayName: 'displayName',
+  description: 'description',
+  inputCostPer1M: 'inputCostPer1M',
+  outputCostPer1M: 'outputCostPer1M',
+  cacheReadCostPer1M: 'cacheReadCostPer1M',
+  cacheWriteCostPer1M: 'cacheWriteCostPer1M',
+  thinkingType: 'thinkingType',
+  thinkingBudget: 'thinkingBudget',
+  isActive: 'isActive',
+  isDefault: 'isDefault',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ModelRegistryScalarFieldEnum = (typeof ModelRegistryScalarFieldEnum)[keyof typeof ModelRegistryScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2060,6 +2156,7 @@ export type GlobalOmitConfig = {
   userSessionLog?: Prisma.UserSessionLogOmit
   usageRecord?: Prisma.UsageRecordOmit
   platformSettings?: Prisma.PlatformSettingsOmit
+  modelRegistry?: Prisma.ModelRegistryOmit
 }
 
 /* Types for Logging */

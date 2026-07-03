@@ -10,7 +10,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip"
 import { Bot } from "lucide-react"
-import { motion, AnimatePresence } from "motion/react"
+import { motion } from "motion/react"
 
 interface MessageProps extends React.HTMLAttributes<HTMLDivElement> {
   role?: "user" | "assistant" | "system"
@@ -113,7 +113,7 @@ interface MessageContentProps extends React.HTMLAttributes<HTMLDivElement>, Mark
 }
 
 const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
-  ({ className, markdown, role, isStreaming, children, ...props }, ref) => {
+  ({ className, markdown, role, children, ...props }, ref) => {
     const isMarkdown = markdown === true && typeof children === "string"
 
     // Base styling - specific colors handled in globals.css for dark/light modes

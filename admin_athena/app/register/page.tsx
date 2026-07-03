@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,6 @@ import { Loader2, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react";
 import { AuthBrandingPanel } from "@/components/auth-branding-panel";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -182,14 +181,16 @@ export default function RegisterPage() {
                       placeholder="Min. 8 characters"
                       className="h-11 pr-10"
                     />
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="icon"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      className="absolute right-3 top-1/2 h-auto w-auto -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -223,7 +224,7 @@ export default function RegisterPage() {
                 <Button
                   type="submit"
                   disabled={submitting || !hasMinLength || !passwordsMatch}
-                  className="h-11 w-full rounded-lg bg-gradient-to-r from-[#5b21b6] via-[#7c3aed] to-[#c026d3] text-base text-white shadow-lg shadow-purple-800/30 hover:from-[#4c1d95] hover:via-[#6d28d9] hover:to-[#a21caf]"
+                  className="h-11 w-full rounded-lg bg-gradient-to-r from-auth-grad-from via-auth-grad-via to-auth-grad-to text-base text-white shadow-lg shadow-purple-800/30 hover:from-auth-grad-from-2 hover:via-auth-grad-via-2 hover:to-auth-grad-to-2"
                 >
                   {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Account"}
                 </Button>

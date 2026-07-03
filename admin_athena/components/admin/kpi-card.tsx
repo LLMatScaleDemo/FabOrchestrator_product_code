@@ -1,38 +1,69 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 interface KpiCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
   icon: React.ReactNode;
-  trend?: { value: number; label: string };
+  /**
+   * Optional period-over-period delta. `value` is a percentage; positive is
+   * treated as an improvement (success color) unless `invert` is set — e.g. a
+   * rise in errors should read as bad, so pass `invert`.
+   */
+  trend?: { value: number; label: string; invert?: boolean };
   className?: string;
 }
 
 export function KpiCard({ title, value, subtitle, icon, trend, className }: KpiCardProps) {
+  const up = trend ? trend.value >= 0 : false;
+  // "good" = the direction we want to color as success.
+  const good = trend ? (trend.invert ? !up : up) : false;
+
   return (
-    <Card className={cn("transition-shadow hover:shadow-md", className)}>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold tracking-tight">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground">{subtitle}</p>
-            )}
-            {trend && (
-              <p className={cn(
-                "text-xs font-medium",
-                trend.value >= 0 ? "text-green-600" : "text-red-600"
-              )}>
-                {trend.value >= 0 ? "+" : ""}{trend.value}% {trend.label}
-              </p>
-            )}
-          </div>
-          <div className="rounded-lg bg-primary/10 p-3 text-primary" aria-hidden="true">
+    <Card
+      className={cn(
+        "h-full transition-[box-shadow,border-color] duration-200 hover:border-primary/40 hover:shadow-sm",
+        className
+      )}
+    >
+      <CardContent className="flex h-full flex-col justify-between gap-4 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {title}
+          </p>
+          <span
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+            aria-hidden="true"
+          >
             {icon}
-          </div>
+          </span>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-3xl font-bold leading-none tracking-tight tabular-nums">{value}</p>
+          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+          {trend && (
+            <p
+              className={cn(
+                "flex items-center gap-1 text-xs font-medium",
+                good ? "" : "text-destructive"
+              )}
+              style={good ? { color: "var(--status-success-foreground)" } : undefined}
+            >
+              {up ? (
+                <TrendingUp className="size-3.5" aria-hidden="true" />
+              ) : (
+                <TrendingDown className="size-3.5" aria-hidden="true" />
+              )}
+              <span className="tabular-nums">
+                {up ? "+" : ""}
+                {trend.value}%
+              </span>
+              <span className="text-muted-foreground">{trend.label}</span>
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
