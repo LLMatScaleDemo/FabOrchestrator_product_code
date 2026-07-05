@@ -201,11 +201,21 @@ export async function POST(req: NextRequest) {
         ? userWithRole.role.allowedModels as string[]
         : [];
 
-      if (allowedModels.length > 0 && !allowedModels.includes(modelId)) {
-        throw FabOrchError.invalidParameter('model', allowedModels, undefined, {
-          badValue: modelId,
-          reason: 'role-restricted',
-        });
+      // Only enforce the role's model restriction if it actually references a
+      // currently-available model. Roles that still list ONLY retired ids (from
+      // before the model-registry rebrand) don't block the new models — otherwise
+      // every user is locked out until an admin re-edits each role. Admins are
+      // never model-restricted here (mirrors /api/user/models).
+      const currentValidIds = new Set<string>([...registryAllowedIds, ...ALLOWED_MODELS]);
+      const roleRestrictsCurrent = allowedModels.some((m) => currentValidIds.has(m));
+
+      if (!userWithRole.isAdmin && roleRestrictsCurrent && !allowedModels.includes(modelId)) {
+        throw FabOrchError.invalidParameter(
+          'model',
+          allowedModels.filter((m) => currentValidIds.has(m)),
+          undefined,
+          { badValue: modelId, reason: 'role-restricted' }
+        );
       }
 
       // Check usage limits (rolling 24h)
@@ -604,7 +614,11 @@ export async function POST(req: NextRequest) {
       system: systemPrompt,
       messages: fittedMessages,
       maxTokens: 65536,
-      ...(thinkingMode !== 'none' ? {} : { temperature: 0.7 }),
+      // `temperature` is deprecated/unsupported on the current Claude model
+      // generation (Opus 4.8, Sonnet 5, Opus 4.7) — sending it makes the API
+      // reject the request. We omit it and let the model use its default
+      // sampling. Per-model thinking (adaptive/manual/none) is set below in
+      // providerOptions.anthropic instead.
       // Before each step, strip errored/orphaned server-tool blocks (e.g. a failed
       // code_execution whose error result the SDK packs inline) so Anthropic never
       // sees a `bash_code_execution` tool_use without a valid result. (vercel/ai #11855)
@@ -672,7 +686,7 @@ export async function POST(req: NextRequest) {
 
     if (thinkingMode === 'adaptive') {
       anthropicOptions.thinking = { type: 'adaptive' };
-      // For Opus 4.6 use 'max', for Sonnet 4.6 use 'high' (max is Opus-only)
+      // Opus models (4.8 / 4.7) use 'max' effort; Sonnet uses 'high' ('max' is Opus-only).
       const effort = (modelId === 'claude-opus-4-8' || modelId === 'claude-opus-4-7') ? 'max' : 'high';
       anthropicOptions.effort = effort;
       console.log(`[Chat] Adaptive thinking enabled (effort: ${effort})`);
