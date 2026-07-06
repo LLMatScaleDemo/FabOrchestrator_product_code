@@ -925,12 +925,21 @@ export async function POST(req: NextRequest) {
           try {
             const steps = await result.steps;
             let inputTokens = 0, outputTokens = 0, thinkingTokens = 0;
+            let cacheReadTokens = 0, cacheCreationTokens = 0;
             for (const step of (steps || [])) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const u = (step as any).usage;
               if (u) {
-                inputTokens += u.promptTokens || 0;
-                outputTokens += u.completionTokens || 0;
+                // AI SDK v6 fields: inputTokens/outputTokens (+ reasoningTokens,
+                // cachedInputTokens, cacheCreationInputTokens). v5 used
+                // promptTokens/completionTokens. Read v6 first, fall back to v5,
+                // so usage_records (the admin usage/cost dashboard source) gets
+                // real counts instead of zeros.
+                inputTokens         += u.inputTokens              ?? u.promptTokens     ?? 0;
+                outputTokens        += u.outputTokens             ?? u.completionTokens ?? 0;
+                thinkingTokens      += u.reasoningTokens          ?? 0;
+                cacheReadTokens     += u.cachedInputTokens        ?? 0;
+                cacheCreationTokens += u.cacheCreationInputTokens ?? 0;
               }
             }
             const { prisma: pDb } = await import('@/lib/db');
@@ -941,6 +950,8 @@ export async function POST(req: NextRequest) {
                 inputTokens,
                 outputTokens,
                 thinkingTokens,
+                cacheReadTokens,
+                cacheCreationTokens,
                 conversationId: conversationId || null,
               },
             });
