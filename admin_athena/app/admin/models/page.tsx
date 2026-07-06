@@ -123,12 +123,15 @@ export default function ModelsPage() {
         </Button>
       </AdminPageHeader>
 
-      <div className="mt-4 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
-        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-        <p className="text-xs text-amber-700 dark:text-amber-400">
-          If models don&apos;t appear, run <code className="font-mono">prisma/create_model_registry.sql</code> against the database.
-        </p>
-      </div>
+      {!loading && models.length === 0 && (
+        <div className="mt-4 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            No models found. If the registry table isn&apos;t migrated yet, run{" "}
+            <code className="font-mono">prisma/create_model_registry.sql</code> against the database.
+          </p>
+        </div>
+      )}
 
       <div className="mt-6 max-h-[calc(100vh-20rem)] overflow-auto rounded-lg border">
         <Table className="min-w-[840px] text-base">
