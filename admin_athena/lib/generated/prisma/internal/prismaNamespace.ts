@@ -1874,6 +1874,7 @@ export type UsageRecordScalarFieldEnum = (typeof UsageRecordScalarFieldEnum)[key
 export const PlatformSettingsScalarFieldEnum = {
   id: 'id',
   colorTheme: 'colorTheme',
+  auditRetentionDays: 'auditRetentionDays',
   updatedById: 'updatedById',
   updatedAt: 'updatedAt'
 } as const

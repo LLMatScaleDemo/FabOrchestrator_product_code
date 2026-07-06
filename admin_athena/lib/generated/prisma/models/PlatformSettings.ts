@@ -20,13 +20,24 @@ export type PlatformSettingsModel = runtime.Types.Result.DefaultSelection<Prisma
 
 export type AggregatePlatformSettings = {
   _count: PlatformSettingsCountAggregateOutputType | null
+  _avg: PlatformSettingsAvgAggregateOutputType | null
+  _sum: PlatformSettingsSumAggregateOutputType | null
   _min: PlatformSettingsMinAggregateOutputType | null
   _max: PlatformSettingsMaxAggregateOutputType | null
+}
+
+export type PlatformSettingsAvgAggregateOutputType = {
+  auditRetentionDays: number | null
+}
+
+export type PlatformSettingsSumAggregateOutputType = {
+  auditRetentionDays: number | null
 }
 
 export type PlatformSettingsMinAggregateOutputType = {
   id: string | null
   colorTheme: string | null
+  auditRetentionDays: number | null
   updatedById: string | null
   updatedAt: Date | null
 }
@@ -34,6 +45,7 @@ export type PlatformSettingsMinAggregateOutputType = {
 export type PlatformSettingsMaxAggregateOutputType = {
   id: string | null
   colorTheme: string | null
+  auditRetentionDays: number | null
   updatedById: string | null
   updatedAt: Date | null
 }
@@ -41,15 +53,25 @@ export type PlatformSettingsMaxAggregateOutputType = {
 export type PlatformSettingsCountAggregateOutputType = {
   id: number
   colorTheme: number
+  auditRetentionDays: number
   updatedById: number
   updatedAt: number
   _all: number
 }
 
 
+export type PlatformSettingsAvgAggregateInputType = {
+  auditRetentionDays?: true
+}
+
+export type PlatformSettingsSumAggregateInputType = {
+  auditRetentionDays?: true
+}
+
 export type PlatformSettingsMinAggregateInputType = {
   id?: true
   colorTheme?: true
+  auditRetentionDays?: true
   updatedById?: true
   updatedAt?: true
 }
@@ -57,6 +79,7 @@ export type PlatformSettingsMinAggregateInputType = {
 export type PlatformSettingsMaxAggregateInputType = {
   id?: true
   colorTheme?: true
+  auditRetentionDays?: true
   updatedById?: true
   updatedAt?: true
 }
@@ -64,6 +87,7 @@ export type PlatformSettingsMaxAggregateInputType = {
 export type PlatformSettingsCountAggregateInputType = {
   id?: true
   colorTheme?: true
+  auditRetentionDays?: true
   updatedById?: true
   updatedAt?: true
   _all?: true
@@ -107,6 +131,18 @@ export type PlatformSettingsAggregateArgs<ExtArgs extends runtime.Types.Extensio
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: PlatformSettingsAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: PlatformSettingsSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: PlatformSettingsMinAggregateInputType
@@ -137,6 +173,8 @@ export type PlatformSettingsGroupByArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   _count?: PlatformSettingsCountAggregateInputType | true
+  _avg?: PlatformSettingsAvgAggregateInputType
+  _sum?: PlatformSettingsSumAggregateInputType
   _min?: PlatformSettingsMinAggregateInputType
   _max?: PlatformSettingsMaxAggregateInputType
 }
@@ -144,9 +182,12 @@ export type PlatformSettingsGroupByArgs<ExtArgs extends runtime.Types.Extensions
 export type PlatformSettingsGroupByOutputType = {
   id: string
   colorTheme: string
+  auditRetentionDays: number
   updatedById: string | null
   updatedAt: Date
   _count: PlatformSettingsCountAggregateOutputType | null
+  _avg: PlatformSettingsAvgAggregateOutputType | null
+  _sum: PlatformSettingsSumAggregateOutputType | null
   _min: PlatformSettingsMinAggregateOutputType | null
   _max: PlatformSettingsMaxAggregateOutputType | null
 }
@@ -172,6 +213,7 @@ export type PlatformSettingsWhereInput = {
   NOT?: Prisma.PlatformSettingsWhereInput | Prisma.PlatformSettingsWhereInput[]
   id?: Prisma.StringFilter<"PlatformSettings"> | string
   colorTheme?: Prisma.StringFilter<"PlatformSettings"> | string
+  auditRetentionDays?: Prisma.IntFilter<"PlatformSettings"> | number
   updatedById?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
   updatedAt?: Prisma.DateTimeFilter<"PlatformSettings"> | Date | string
 }
@@ -179,6 +221,7 @@ export type PlatformSettingsWhereInput = {
 export type PlatformSettingsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   colorTheme?: Prisma.SortOrder
+  auditRetentionDays?: Prisma.SortOrder
   updatedById?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -189,6 +232,7 @@ export type PlatformSettingsWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.PlatformSettingsWhereInput[]
   NOT?: Prisma.PlatformSettingsWhereInput | Prisma.PlatformSettingsWhereInput[]
   colorTheme?: Prisma.StringFilter<"PlatformSettings"> | string
+  auditRetentionDays?: Prisma.IntFilter<"PlatformSettings"> | number
   updatedById?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
   updatedAt?: Prisma.DateTimeFilter<"PlatformSettings"> | Date | string
 }, "id">
@@ -196,11 +240,14 @@ export type PlatformSettingsWhereUniqueInput = Prisma.AtLeast<{
 export type PlatformSettingsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   colorTheme?: Prisma.SortOrder
+  auditRetentionDays?: Prisma.SortOrder
   updatedById?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.PlatformSettingsCountOrderByAggregateInput
+  _avg?: Prisma.PlatformSettingsAvgOrderByAggregateInput
   _max?: Prisma.PlatformSettingsMaxOrderByAggregateInput
   _min?: Prisma.PlatformSettingsMinOrderByAggregateInput
+  _sum?: Prisma.PlatformSettingsSumOrderByAggregateInput
 }
 
 export type PlatformSettingsScalarWhereWithAggregatesInput = {
@@ -209,6 +256,7 @@ export type PlatformSettingsScalarWhereWithAggregatesInput = {
   NOT?: Prisma.PlatformSettingsScalarWhereWithAggregatesInput | Prisma.PlatformSettingsScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"PlatformSettings"> | string
   colorTheme?: Prisma.StringWithAggregatesFilter<"PlatformSettings"> | string
+  auditRetentionDays?: Prisma.IntWithAggregatesFilter<"PlatformSettings"> | number
   updatedById?: Prisma.StringNullableWithAggregatesFilter<"PlatformSettings"> | string | null
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"PlatformSettings"> | Date | string
 }
@@ -216,6 +264,7 @@ export type PlatformSettingsScalarWhereWithAggregatesInput = {
 export type PlatformSettingsCreateInput = {
   id?: string
   colorTheme?: string
+  auditRetentionDays?: number
   updatedById?: string | null
   updatedAt?: Date | string
 }
@@ -223,6 +272,7 @@ export type PlatformSettingsCreateInput = {
 export type PlatformSettingsUncheckedCreateInput = {
   id?: string
   colorTheme?: string
+  auditRetentionDays?: number
   updatedById?: string | null
   updatedAt?: Date | string
 }
@@ -230,6 +280,7 @@ export type PlatformSettingsUncheckedCreateInput = {
 export type PlatformSettingsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   colorTheme?: Prisma.StringFieldUpdateOperationsInput | string
+  auditRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -237,6 +288,7 @@ export type PlatformSettingsUpdateInput = {
 export type PlatformSettingsUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   colorTheme?: Prisma.StringFieldUpdateOperationsInput | string
+  auditRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -244,6 +296,7 @@ export type PlatformSettingsUncheckedUpdateInput = {
 export type PlatformSettingsCreateManyInput = {
   id?: string
   colorTheme?: string
+  auditRetentionDays?: number
   updatedById?: string | null
   updatedAt?: Date | string
 }
@@ -251,6 +304,7 @@ export type PlatformSettingsCreateManyInput = {
 export type PlatformSettingsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   colorTheme?: Prisma.StringFieldUpdateOperationsInput | string
+  auditRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -258,6 +312,7 @@ export type PlatformSettingsUpdateManyMutationInput = {
 export type PlatformSettingsUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   colorTheme?: Prisma.StringFieldUpdateOperationsInput | string
+  auditRetentionDays?: Prisma.IntFieldUpdateOperationsInput | number
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -265,13 +320,19 @@ export type PlatformSettingsUncheckedUpdateManyInput = {
 export type PlatformSettingsCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   colorTheme?: Prisma.SortOrder
+  auditRetentionDays?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type PlatformSettingsAvgOrderByAggregateInput = {
+  auditRetentionDays?: Prisma.SortOrder
 }
 
 export type PlatformSettingsMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   colorTheme?: Prisma.SortOrder
+  auditRetentionDays?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -279,8 +340,13 @@ export type PlatformSettingsMaxOrderByAggregateInput = {
 export type PlatformSettingsMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   colorTheme?: Prisma.SortOrder
+  auditRetentionDays?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type PlatformSettingsSumOrderByAggregateInput = {
+  auditRetentionDays?: Prisma.SortOrder
 }
 
 
@@ -288,6 +354,7 @@ export type PlatformSettingsMinOrderByAggregateInput = {
 export type PlatformSettingsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   colorTheme?: boolean
+  auditRetentionDays?: boolean
   updatedById?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["platformSettings"]>
@@ -295,6 +362,7 @@ export type PlatformSettingsSelect<ExtArgs extends runtime.Types.Extensions.Inte
 export type PlatformSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   colorTheme?: boolean
+  auditRetentionDays?: boolean
   updatedById?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["platformSettings"]>
@@ -302,6 +370,7 @@ export type PlatformSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
 export type PlatformSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   colorTheme?: boolean
+  auditRetentionDays?: boolean
   updatedById?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["platformSettings"]>
@@ -309,11 +378,12 @@ export type PlatformSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
 export type PlatformSettingsSelectScalar = {
   id?: boolean
   colorTheme?: boolean
+  auditRetentionDays?: boolean
   updatedById?: boolean
   updatedAt?: boolean
 }
 
-export type PlatformSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "colorTheme" | "updatedById" | "updatedAt", ExtArgs["result"]["platformSettings"]>
+export type PlatformSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "colorTheme" | "auditRetentionDays" | "updatedById" | "updatedAt", ExtArgs["result"]["platformSettings"]>
 
 export type $PlatformSettingsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "PlatformSettings"
@@ -321,6 +391,7 @@ export type $PlatformSettingsPayload<ExtArgs extends runtime.Types.Extensions.In
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     colorTheme: string
+    auditRetentionDays: number
     updatedById: string | null
     updatedAt: Date
   }, ExtArgs["result"]["platformSettings"]>
@@ -748,6 +819,7 @@ export interface Prisma__PlatformSettingsClient<T, Null = never, ExtArgs extends
 export interface PlatformSettingsFieldRefs {
   readonly id: Prisma.FieldRef<"PlatformSettings", 'String'>
   readonly colorTheme: Prisma.FieldRef<"PlatformSettings", 'String'>
+  readonly auditRetentionDays: Prisma.FieldRef<"PlatformSettings", 'Int'>
   readonly updatedById: Prisma.FieldRef<"PlatformSettings", 'String'>
   readonly updatedAt: Prisma.FieldRef<"PlatformSettings", 'DateTime'>
 }

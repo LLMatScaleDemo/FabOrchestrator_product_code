@@ -20,6 +20,7 @@ import {
   Shield,
   BarChart3,
   ScrollText,
+  ShieldCheck,
   Settings,
   LogOut,
   MessageSquare,
@@ -69,6 +70,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Usage", href: "/admin/usage", icon: BarChart3 },
       { label: "Audit Logs", href: "/admin/audit-logs", icon: ScrollText },
+      { label: "Compliance", href: "/admin/compliance", icon: ShieldCheck },
     ],
   },
   {

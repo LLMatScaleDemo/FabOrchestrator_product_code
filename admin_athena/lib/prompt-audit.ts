@@ -199,6 +199,8 @@ export interface PromptStartParams {
   userEmail: string | null;
   userPrompt: string;
   app?: 'faborch' | 'faborch-admin';
+  /** The model id used for this prompt (attribution). */
+  model?: string;
 }
 
 export interface PromptStartHandle {
@@ -218,14 +220,15 @@ export async function recordPromptStart(
     const app = params.app ?? 'faborch';
     await prisma.$executeRawUnsafe(
       `INSERT INTO "prompt_audit_logs"
-         (id, prompt_id, datetime, user_id, user_name, user_email, user_prompt, status)
-       VALUES ($1, $2, NOW(), $3, $4, $5, $6, 'PENDING'::"prompt_audit_status")`,
+         (id, prompt_id, datetime, user_id, user_name, user_email, user_prompt, model, status)
+       VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, 'PENDING'::"prompt_audit_status")`,
       id,
       promptId,
       params.userId,
       params.userName,
       params.userEmail,
-      truncate(params.userPrompt)
+      truncate(params.userPrompt),
+      params.model ?? null
     );
     return { rowId: id, promptId, startedAtMs, app };
   } catch {

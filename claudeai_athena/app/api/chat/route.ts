@@ -277,6 +277,7 @@ export async function POST(req: NextRequest) {
         userEmail: user.email,
         userPrompt: promptAuditUserText,
         app: 'faborch',
+        model: modelId,
       });
     }
     // ── End REQ-04 prompt-start hook ──

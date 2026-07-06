@@ -199,6 +199,7 @@ export interface PromptStartParams {
   userEmail: string | null;
   userPrompt: string;
   app?: 'faborch' | 'faborch-admin';
+  model?: string;
 }
 
 export interface PromptStartHandle {
@@ -218,14 +219,15 @@ export async function recordPromptStart(
     const app = params.app ?? 'faborch';
     await prisma.$executeRawUnsafe(
       `INSERT INTO "prompt_audit_logs"
-         (id, prompt_id, datetime, user_id, user_name, user_email, user_prompt, status)
-       VALUES ($1, $2, NOW(), $3, $4, $5, $6, 'PENDING'::"prompt_audit_status")`,
+         (id, prompt_id, datetime, user_id, user_name, user_email, user_prompt, status, model)
+       VALUES ($1, $2, NOW(), $3, $4, $5, $6, 'PENDING'::"prompt_audit_status", $7)`,
       id,
       promptId,
       params.userId,
       params.userName,
       params.userEmail,
-      truncate(params.userPrompt)
+      truncate(params.userPrompt),
+      params.model ?? null
     );
     return { rowId: id, promptId, startedAtMs, app };
   } catch {
@@ -408,6 +410,7 @@ export interface PromptAuditRow {
   llmResponse: string | null;
   responseTimeMs: number | null;
   status: PromptAuditStatus;
+  model: string | null;
   toolCalls: unknown | null;
   requestTokens: number | null;
   retrievalTokens: number | null;
@@ -464,7 +467,7 @@ export async function queryPromptAudit(
     SELECT l.id, l.prompt_id, l.user_id, l.user_name, l.user_email,
            l.datetime, l.user_prompt, l.topic_matched,
            l.query_executed, l.data_retrieved,
-           l.llm_response, l.response_time_ms, l.status,
+           l.llm_response, l.response_time_ms, l.status, l.model,
            l.tool_calls,
            l.request_tokens, l.retrieval_tokens, l.response_tokens,
            l.request_cost,   l.retrieval_cost,   l.response_cost
@@ -490,6 +493,7 @@ export async function queryPromptAudit(
     llmResponse: r.llm_response,
     responseTimeMs: r.response_time_ms,
     status: r.status as PromptAuditStatus,
+    model: r.model,
     toolCalls: r.tool_calls,
     requestTokens:   r.request_tokens,
     retrievalTokens: r.retrieval_tokens,

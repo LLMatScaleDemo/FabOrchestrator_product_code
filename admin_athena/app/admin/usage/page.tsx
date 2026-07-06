@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import {
   DailyUsageChart,
   ModelCostChart,
@@ -27,7 +28,7 @@ import {
   fmtNumber,
   fmtCurrency,
 } from "@/components/admin/analytics-charts";
-import { Zap, MessageSquare, Cpu, DollarSign, Timer } from "lucide-react";
+import { Zap, MessageSquare, Cpu, DollarSign, Timer, Download } from "lucide-react";
 
 interface ModelRow {
   model: string;
@@ -83,10 +84,19 @@ const DAY_OPTIONS = [
   { value: "90", label: "Last 90 days" },
 ];
 
+const EXPORT_OPTIONS = [
+  { value: "user", label: "By user" },
+  { value: "model", label: "By model" },
+  { value: "day", label: "By day" },
+  { value: "prompt", label: "By prompt" },
+];
+
 export default function UsagePage() {
   const [data, setData] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState("30");
+  const [groupBy, setGroupBy] = useState("user");
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem("admin_athena_token");
@@ -111,6 +121,39 @@ export default function UsagePage() {
     load();
   }, [load]);
 
+  const handleExport = useCallback(async () => {
+    const token = localStorage.getItem("admin_athena_token");
+    const to = new Date();
+    const from = new Date(Date.now() - Number(days) * 24 * 60 * 60 * 1000);
+    const params = new URLSearchParams({
+      from: from.toISOString(),
+      to: to.toISOString(),
+      groupBy,
+    });
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/admin/usage/export?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `usage-${groupBy}-${from.toISOString().slice(0, 10)}-${to
+        .toISOString()
+        .slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      console.error("Failed to export usage data");
+    } finally {
+      setExporting(false);
+    }
+  }, [days, groupBy]);
+
   const breakdown = data
     ? [
         { label: "Input", value: data.tokenBreakdown.input },
@@ -124,18 +167,36 @@ export default function UsagePage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <AdminPageHeader title="Usage & Cost" description="Token consumption, spend and per-user analytics">
-        <Select value={days} onValueChange={setDays}>
-          <SelectTrigger className="w-[160px]" aria-label="Time range">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {DAY_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={days} onValueChange={setDays}>
+            <SelectTrigger className="w-[160px]" aria-label="Time range">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DAY_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={groupBy} onValueChange={setGroupBy}>
+            <SelectTrigger className="w-[140px]" aria-label="Export grouping">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {EXPORT_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={handleExport} disabled={exporting}>
+            <Download className="h-4 w-4" />
+            {exporting ? "Exporting…" : "Export CSV"}
+          </Button>
+        </div>
       </AdminPageHeader>
 
       {loading ? (

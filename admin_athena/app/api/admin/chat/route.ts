@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
         userEmail: auth.user.email,
         userPrompt: promptText,
         app: 'faborch-admin',
+        model: modelId,
       });
     }
     // ── End REQ-04 prompt-start ──

@@ -356,6 +356,7 @@ model UsageRecord {
 model PlatformSettings {
   id          String   @id @default("global") // singleton row
   colorTheme  String   @default("fab-blue") @map("color_theme")
+  auditRetentionDays Int  @default(90) @map("audit_retention_days")
   updatedById String?  @map("updated_by_id")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

@@ -8,17 +8,16 @@ import prisma from '@/lib/db';
  * READ-ONLY. Every raw-SQL audit query (prompt_audit_logs / error_audit_logs)
  * is wrapped so a missing table degrades to zeros instead of a 500.
  *
+ * ACCURATE SOURCE: usage token sums and USD cost come from
+ * `prompt_audit_logs` (real per-prompt data) — NOT `usage_records`, which
+ * historically stored 0 tokens. prompt_audit_logs has no 5-way token split,
+ * so we map request+retrieval → input and response → output while keeping the
+ * TokenBucket field names for back-compat.
+ *
  * The top-level fields (totalUsers, activeUsers, totalConversations,
  * totalRoles, totalRequests30d, totalTokens30d) are kept for backward
  * compatibility with older clients; the rich metrics live in nested objects.
  */
-
-interface ModelRate {
-  inputCostPer1M: number;
-  outputCostPer1M: number;
-  cacheReadCostPer1M: number;
-  cacheWriteCostPer1M: number;
-}
 
 interface TokenBucket {
   input: number;
@@ -29,87 +28,53 @@ interface TokenBucket {
   total: number;
 }
 
-// Usage-record token sums grouped by model over a window.
-interface ModelUsageRow {
-  model: string;
+interface PromptAuditUsage {
   requests: number;
-  input: number;
-  output: number;
-  thinking: number;
-  cacheRead: number;
-  cacheCreation: number;
+  tokens: TokenBucket;
+  cost: number;
 }
 
-/** USD cost of a usage-record token bucket for one model, given its rate. */
-function costForModel(row: ModelUsageRow, rate: ModelRate | undefined): number {
-  if (!rate) return 0;
-  const per1M = (tokens: number, price: number) => (tokens / 1_000_000) * price;
-  return (
-    per1M(row.input, rate.inputCostPer1M) +
-    // Thinking tokens are billed as output tokens by Anthropic.
-    per1M(row.output + row.thinking, rate.outputCostPer1M) +
-    per1M(row.cacheRead, rate.cacheReadCostPer1M) +
-    per1M(row.cacheCreation, rate.cacheWriteCostPer1M)
-  );
-}
+const emptyBucket = (): TokenBucket => ({
+  input: 0,
+  output: 0,
+  thinking: 0,
+  cacheRead: 0,
+  cacheCreation: 0,
+  total: 0,
+});
 
-async function usageByModel(since: Date): Promise<ModelUsageRow[]> {
-  const grouped = await prisma.usageRecord.groupBy({
-    by: ['model'],
-    where: { createdAt: { gte: since } },
-    _count: { _all: true },
-    _sum: {
-      inputTokens: true,
-      outputTokens: true,
-      thinkingTokens: true,
-      cacheReadTokens: true,
-      cacheCreationTokens: true,
-    },
-  });
-  return grouped.map((g) => ({
-    model: g.model,
-    requests: g._count._all,
-    input: g._sum.inputTokens || 0,
-    output: g._sum.outputTokens || 0,
-    thinking: g._sum.thinkingTokens || 0,
-    cacheRead: g._sum.cacheReadTokens || 0,
-    cacheCreation: g._sum.cacheCreationTokens || 0,
-  }));
-}
-
-function tokensOf(rows: ModelUsageRow[]): TokenBucket {
-  const b: TokenBucket = { input: 0, output: 0, thinking: 0, cacheRead: 0, cacheCreation: 0, total: 0 };
-  for (const r of rows) {
-    b.input += r.input;
-    b.output += r.output;
-    b.thinking += r.thinking;
-    b.cacheRead += r.cacheRead;
-    b.cacheCreation += r.cacheCreation;
-  }
-  b.total = b.input + b.output + b.thinking + b.cacheRead + b.cacheCreation;
-  return b;
-}
-
-function requestsOf(rows: ModelUsageRow[]): number {
-  return rows.reduce((n, r) => n + r.requests, 0);
-}
-
-function computedCost(rows: ModelUsageRow[], rates: Map<string, ModelRate>): number {
-  return rows.reduce((sum, r) => sum + costForModel(r, rates.get(r.model)), 0);
-}
-
-/** Sum of prompt_audit_logs USD cost since a date, or null if the table is unavailable. */
-async function promptAuditCost(since: Date): Promise<number | null> {
+/**
+ * Requests, token bucket, and USD cost from prompt_audit_logs since a date.
+ * Degrades to zeros if the table/columns are unavailable.
+ */
+async function promptAuditUsage(since: Date): Promise<PromptAuditUsage> {
   try {
-    const rows = await prisma.$queryRawUnsafe<Array<{ cost: number | string | null }>>(
-      `SELECT COALESCE(SUM(COALESCE(request_cost,0)+COALESCE(retrieval_cost,0)+COALESCE(response_cost,0)),0)::float AS cost
+    const rows = await prisma.$queryRawUnsafe<
+      Array<{
+        requests: number | string;
+        input: bigint | number | string;
+        output: bigint | number | string;
+        cost: number | string | null;
+      }>
+    >(
+      `SELECT COUNT(*)::int AS requests,
+              COALESCE(SUM(COALESCE(request_tokens,0)+COALESCE(retrieval_tokens,0)),0)::bigint AS input,
+              COALESCE(SUM(response_tokens),0)::bigint AS output,
+              COALESCE(SUM(COALESCE(request_cost,0)+COALESCE(retrieval_cost,0)+COALESCE(response_cost,0)),0)::float AS cost
          FROM prompt_audit_logs WHERE datetime >= $1`,
       since
     );
-    const c = Number(rows?.[0]?.cost ?? 0);
-    return Number.isFinite(c) ? c : 0;
+    const r = rows?.[0];
+    const input = Number(r?.input ?? 0) || 0;
+    const output = Number(r?.output ?? 0) || 0;
+    const cost = Number(r?.cost ?? 0);
+    return {
+      requests: Number(r?.requests ?? 0) || 0,
+      tokens: { input, output, thinking: 0, cacheRead: 0, cacheCreation: 0, total: input + output },
+      cost: Number.isFinite(cost) ? cost : 0,
+    };
   } catch {
-    return null;
+    return { requests: 0, tokens: emptyBucket(), cost: 0 };
   }
 }
 
@@ -136,9 +101,8 @@ export async function GET(req: NextRequest) {
       connectedMcp,
       activeSessions,
       closedIdle7d,
-      modelRates,
-      usage7dRows,
-      usage30dRows,
+      usage7d,
+      usage30d,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { lastLogin: { gte: thirtyDaysAgo } } }),
@@ -155,36 +119,10 @@ export async function GET(req: NextRequest) {
       prisma.userSessionLog.count({
         where: { sessionStatus: 'CLOSED_IDLE', loginTime: { gte: sevenDaysAgo } },
       }),
-      // model_registry may not exist yet (migration not run) → fall back to
-      // no pricing rather than failing the whole dashboard.
-      prisma.modelRegistry.findMany({
-        select: {
-          modelId: true,
-          inputCostPer1M: true,
-          outputCostPer1M: true,
-          cacheReadCostPer1M: true,
-          cacheWriteCostPer1M: true,
-        },
-      }).catch(() => [] as Array<{
-        modelId: string;
-        inputCostPer1M: number; outputCostPer1M: number;
-        cacheReadCostPer1M: number; cacheWriteCostPer1M: number;
-      }>),
-      usageByModel(sevenDaysAgo),
-      usageByModel(thirtyDaysAgo),
+      // ACCURATE usage + cost from prompt_audit_logs (resilient to missing table).
+      promptAuditUsage(sevenDaysAgo),
+      promptAuditUsage(thirtyDaysAgo),
     ]);
-
-    const rates = new Map<string, ModelRate>(
-      modelRates.map((m) => [
-        m.modelId,
-        {
-          inputCostPer1M: m.inputCostPer1M,
-          outputCostPer1M: m.outputCostPer1M,
-          cacheReadCostPer1M: m.cacheReadCostPer1M,
-          cacheWriteCostPer1M: m.cacheWriteCostPer1M,
-        },
-      ])
-    );
 
     // Average closed-session duration (seconds), last 30d. Raw SQL because
     // Prisma cannot aggregate a timestamp difference. Table is a real model,
@@ -201,21 +139,6 @@ export async function GET(req: NextRequest) {
     } catch {
       avgSessionSec = 0;
     }
-
-    // Cost: prefer prompt_audit_logs sums when they exist and are non-zero,
-    // otherwise fall back to usage_records × modelRegistry rates.
-    const [promptCost7d, promptCost30d] = await Promise.all([
-      promptAuditCost(sevenDaysAgo),
-      promptAuditCost(thirtyDaysAgo),
-    ]);
-    const computedCost7d = computedCost(usage7dRows, rates);
-    const computedCost30d = computedCost(usage30dRows, rates);
-    const cost7d = promptCost7d && promptCost7d > 0 ? promptCost7d : computedCost7d;
-    const cost30d = promptCost30d && promptCost30d > 0 ? promptCost30d : computedCost30d;
-    const costSource =
-      (promptCost30d && promptCost30d > 0) || (promptCost7d && promptCost7d > 0)
-        ? 'prompt_audit_logs'
-        : 'usage_records';
 
     // ── Errors (raw-SQL audit table, resilient) ──────────────────────────
     let errorsOpen = 0;
@@ -278,10 +201,13 @@ export async function GET(req: NextRequest) {
       // table absent → zeros
     }
 
-    const tokens7d = tokensOf(usage7dRows);
-    const tokens30d = tokensOf(usage30dRows);
-    const requests7d = requestsOf(usage7dRows);
-    const requests30d = requestsOf(usage30dRows);
+    const tokens7d = usage7d.tokens;
+    const tokens30d = usage30d.tokens;
+    const requests7d = usage7d.requests;
+    const requests30d = usage30d.requests;
+    const cost7d = usage7d.cost;
+    const cost30d = usage30d.cost;
+    const costSource = 'prompt_audit_logs';
 
     return NextResponse.json({
       // ── Backward-compatible top-level fields ──
