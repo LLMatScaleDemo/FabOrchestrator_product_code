@@ -19,16 +19,26 @@ export interface ModelRates {
   cacheWrite: number;
 }
 
+// Rates are USD per 1M tokens, matching Anthropic's published pricing.
+// cacheWrite = the 5-minute cache-write rate; cacheRead = "Cache Hits & Refreshes".
 const MODEL_PRICING: Record<string, ModelRates> = {
-  "claude-opus-4-8":            { input: 15, output: 75, cacheRead: 1.5,  cacheWrite: 18.75 },
-  "claude-sonnet-5":           { input:  3, output: 15, cacheRead: 0.30, cacheWrite:  3.75 },
-  "claude-opus-4-7":            { input: 15, output: 75, cacheRead: 1.5,  cacheWrite: 18.75 },
-  "claude-opus-4-6":            { input: 15, output: 75, cacheRead: 1.5,  cacheWrite: 18.75 },
-  "claude-opus-4-5-20251101":   { input: 15, output: 75, cacheRead: 1.5,  cacheWrite: 18.75 },
-  "claude-opus-4-20250514":     { input: 15, output: 75, cacheRead: 1.5,  cacheWrite: 18.75 },
+  // Fable / Mythos 5
+  "claude-fable-5":             { input: 10, output: 50, cacheRead: 1.0,  cacheWrite: 12.5  },
+  "claude-mythos-5":           { input: 10, output: 50, cacheRead: 1.0,  cacheWrite: 12.5  },
+  // Opus 4.5–4.8 → $5 / $25
+  "claude-opus-4-8":            { input:  5, output: 25, cacheRead: 0.50, cacheWrite:  6.25 },
+  "claude-opus-4-7":            { input:  5, output: 25, cacheRead: 0.50, cacheWrite:  6.25 },
+  "claude-opus-4-6":            { input:  5, output: 25, cacheRead: 0.50, cacheWrite:  6.25 },
+  "claude-opus-4-5-20251101":   { input:  5, output: 25, cacheRead: 0.50, cacheWrite:  6.25 },
+  // Opus 4.1 / 4 (deprecated/retired) → $15 / $75
+  "claude-opus-4-20250514":     { input: 15, output: 75, cacheRead: 1.50, cacheWrite: 18.75 },
+  // Sonnet 5 (through Aug 31, 2026) → $2 / $10
+  "claude-sonnet-5":           { input:  2, output: 10, cacheRead: 0.20, cacheWrite:  2.50 },
+  // Sonnet 4 / 4.5 / 4.6 → $3 / $15
   "claude-sonnet-4-6":          { input:  3, output: 15, cacheRead: 0.30, cacheWrite:  3.75 },
   "claude-sonnet-4-5-20250929": { input:  3, output: 15, cacheRead: 0.30, cacheWrite:  3.75 },
   "claude-sonnet-4-20250514":   { input:  3, output: 15, cacheRead: 0.30, cacheWrite:  3.75 },
+  // Haiku 4.5 → $1 / $5
   "claude-haiku-4-5-20251001":  { input:  1, output:  5, cacheRead: 0.10, cacheWrite:  1.25 },
 };
 

@@ -35,9 +35,9 @@ INSERT INTO "model_registry"
    "thinking_type", "is_active", "is_default", "sort_order", "updated_at")
 VALUES
   (gen_random_uuid(), 'claude-opus-4-7', 'FabOrchestrator 1.0', 'Powerful reasoning with adaptive thinking',
-   15, 75, 1.5, 18.75, 'adaptive', true, false, 0, CURRENT_TIMESTAMP),
+   5, 25, 0.50, 6.25, 'adaptive', true, false, 0, CURRENT_TIMESTAMP),
   (gen_random_uuid(), 'claude-sonnet-5', 'FabOrchestrator 1.1', 'Fast and intelligent with adaptive thinking',
-   3, 15, 0.30, 3.75, 'adaptive', true, false, 1, CURRENT_TIMESTAMP),
+   2, 10, 0.20, 2.50, 'adaptive', true, false, 1, CURRENT_TIMESTAMP),
   (gen_random_uuid(), 'claude-opus-4-8', 'FabOrchestrator 2.0', 'Most capable model with adaptive thinking',
-   15, 75, 1.5, 18.75, 'adaptive', true, true, 2, CURRENT_TIMESTAMP)
+   5, 25, 0.50, 6.25, 'adaptive', true, true, 2, CURRENT_TIMESTAMP)
 ON CONFLICT ("model_id") DO NOTHING;
