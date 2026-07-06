@@ -79,7 +79,8 @@ export async function GET(req: NextRequest) {
     }
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    const [totalsRows, byModelRows, byUserRows, dailyRows, modelNames] = await Promise.all([
+    const [totalsRows, byModelRows, byUserRows, dailyRows, modelNames, cacheRows, rateRows] =
+      await Promise.all([
       prisma
         .$queryRawUnsafe<TotalsRow[]>(
           `SELECT COUNT(*)::int AS requests,
@@ -136,6 +137,39 @@ export async function GET(req: NextRequest) {
       prisma.modelRegistry
         .findMany({ select: { modelId: true, displayName: true } })
         .catch(() => [] as Array<{ modelId: string; displayName: string }>),
+      // Prompt-cache tokens per model — from usage_records, which carries the
+      // cache_read / cache_creation split (prompt_audit_logs does not).
+      prisma
+        .$queryRawUnsafe<
+          Array<{
+            model: string;
+            read: bigint | number | string;
+            write: bigint | number | string;
+            input: bigint | number | string;
+          }>
+        >(
+          `SELECT model,
+                  COALESCE(SUM(cache_read_tokens),0)::bigint     AS read,
+                  COALESCE(SUM(cache_creation_tokens),0)::bigint AS write,
+                  COALESCE(SUM(input_tokens),0)::bigint          AS input
+             FROM usage_records WHERE created_at >= $1 GROUP BY model`,
+          since
+        )
+        .catch(
+          () =>
+            [] as Array<{
+              model: string;
+              read: bigint | number | string;
+              write: bigint | number | string;
+              input: bigint | number | string;
+            }>
+        ),
+      // Per-model base input rates ($/1M) for cache-savings estimation.
+      prisma
+        .$queryRawUnsafe<Array<{ model_id: string; rate: number | string }>>(
+          `SELECT model_id, input_cost_per_1m::float AS rate FROM model_registry`
+        )
+        .catch(() => [] as Array<{ model_id: string; rate: number | string }>),
     ]);
 
     const displayNames = new Map<string, string>(
@@ -188,6 +222,32 @@ export async function GET(req: NextRequest) {
     const topUsersByCost = [...usersEnriched].sort((a, b) => b.cost - a.cost).slice(0, 10);
     const topUsersByTokens = [...usersEnriched].sort((a, b) => b.tokens - a.tokens).slice(0, 10);
 
+    // ── Prompt-cache metrics (from usage_records) ──
+    const rateMap = new Map<string, number>((rateRows || []).map((r) => [r.model_id, num(r.rate)]));
+    const cacheByModel = new Map<string, { read: number; write: number }>();
+    const DEFAULT_RATE = 5; // $/1M, Opus-tier fallback for models absent from registry
+    let cacheRead = 0, cacheWrite = 0, cacheInput = 0, cacheSavings = 0;
+    for (const r of cacheRows || []) {
+      const rd = num(r.read), wr = num(r.write), inp = num(r.input);
+      cacheRead += rd;
+      cacheWrite += wr;
+      cacheInput += inp;
+      cacheByModel.set(r.model, { read: rd, write: wr });
+      const rate = rateMap.get(r.model) ?? DEFAULT_RATE;
+      // Cache reads cost ~0.1x base (save 0.9x/tok); writes cost ~1.25x (add 0.25x/tok).
+      cacheSavings += (rd * 0.9 - wr * 0.25) * (rate / 1_000_000);
+    }
+    const cacheDenom = cacheRead + cacheWrite + cacheInput;
+    const cacheHitRate = cacheDenom > 0 ? Math.round((cacheRead / cacheDenom) * 1000) / 10 : null;
+    // Merge per-model cache tokens into the byModel rows.
+    for (const m of byModel) {
+      const c = cacheByModel.get(m.model);
+      if (c) {
+        m.cacheRead = c.read;
+        m.cacheCreation = c.write;
+      }
+    }
+
     // ── Daily time series (continuous, zero-filled) ──
     const dailyMap = new Map<string, { tokens: number; cost: number; requests: number }>();
     for (const r of dailyRows) {
@@ -219,9 +279,17 @@ export async function GET(req: NextRequest) {
         input: tInput,
         output: tOutput,
         thinking: 0,
-        cacheRead: 0,
-        cacheCreation: 0,
+        cacheRead,
+        cacheCreation: cacheWrite,
         total: totalTokens,
+      },
+      cache: {
+        readTokens: cacheRead,
+        writeTokens: cacheWrite,
+        uncachedInputTokens: cacheInput,
+        hitRate: cacheHitRate,
+        savingsUsd: round2(cacheSavings),
+        source: 'usage_records',
       },
       byModel,
       topUsersByCost,

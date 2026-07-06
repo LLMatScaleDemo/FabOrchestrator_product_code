@@ -608,12 +608,46 @@ export async function POST(req: NextRequest) {
     // Fit messages within the context window (trim tool results + drop old groups)
     const fittedMessages = fitMessagesToContextWindow(messages, systemPrompt);
 
+    // ── Prompt caching (Anthropic, via AI SDK `cacheControl`) ──
+    // Cache the large stable prefix (tools + system) and the growing
+    // conversation history so repeat turns read them at ~0.1x instead of full
+    // input price, and shave time-to-first-token. Prompt caching is a PREFIX
+    // match: any byte change before a breakpoint wastes the cache write. The
+    // system prompt embeds per-request presigned S3 URLs when files are
+    // attached (they change every request), which would bust the whole prefix
+    // — so we only enable caching when there are no volatile file refs (the
+    // common case). Multi-turn, no-file conversations get the full win.
+    const cacheEnabled = promptFileRefs.length === 0 && fittedMessages.length > 0;
+    const ephemeral = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let outboundMessages: any[] = fittedMessages;
+    if (cacheEnabled) {
+      // Fold the system prompt into a leading system message so the breakpoint
+      // covers tools+system, then mark the last message to cache the history.
+      const msgs = [
+        { role: 'system', content: systemPrompt, providerOptions: ephemeral },
+        ...fittedMessages,
+      ];
+      const last = msgs[msgs.length - 1];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      msgs[msgs.length - 1] = {
+        ...last,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        providerOptions: { ...(last as any).providerOptions, ...ephemeral },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
+      outboundMessages = msgs;
+    }
+    console.log(`[Chat] Prompt caching ${cacheEnabled ? 'ENABLED (system+history breakpoints)' : 'disabled (volatile file refs present)'}`);
+
     // Build streamText configuration
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const streamConfig: Record<string, any> = {
       model: modelProvider(modelId),
-      system: systemPrompt,
-      messages: fittedMessages,
+      // When caching, the system prompt is carried as a leading system message
+      // (with a cache breakpoint) instead of the top-level `system` field.
+      ...(cacheEnabled ? {} : { system: systemPrompt }),
+      messages: outboundMessages,
       maxTokens: 65536,
       // `temperature` is deprecated/unsupported on the current Claude model
       // generation (Opus 4.8, Sonnet 5, Opus 4.7) — sending it makes the API

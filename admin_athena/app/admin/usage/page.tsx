@@ -28,7 +28,7 @@ import {
   fmtNumber,
   fmtCurrency,
 } from "@/components/admin/analytics-charts";
-import { Zap, MessageSquare, Cpu, DollarSign, Timer, Download } from "lucide-react";
+import { Zap, MessageSquare, Cpu, DollarSign, Timer, Download, Gauge, Database, PiggyBank } from "lucide-react";
 
 interface ModelRow {
   model: string;
@@ -65,6 +65,14 @@ interface UsageData {
     cacheRead: number;
     cacheCreation: number;
     total: number;
+  };
+  cache?: {
+    readTokens: number;
+    writeTokens: number;
+    uncachedInputTokens: number;
+    hitRate: number | null;
+    savingsUsd: number;
+    source: string;
   };
   byModel: ModelRow[];
   topUsersByCost: UserRow[];
@@ -222,6 +230,39 @@ export default function UsagePage() {
               subtitle="per request"
               icon={<Timer className="h-5 w-5" />}
             />
+          </div>
+
+          {/* ── Prompt cache KPIs ── */}
+          <div>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Prompt Cache
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <KpiCard
+                title="Cache Hit Rate"
+                value={data.cache?.hitRate != null ? `${data.cache.hitRate}%` : "—"}
+                subtitle="of prompt input served from cache"
+                icon={<Gauge className="h-5 w-5" />}
+              />
+              <KpiCard
+                title="Est. Savings"
+                value={fmtCurrency(data.cache?.savingsUsd ?? 0)}
+                subtitle={`over ${data.days} days`}
+                icon={<PiggyBank className="h-5 w-5" />}
+              />
+              <KpiCard
+                title="Cache Reads"
+                value={fmtNumber(data.cache?.readTokens ?? 0)}
+                subtitle="tokens served at ~0.1× price"
+                icon={<Database className="h-5 w-5" />}
+              />
+              <KpiCard
+                title="Cache Writes"
+                value={fmtNumber(data.cache?.writeTokens ?? 0)}
+                subtitle="tokens written at ~1.25× price"
+                icon={<Database className="h-5 w-5" />}
+              />
+            </div>
           </div>
 
           {/* ── Trend + token breakdown ── */}

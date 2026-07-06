@@ -44,6 +44,85 @@ const emptyBucket = (): TokenBucket => ({
 });
 
 /**
+ * Prompt-cache effectiveness, sourced from `usage_records` (which carries the
+ * per-request cache_read / cache_creation token counts the chat route records
+ * from the Anthropic usage object). prompt_audit_logs has no cache split, so
+ * cache metrics live here.
+ */
+interface CacheMetrics {
+  readTokens: number;    // served from cache (~0.1x base input price)
+  writeTokens: number;   // written to cache (~1.25x base input price)
+  inputTokens: number;   // uncached input tokens
+  hitRate: number | null; // readTokens / (read + write + input) * 100
+  savingsUsd: number;    // estimated net $ saved vs. an uncached run
+}
+
+const emptyCache = (): CacheMetrics => ({
+  readTokens: 0,
+  writeTokens: 0,
+  inputTokens: 0,
+  hitRate: null,
+  savingsUsd: 0,
+});
+
+/** Per-model base input rate ($/1M tokens) from the model registry. */
+async function registryInputRates(): Promise<Map<string, number>> {
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ model_id: string; rate: number | string }>>(
+      `SELECT model_id, input_cost_per_1m::float AS rate FROM model_registry`
+    );
+    return new Map((rows || []).map((r) => [r.model_id, Number(r.rate) || 0]));
+  } catch {
+    return new Map();
+  }
+}
+
+async function cacheMetrics(since: Date, rates: Map<string, number>): Promise<CacheMetrics> {
+  try {
+    const rows = await prisma.$queryRawUnsafe<
+      Array<{
+        model: string;
+        read: bigint | number | string;
+        write: bigint | number | string;
+        input: bigint | number | string;
+      }>
+    >(
+      `SELECT model,
+              COALESCE(SUM(cache_read_tokens),0)::bigint     AS read,
+              COALESCE(SUM(cache_creation_tokens),0)::bigint AS write,
+              COALESCE(SUM(input_tokens),0)::bigint          AS input
+         FROM usage_records WHERE created_at >= $1 GROUP BY model`,
+      since
+    );
+    // Fallback base rate ($/1M) for models absent from the registry (Opus tier).
+    const DEFAULT_RATE = 5;
+    let read = 0, write = 0, input = 0, savings = 0;
+    for (const r of rows || []) {
+      const rd = Number(r.read) || 0;
+      const wr = Number(r.write) || 0;
+      const inp = Number(r.input) || 0;
+      read += rd;
+      write += wr;
+      input += inp;
+      const rate = rates.get(r.model) ?? DEFAULT_RATE;
+      // Cache reads cost ~0.1x base (save 0.9x/token); writes cost ~1.25x base
+      // (add 0.25x/token). Net saving vs. paying full input price uncached.
+      savings += (rd * 0.9 - wr * 0.25) * (rate / 1_000_000);
+    }
+    const denom = read + write + input;
+    return {
+      readTokens: read,
+      writeTokens: write,
+      inputTokens: input,
+      hitRate: denom > 0 ? Math.round((read / denom) * 1000) / 10 : null,
+      savingsUsd: Math.round(savings * 100) / 100,
+    };
+  } catch {
+    return emptyCache();
+  }
+}
+
+/**
  * Requests, token bucket, and USD cost from prompt_audit_logs since a date.
  * Degrades to zeros if the table/columns are unavailable.
  */
@@ -87,6 +166,9 @@ export async function GET(req: NextRequest) {
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+    // Per-model rates for cache-savings estimation (resilient to missing table).
+    const cacheRates = await registryInputRates();
+
     const [
       totalUsers,
       activeUsers,
@@ -103,6 +185,8 @@ export async function GET(req: NextRequest) {
       closedIdle7d,
       usage7d,
       usage30d,
+      cache7d,
+      cache30d,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { lastLogin: { gte: thirtyDaysAgo } } }),
@@ -122,6 +206,9 @@ export async function GET(req: NextRequest) {
       // ACCURATE usage + cost from prompt_audit_logs (resilient to missing table).
       promptAuditUsage(sevenDaysAgo),
       promptAuditUsage(thirtyDaysAgo),
+      // Prompt-cache effectiveness from usage_records.
+      cacheMetrics(sevenDaysAgo, cacheRates),
+      cacheMetrics(thirtyDaysAgo, cacheRates),
     ]);
 
     // Average closed-session duration (seconds), last 30d. Raw SQL because
@@ -203,6 +290,11 @@ export async function GET(req: NextRequest) {
 
     const tokens7d = usage7d.tokens;
     const tokens30d = usage30d.tokens;
+    // Surface real cache token counts (from usage_records) on the token buckets.
+    tokens7d.cacheRead = cache7d.readTokens;
+    tokens7d.cacheCreation = cache7d.writeTokens;
+    tokens30d.cacheRead = cache30d.readTokens;
+    tokens30d.cacheCreation = cache30d.writeTokens;
     const requests7d = usage7d.requests;
     const requests30d = usage30d.requests;
     const cost7d = usage7d.cost;
@@ -246,6 +338,11 @@ export async function GET(req: NextRequest) {
         last7d: Math.round(cost7d * 100) / 100,
         last30d: Math.round(cost30d * 100) / 100,
         source: costSource,
+      },
+      cache: {
+        last7d: cache7d,
+        last30d: cache30d,
+        source: 'usage_records',
       },
       errors: {
         open: errorsOpen,
