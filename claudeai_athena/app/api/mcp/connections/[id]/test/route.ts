@@ -242,6 +242,8 @@ export async function POST(
             // Store discovered tools
             await prisma.mcpConnection.update({
               where: { id },
+              // Prisma Json column accepts the discovered tool list; cast is unavoidable.
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               data: { availableTools: discoveredTools as any },
             });
             console.log('[MCP Test] Stored tools in database');

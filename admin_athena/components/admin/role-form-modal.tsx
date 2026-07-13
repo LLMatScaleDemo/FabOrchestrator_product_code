@@ -129,6 +129,8 @@ interface RoleFormModalProps {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
+  // Loosely-typed role record hydrated from the API (fields read with guards below).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   editRole?: Record<string, any> | null;
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,10 +47,10 @@ export default function ForgotPasswordPage() {
       <div className="flex flex-1 items-center justify-center bg-background px-6">
       <div className="w-full max-w-md space-y-6">
         {/* Back link */}
-        <a href="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Back to login
-        </a>
+        </Link>
 
         {sent ? (
           <div className="flex flex-col items-center gap-4 rounded-lg border bg-card p-8 text-center shadow-sm">

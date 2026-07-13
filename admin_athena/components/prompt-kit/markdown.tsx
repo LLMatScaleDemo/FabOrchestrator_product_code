@@ -86,8 +86,8 @@ const DEFAULT_COMPONENTS: Partial<Components> = {
 }
 
 // Stable plugin arrays — prevents ReactMarkdown from re-initializing parsers
-const REMARK_PLUGINS = [remarkGfm, remarkMath] as const
-const REHYPE_PLUGINS = [rehypeKatex] as const
+const REMARK_PLUGINS = [remarkGfm, remarkMath]
+const REHYPE_PLUGINS = [rehypeKatex]
 
 const Markdown = React.forwardRef<HTMLDivElement, MarkdownProps>(
   ({ children, className, components, ...props }, ref) => {
@@ -106,8 +106,8 @@ const Markdown = React.forwardRef<HTMLDivElement, MarkdownProps>(
         {...props}
       >
         <ReactMarkdown
-          remarkPlugins={REMARK_PLUGINS as any}
-          rehypePlugins={REHYPE_PLUGINS as any}
+          remarkPlugins={REMARK_PLUGINS}
+          rehypePlugins={REHYPE_PLUGINS}
           components={mergedComponents}
         >
           {children}

@@ -127,10 +127,9 @@ function cleanToolMessages(modelMessages: any[]): any[] {
   const out: any[] = [];
   for (const m of modelMessages) {
     if (!Array.isArray(m?.content)) { out.push(m); continue; }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const content = m.content.filter(
-      (c: any) =>
-        !((c?.type === 'tool-call' || c?.type === 'tool-result') && dropIds.has(c.toolCallId))
+      (c: { type?: string; toolCallId?: string }) =>
+        !((c?.type === 'tool-call' || c?.type === 'tool-result') && dropIds.has(c.toolCallId ?? ''))
     );
     if (content.length > 0) out.push({ ...m, content });
   }

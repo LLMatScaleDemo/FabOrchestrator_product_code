@@ -266,7 +266,7 @@ Loader.displayName = "Loader"
  * PulseLoader - Three animated dots for "thinking" state
  * Convenience wrapper around Loader with pulse-dot variant
  */
-interface PulseLoaderProps extends Omit<LoaderProps, "variant"> {}
+type PulseLoaderProps = Omit<LoaderProps, "variant">;
 
 const PulseLoader = React.forwardRef<HTMLDivElement, PulseLoaderProps>(
   ({ size = "md", ...props }, ref) => (

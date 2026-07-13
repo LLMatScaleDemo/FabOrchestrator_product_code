@@ -144,6 +144,8 @@ export async function POST(
 
       await prisma.mcpConnection.update({
         where: { id },
+        // Prisma Json column accepts the discovered tool list; cast is unavoidable.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data: { availableTools: toolsWithSchema as any },
       });
 

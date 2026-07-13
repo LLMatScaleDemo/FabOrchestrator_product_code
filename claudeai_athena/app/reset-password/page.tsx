@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ export default function ResetPasswordPage() {
         <div className="text-center">
           <h2 className="text-xl font-semibold">Invalid Reset Link</h2>
           <p className="mt-2 text-muted-foreground">No reset token provided.</p>
-          <a href="/" className="mt-4 inline-block text-sm text-primary underline">Back to login</a>
+          <Link href="/" className="mt-4 inline-block text-sm text-primary underline">Back to login</Link>
         </div>
       </div>
     );
@@ -67,9 +68,9 @@ export default function ResetPasswordPage() {
             </div>
             <h3 className="text-lg font-semibold">Password Reset!</h3>
             <p className="mt-2 text-sm text-muted-foreground">You can now log in with your new password.</p>
-            <a href="/" className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <Link href="/" className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90">
               Go to Login
-            </a>
+            </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
@@ -92,7 +93,7 @@ export default function ResetPasswordPage() {
           </form>
         )}
 
-        <p className="text-center text-sm"><a href="/" className="text-primary underline">Back to login</a></p>
+        <p className="text-center text-sm"><Link href="/" className="text-primary underline">Back to login</Link></p>
       </div>
     </div>
   );

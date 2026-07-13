@@ -56,9 +56,8 @@ export function ArtifactPanelWrapper({
   useEffect(() => {
     // Use double-rAF to ensure the browser has painted the initial state
     // before transitioning. This guarantees the CSS transition runs.
-    let raf1: number
     let raf2: number
-    raf1 = requestAnimationFrame(() => {
+    const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
         if (phaseRef.current === 'entering') {
           setPhase('visible')
