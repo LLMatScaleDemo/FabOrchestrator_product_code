@@ -219,7 +219,7 @@ export function ShimmerText({
  */
 export function StreamingCode({
   code,
-  language = "plaintext",
+  language: _language = "plaintext",
   isStreaming = false,
   className,
 }: {

@@ -68,6 +68,8 @@ const FilePreviewCard: React.FC<FilePreviewCardProps> = ({ file, onRemove }) => 
         <div className={`relative group flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden border border-bg-300 bg-bg-200 animate-fade-in transition-colors hover:border-text-400`}>
             {isImage ? (
                 <div className="w-full h-full relative">
+                    {/* Local blob-preview thumbnail (no known dimensions / loader) — plain img. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={file.preview!} alt={file.file.name} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
                 </div>

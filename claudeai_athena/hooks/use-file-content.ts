@@ -15,7 +15,7 @@ type CacheListener = () => void
 
 export function useFileContent() {
   const cacheRef = useRef<Map<string, CacheEntry>>(new Map())
-  const listenersRef = useRef<Set<CacheListener>>(new Set())
+  const _listenersRef = useRef<Set<CacheListener>>(new Set())
   const fetchingRef = useRef<Set<string>>(new Set())
 
   const getCache = useCallback((fileId: string): CacheEntry | null => {

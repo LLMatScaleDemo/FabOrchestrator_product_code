@@ -245,8 +245,8 @@ function parseRelationships(relsXml: string): RelationshipMap {
 
 async function parseShape(
   spXml: string,
-  rels: RelationshipMap,
-  loadImage: (path: string) => Promise<string | null>
+  _rels: RelationshipMap,
+  _loadImage: (path: string) => Promise<string | null>
 ): Promise<SlideShape | null> {
   const transform = parseTransform(spXml)
   if (!transform) return null
@@ -566,7 +566,7 @@ function RunRenderer({ run }: { run: TextRun }) {
 
 // --- Main Component ---
 
-export function PptxViewer({ arrayBuffer, isDarkMode, filename, onDownload }: PptxViewerProps) {
+export function PptxViewer({ arrayBuffer, isDarkMode: _isDarkMode, filename, onDownload }: PptxViewerProps) {
   const [slides, setSlides] = useState<ParsedSlide[]>([])
   const [slideWidth, setSlideWidth] = useState(960)  // px
   const [slideHeight, setSlideHeight] = useState(720) // px
@@ -576,8 +576,9 @@ export function PptxViewer({ arrayBuffer, isDarkMode, filename, onDownload }: Pp
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
+    const blobUrls = blobUrlsRef.current
     return () => {
-      blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
+      blobUrls.forEach((url) => URL.revokeObjectURL(url))
     }
   }, [])
 

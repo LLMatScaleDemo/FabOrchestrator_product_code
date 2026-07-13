@@ -476,7 +476,7 @@ export async function POST(req: NextRequest) {
     ]);
 
     // Collect unsupported files for container_upload (will be uploaded to Files API)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const containerUploadFiles: Array<{ data: string; filename: string; mediaType: string }> = [];
 
     // Sanitize messages before converting — strip parts that convertToModelMessages can't handle
@@ -628,7 +628,7 @@ export async function POST(req: NextRequest) {
         ...fittedMessages,
       ];
       const last = msgs[msgs.length - 1];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       msgs[msgs.length - 1] = {
         ...last,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

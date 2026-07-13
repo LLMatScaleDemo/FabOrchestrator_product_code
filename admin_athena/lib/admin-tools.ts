@@ -1162,7 +1162,7 @@ export function getAdminTools(adminUserId: string) {
         const where = `WHERE ${conds.join(' AND ')}`;
 
         // 1) Counts + rates + timing percentiles + token/cost totals in one pass.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const summary = (await prisma.$queryRawUnsafe(
           `SELECT
               COUNT(*)::int                                                          AS total,

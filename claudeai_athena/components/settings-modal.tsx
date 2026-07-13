@@ -307,7 +307,8 @@ export function SettingsModal({ open, onClose, defaultTab = "general", currentMo
       root.classList.remove("dark")
     } else {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-      prefersDark ? root.classList.add("dark") : root.classList.remove("dark")
+      if (prefersDark) root.classList.add("dark")
+      else root.classList.remove("dark")
     }
   }
 

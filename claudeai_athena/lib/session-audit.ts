@@ -186,7 +186,7 @@ export async function checkAndRecordActivity(
   const tokenHash = hashToken(sessionToken);
 
   // Step 1: read current state.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const rows = (await prisma.$queryRawUnsafe(
     `SELECT id,
             last_activity_at,
@@ -229,11 +229,11 @@ export async function checkAndRecordActivity(
     return { status: 'not_found' };
   }
 
-  const { id, last_activity_at, gap_seconds } = rows[0];
+  const { id, last_activity_at: _last_activity_at, gap_seconds } = rows[0];
 
   // Step 2a: idle eviction.
   if (gap_seconds > IDLE_TIMEOUT_SEC) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const out = (await prisma.$queryRawUnsafe(
       `UPDATE "user_session_logs"
           SET session_status      = 'CLOSED_IDLE',

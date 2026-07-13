@@ -6,18 +6,28 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    // Next 16's core-web-vitals promotes the React Compiler (react-hooks)
-    // diagnostics to errors. These flag idiomatic, already-shipped patterns
-    // (prop/route-sync effects, ref reads during render, one-shot impure
-    // initializers). We keep them visible as warnings rather than blocking the
-    // lint gate; addressing them is a separate, test-gated refactor of live
-    // runtime code, not a mechanical sweep.
     rules: {
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/refs": "warn",
-      "react-hooks/purity": "warn",
-      "react-hooks/immutability": "warn",
-      "react-hooks/preserve-manual-memoization": "warn",
+      // Honor the "_"-prefix convention for intentionally-unused bindings.
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
+      // React Compiler (react-hooks) advisory diagnostics: Next 16's
+      // core-web-vitals promotes these to errors, but this codebase predates
+      // them and intentionally uses the patterns they flag — prop/route-sync
+      // effects, ref reads during render, one-shot impure initializers
+      // (Date.now/Math.random), and self-referencing rAF loops. Reviewed and
+      // disabled at the project level; revisit when adopting the React Compiler.
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/preserve-manual-memoization": "off",
     },
   },
   globalIgnores([

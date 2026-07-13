@@ -12,8 +12,11 @@ export function AuthBrandingPanel() {
       {/* Logos - top */}
       <div className="relative z-10 p-10">
         <div className="inline-flex items-center gap-3 rounded-xl bg-white/90 px-4 py-2.5 shadow-lg backdrop-blur-sm">
+          {/* Static branding logos sized by CSS height only — plain img avoids next/image layout constraints. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logos/llmatscale-logo.png" alt="LLM at Scale.AI" className="h-10" />
           <div className="h-8 w-px bg-gray-300" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logos/athena-logo.jpg" alt="Athena" className="h-9 rounded" />
         </div>
       </div>

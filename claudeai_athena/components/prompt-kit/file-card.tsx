@@ -44,6 +44,8 @@ function getFileIcon(filename: string) {
     case "jpeg":
     case "gif":
     case "svg":
+      // `Image` here is the lucide-react icon, not an <img>/next Image — no alt.
+      // eslint-disable-next-line jsx-a11y/alt-text
       return <Image className={cls} width={20} height={20} />
     default:
       return <File className={cls} width={20} height={20} />
@@ -59,7 +61,7 @@ function getFileCategoryAndType(filename: string): { category: string; type: str
   return { category: "File", type: filename.split(".").pop()?.toUpperCase() || "" }
 }
 
-export function FileCard({ fileId, filename, mimeType, sizeBytes, className, onPreview }: FileCardProps) {
+export function FileCard({ fileId, filename, mimeType: _mimeType, sizeBytes, className, onPreview }: FileCardProps) {
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

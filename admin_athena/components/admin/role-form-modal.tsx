@@ -124,7 +124,7 @@ interface RoleFormData {
   dailyTokenLimit: number | null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 interface RoleFormModalProps {
   open: boolean;
   onClose: () => void;

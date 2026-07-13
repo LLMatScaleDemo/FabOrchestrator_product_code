@@ -996,6 +996,8 @@ function ChatContent({
       const text = getMessageText(lastAssistantMsg)
       navigator.clipboard.writeText(text)
     }
+    // getMessageText is a stable helper; intentionally keyed on messages only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages])
 
   // Save feedback to API
@@ -1256,7 +1258,7 @@ function ChatContent({
 
   const selectedModelInfo = allowedModels.find((m) => m.id === selectedModel) || CLAUDE_MODELS.find((m) => m.id === selectedModel)
 
-  const createOptimisticUserMessage = (text: string) => {
+  const createOptimisticUserMessage = useCallback((text: string) => {
     const nextId = optimisticMessageCounterRef.current++
     const messageId = `user-${Date.now()}-${nextId}`
     const optimisticMessage: UIMessage = {
@@ -1272,7 +1274,7 @@ function ChatContent({
 
     setMessages((prev) => [...prev, optimisticMessage])
     return messageId
-  }
+  }, [setMessages])
 
   // Get raw text from message parts (before stripping artifact tags)
   const getRawMessageText = (message: UIMessage): string => {
@@ -1407,7 +1409,7 @@ function ChatContent({
     return result
   }
 
-  const onSubmit = async (e?: React.FormEvent) => {
+  const _onSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
     const text = input.trim()
     if (!text || isLoading) return

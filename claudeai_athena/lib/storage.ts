@@ -550,7 +550,7 @@ export async function deleteAllMemoryFiles(userId: string, scope?: 'user' | 'glo
  */
 export function toUIMessage(message: Message) {
   const storedParts = message.parts as Array<Record<string, unknown>> | null;
-  const metadata = message.metadata as Record<string, unknown> | null;
+  const _metadata = message.metadata as Record<string, unknown> | null;
 
   // If no parts stored, create basic text part
   if (!storedParts || !Array.isArray(storedParts) || storedParts.length === 0) {

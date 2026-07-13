@@ -48,7 +48,7 @@ function shouldPersist(envelope: FabOrchErrorEnvelope, ctx: ErrorAuditContext): 
  * so concurrent inserts never collide.
  */
 async function nextErrorId(): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const rows = (await prisma.$queryRawUnsafe(
     `INSERT INTO error_audit_daily_counter (counter_date, last_seq)
      VALUES (CURRENT_DATE, 1)

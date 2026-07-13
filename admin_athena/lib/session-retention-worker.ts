@@ -16,7 +16,7 @@ import { logger } from './logger';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __faborchSessionRetentionStarted: boolean | undefined;
 }
 
