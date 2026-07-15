@@ -71,6 +71,9 @@ model User {
   usageRecords    UsageRecord[]
   invitationsSent Invitation[] @relation("InvitedByUser")
   sessionLogs     UserSessionLog[]
+  cmfPackages     Package[]
+  cmfRuns         Run[]
+  cmfStagedUploads StagedUpload[]
 
   @@index([email])
   @@map("users")
@@ -103,6 +106,7 @@ model Conversation {
   userId        String    @map("user_id")
   title         String    @default("New Conversation")
   model         String
+  agent         String    @default("chat")                        // "chat" | "modeling" — separates Modeling Agent history
   activeMcpIds  Json      @default("[]") @map("active_mcp_ids")
   isPinned      Boolean   @default(false) @map("is_pinned")
   isShared      Boolean   @default(false) @map("is_shared")
@@ -360,4 +364,117 @@ model ModelRegistry {
   @@index([isActive])
   @@index([sortOrder])
   @@map("model_registry")
+}
+
+// ============================================================================
+// CMF MASTER-DATA LOADER (Modeling Agent) — ported from the cmf-loader app.
+// End users build/validate/load CMF master-data packages via the Modeling
+// Agent; admin reads these tables for the Data Loader dashboard. The audit
+// trail reuses the shared AuditLog table (action = "cmf.*").
+// ============================================================================
+
+enum Operation {
+  VALIDATE
+  LOAD
+
+  @@map("cmf_operation")
+}
+
+enum RunStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILURE
+  EXPIRED
+
+  @@map("cmf_run_status")
+}
+
+model Package {
+  id              String     @id @default(cuid())
+  cmfId           String     @unique @map("cmf_id")
+  name            String
+  filename        String
+  checksum        String
+  sizeBytes       BigInt     @map("size_bytes")
+  contentType     String     @map("content_type")
+  createdBy       User       @relation(fields: [createdByUserId], references: [id])
+  createdByUserId String     @map("created_by_user_id")
+  lastResult      Int?       @map("last_result")
+  lastOperation   Operation? @map("last_operation")
+  lastRunAt       DateTime?  @map("last_run_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+
+  runs              Run[]
+  file              PackageFile?
+  validationReports ValidationReport[]
+
+  @@index([createdAt])
+  @@map("cmf_packages")
+}
+
+model StagedUpload {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  filename      String
+  s3Key         String   @map("s3_key")
+  status        String   @default("UPLOADED")
+  packageName   String?  @map("package_name")
+  packageCmfId  String?  @map("package_cmf_id")
+  selectedTypes Json?    @map("selected_types")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("cmf_staged_uploads")
+}
+
+model PackageFile {
+  id        String   @id @default(cuid())
+  package   Package  @relation(fields: [packageId], references: [id])
+  packageId String   @unique @map("package_id")
+  filename  String
+  s3Key     String   @map("s3_key")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("cmf_package_files")
+}
+
+model ValidationReport {
+  id           String   @id @default(cuid())
+  package      Package  @relation(fields: [packageId], references: [id])
+  packageId    String   @map("package_id")
+  ok           Boolean
+  errorCount   Int      @map("error_count")
+  warningCount Int      @map("warning_count")
+  report       Json
+  advisory     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([packageId])
+  @@map("cmf_validation_reports")
+}
+
+model Run {
+  id                 String    @id @default(cuid())
+  package            Package   @relation(fields: [packageId], references: [id])
+  packageId          String    @map("package_id")
+  user               User      @relation(fields: [userId], references: [id])
+  userId             String    @map("user_id")
+  operation          Operation
+  status             RunStatus @default(QUEUED)
+  cmfBaselineEndDate String?   @map("cmf_baseline_end_date")
+  selectedTypes      Json      @map("selected_types")
+  result             Int?
+  log                Json?
+  error              String?
+  startedAt          DateTime  @default(now()) @map("started_at")
+  endedAt            DateTime? @map("ended_at")
+
+  @@index([packageId])
+  @@index([startedAt])
+  @@map("cmf_runs")
 }

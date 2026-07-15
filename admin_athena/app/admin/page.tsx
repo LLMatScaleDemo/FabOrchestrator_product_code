@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { DataLoaderDashboard } from "@/components/admin/data-loader-dashboard";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +73,7 @@ export default function AdminDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"fab" | "loader">("fab");
 
   useEffect(() => {
     const token = localStorage.getItem("admin_athena_token");
@@ -102,7 +104,29 @@ export default function AdminDashboard() {
         description="Enterprise overview of platform activity, usage, cost and reliability (last 30 days)"
       />
 
-      {loading ? (
+      {/* App switch: Fab AI (default) vs the CMF Data Loader (Modeling Agent). */}
+      <div className="mt-4 inline-flex rounded-lg border border-border p-0.5 text-sm">
+        <button
+          onClick={() => setView("fab")}
+          className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
+            view === "fab" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Fab AI
+        </button>
+        <button
+          onClick={() => setView("loader")}
+          className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
+            view === "loader" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Data Loader
+        </button>
+      </div>
+
+      {view === "loader" ? (
+        <DataLoaderDashboard />
+      ) : loading ? (
         <div className="mt-8 space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(8)].map((_, i) => (

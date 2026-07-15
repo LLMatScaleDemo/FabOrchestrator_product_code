@@ -66,7 +66,12 @@ export const ModelName = {
   UserSessionLog: 'UserSessionLog',
   UsageRecord: 'UsageRecord',
   PlatformSettings: 'PlatformSettings',
-  ModelRegistry: 'ModelRegistry'
+  ModelRegistry: 'ModelRegistry',
+  Package: 'Package',
+  StagedUpload: 'StagedUpload',
+  PackageFile: 'PackageFile',
+  ValidationReport: 'ValidationReport',
+  Run: 'Run'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -147,6 +152,7 @@ export const ConversationScalarFieldEnum = {
   userId: 'userId',
   title: 'title',
   model: 'model',
+  agent: 'agent',
   activeMcpIds: 'activeMcpIds',
   isPinned: 'isPinned',
   isShared: 'isShared',
@@ -344,6 +350,83 @@ export const ModelRegistryScalarFieldEnum = {
 } as const
 
 export type ModelRegistryScalarFieldEnum = (typeof ModelRegistryScalarFieldEnum)[keyof typeof ModelRegistryScalarFieldEnum]
+
+
+export const PackageScalarFieldEnum = {
+  id: 'id',
+  cmfId: 'cmfId',
+  name: 'name',
+  filename: 'filename',
+  checksum: 'checksum',
+  sizeBytes: 'sizeBytes',
+  contentType: 'contentType',
+  createdByUserId: 'createdByUserId',
+  lastResult: 'lastResult',
+  lastOperation: 'lastOperation',
+  lastRunAt: 'lastRunAt',
+  createdAt: 'createdAt'
+} as const
+
+export type PackageScalarFieldEnum = (typeof PackageScalarFieldEnum)[keyof typeof PackageScalarFieldEnum]
+
+
+export const StagedUploadScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  filename: 'filename',
+  s3Key: 's3Key',
+  status: 'status',
+  packageName: 'packageName',
+  packageCmfId: 'packageCmfId',
+  selectedTypes: 'selectedTypes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StagedUploadScalarFieldEnum = (typeof StagedUploadScalarFieldEnum)[keyof typeof StagedUploadScalarFieldEnum]
+
+
+export const PackageFileScalarFieldEnum = {
+  id: 'id',
+  packageId: 'packageId',
+  filename: 'filename',
+  s3Key: 's3Key',
+  createdAt: 'createdAt'
+} as const
+
+export type PackageFileScalarFieldEnum = (typeof PackageFileScalarFieldEnum)[keyof typeof PackageFileScalarFieldEnum]
+
+
+export const ValidationReportScalarFieldEnum = {
+  id: 'id',
+  packageId: 'packageId',
+  ok: 'ok',
+  errorCount: 'errorCount',
+  warningCount: 'warningCount',
+  report: 'report',
+  advisory: 'advisory',
+  createdAt: 'createdAt'
+} as const
+
+export type ValidationReportScalarFieldEnum = (typeof ValidationReportScalarFieldEnum)[keyof typeof ValidationReportScalarFieldEnum]
+
+
+export const RunScalarFieldEnum = {
+  id: 'id',
+  packageId: 'packageId',
+  userId: 'userId',
+  operation: 'operation',
+  status: 'status',
+  cmfBaselineEndDate: 'cmfBaselineEndDate',
+  selectedTypes: 'selectedTypes',
+  result: 'result',
+  log: 'log',
+  error: 'error',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt'
+} as const
+
+export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
 
 
 export const SortOrder = {

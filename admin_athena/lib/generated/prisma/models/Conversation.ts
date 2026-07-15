@@ -29,6 +29,7 @@ export type ConversationMinAggregateOutputType = {
   userId: string | null
   title: string | null
   model: string | null
+  agent: string | null
   isPinned: boolean | null
   isShared: boolean | null
   createdAt: Date | null
@@ -42,6 +43,7 @@ export type ConversationMaxAggregateOutputType = {
   userId: string | null
   title: string | null
   model: string | null
+  agent: string | null
   isPinned: boolean | null
   isShared: boolean | null
   createdAt: Date | null
@@ -55,6 +57,7 @@ export type ConversationCountAggregateOutputType = {
   userId: number
   title: number
   model: number
+  agent: number
   activeMcpIds: number
   isPinned: number
   isShared: number
@@ -71,6 +74,7 @@ export type ConversationMinAggregateInputType = {
   userId?: true
   title?: true
   model?: true
+  agent?: true
   isPinned?: true
   isShared?: true
   createdAt?: true
@@ -84,6 +88,7 @@ export type ConversationMaxAggregateInputType = {
   userId?: true
   title?: true
   model?: true
+  agent?: true
   isPinned?: true
   isShared?: true
   createdAt?: true
@@ -97,6 +102,7 @@ export type ConversationCountAggregateInputType = {
   userId?: true
   title?: true
   model?: true
+  agent?: true
   activeMcpIds?: true
   isPinned?: true
   isShared?: true
@@ -184,6 +190,7 @@ export type ConversationGroupByOutputType = {
   userId: string
   title: string
   model: string
+  agent: string
   activeMcpIds: runtime.JsonValue
   isPinned: boolean
   isShared: boolean
@@ -219,6 +226,7 @@ export type ConversationWhereInput = {
   userId?: Prisma.StringFilter<"Conversation"> | string
   title?: Prisma.StringFilter<"Conversation"> | string
   model?: Prisma.StringFilter<"Conversation"> | string
+  agent?: Prisma.StringFilter<"Conversation"> | string
   activeMcpIds?: Prisma.JsonFilter<"Conversation">
   isPinned?: Prisma.BoolFilter<"Conversation"> | boolean
   isShared?: Prisma.BoolFilter<"Conversation"> | boolean
@@ -236,6 +244,7 @@ export type ConversationOrderByWithRelationInput = {
   userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  agent?: Prisma.SortOrder
   activeMcpIds?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
   isShared?: Prisma.SortOrder
@@ -256,6 +265,7 @@ export type ConversationWhereUniqueInput = Prisma.AtLeast<{
   userId?: Prisma.StringFilter<"Conversation"> | string
   title?: Prisma.StringFilter<"Conversation"> | string
   model?: Prisma.StringFilter<"Conversation"> | string
+  agent?: Prisma.StringFilter<"Conversation"> | string
   activeMcpIds?: Prisma.JsonFilter<"Conversation">
   isPinned?: Prisma.BoolFilter<"Conversation"> | boolean
   isShared?: Prisma.BoolFilter<"Conversation"> | boolean
@@ -273,6 +283,7 @@ export type ConversationOrderByWithAggregationInput = {
   userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  agent?: Prisma.SortOrder
   activeMcpIds?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
   isShared?: Prisma.SortOrder
@@ -293,6 +304,7 @@ export type ConversationScalarWhereWithAggregatesInput = {
   userId?: Prisma.StringWithAggregatesFilter<"Conversation"> | string
   title?: Prisma.StringWithAggregatesFilter<"Conversation"> | string
   model?: Prisma.StringWithAggregatesFilter<"Conversation"> | string
+  agent?: Prisma.StringWithAggregatesFilter<"Conversation"> | string
   activeMcpIds?: Prisma.JsonWithAggregatesFilter<"Conversation">
   isPinned?: Prisma.BoolWithAggregatesFilter<"Conversation"> | boolean
   isShared?: Prisma.BoolWithAggregatesFilter<"Conversation"> | boolean
@@ -306,6 +318,7 @@ export type ConversationCreateInput = {
   id?: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -323,6 +336,7 @@ export type ConversationUncheckedCreateInput = {
   userId: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -338,6 +352,7 @@ export type ConversationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -355,6 +370,7 @@ export type ConversationUncheckedUpdateInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -371,6 +387,7 @@ export type ConversationCreateManyInput = {
   userId: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -384,6 +401,7 @@ export type ConversationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -398,6 +416,7 @@ export type ConversationUncheckedUpdateManyInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -422,6 +441,7 @@ export type ConversationCountOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  agent?: Prisma.SortOrder
   activeMcpIds?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
   isShared?: Prisma.SortOrder
@@ -436,6 +456,7 @@ export type ConversationMaxOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  agent?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
   isShared?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -449,6 +470,7 @@ export type ConversationMinOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  agent?: Prisma.SortOrder
   isPinned?: Prisma.SortOrder
   isShared?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -536,6 +558,7 @@ export type ConversationCreateWithoutUserInput = {
   id?: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -551,6 +574,7 @@ export type ConversationUncheckedCreateWithoutUserInput = {
   id?: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -596,6 +620,7 @@ export type ConversationScalarWhereInput = {
   userId?: Prisma.StringFilter<"Conversation"> | string
   title?: Prisma.StringFilter<"Conversation"> | string
   model?: Prisma.StringFilter<"Conversation"> | string
+  agent?: Prisma.StringFilter<"Conversation"> | string
   activeMcpIds?: Prisma.JsonFilter<"Conversation">
   isPinned?: Prisma.BoolFilter<"Conversation"> | boolean
   isShared?: Prisma.BoolFilter<"Conversation"> | boolean
@@ -609,6 +634,7 @@ export type ConversationCreateWithoutMessagesInput = {
   id?: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -625,6 +651,7 @@ export type ConversationUncheckedCreateWithoutMessagesInput = {
   userId: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -655,6 +682,7 @@ export type ConversationUpdateWithoutMessagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -671,6 +699,7 @@ export type ConversationUncheckedUpdateWithoutMessagesInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -685,6 +714,7 @@ export type ConversationCreateWithoutArtifactsInput = {
   id?: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -701,6 +731,7 @@ export type ConversationUncheckedCreateWithoutArtifactsInput = {
   userId: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -731,6 +762,7 @@ export type ConversationUpdateWithoutArtifactsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -747,6 +779,7 @@ export type ConversationUncheckedUpdateWithoutArtifactsInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -761,6 +794,7 @@ export type ConversationCreateManyUserInput = {
   id?: string
   title?: string
   model: string
+  agent?: string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: boolean
   isShared?: boolean
@@ -774,6 +808,7 @@ export type ConversationUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -789,6 +824,7 @@ export type ConversationUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -804,6 +840,7 @@ export type ConversationUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  agent?: Prisma.StringFieldUpdateOperationsInput | string
   activeMcpIds?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isPinned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isShared?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -858,6 +895,7 @@ export type ConversationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   userId?: boolean
   title?: boolean
   model?: boolean
+  agent?: boolean
   activeMcpIds?: boolean
   isPinned?: boolean
   isShared?: boolean
@@ -876,6 +914,7 @@ export type ConversationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   userId?: boolean
   title?: boolean
   model?: boolean
+  agent?: boolean
   activeMcpIds?: boolean
   isPinned?: boolean
   isShared?: boolean
@@ -891,6 +930,7 @@ export type ConversationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   userId?: boolean
   title?: boolean
   model?: boolean
+  agent?: boolean
   activeMcpIds?: boolean
   isPinned?: boolean
   isShared?: boolean
@@ -906,6 +946,7 @@ export type ConversationSelectScalar = {
   userId?: boolean
   title?: boolean
   model?: boolean
+  agent?: boolean
   activeMcpIds?: boolean
   isPinned?: boolean
   isShared?: boolean
@@ -915,7 +956,7 @@ export type ConversationSelectScalar = {
   deletedAt?: boolean
 }
 
-export type ConversationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "title" | "model" | "activeMcpIds" | "isPinned" | "isShared" | "createdAt" | "updatedAt" | "lastMessageAt" | "deletedAt", ExtArgs["result"]["conversation"]>
+export type ConversationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "title" | "model" | "agent" | "activeMcpIds" | "isPinned" | "isShared" | "createdAt" | "updatedAt" | "lastMessageAt" | "deletedAt", ExtArgs["result"]["conversation"]>
 export type ConversationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   messages?: boolean | Prisma.Conversation$messagesArgs<ExtArgs>
@@ -941,6 +982,7 @@ export type $ConversationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     userId: string
     title: string
     model: string
+    agent: string
     activeMcpIds: runtime.JsonValue
     isPinned: boolean
     isShared: boolean
@@ -1378,6 +1420,7 @@ export interface ConversationFieldRefs {
   readonly userId: Prisma.FieldRef<"Conversation", 'String'>
   readonly title: Prisma.FieldRef<"Conversation", 'String'>
   readonly model: Prisma.FieldRef<"Conversation", 'String'>
+  readonly agent: Prisma.FieldRef<"Conversation", 'String'>
   readonly activeMcpIds: Prisma.FieldRef<"Conversation", 'Json'>
   readonly isPinned: Prisma.FieldRef<"Conversation", 'Boolean'>
   readonly isShared: Prisma.FieldRef<"Conversation", 'Boolean'>

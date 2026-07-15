@@ -22,6 +22,7 @@ interface Agent {
     ml: string
     num2: string
     delta: string
+    route: string
 }
 
 const AGENTS: Agent[] = [
@@ -34,6 +35,7 @@ const AGENTS: Agent[] = [
         ml: "Queries today",
         num2: "1,284",
         delta: "18%",
+        route: "/chat",
     },
     {
         num: "AGENT · 02",
@@ -44,6 +46,7 @@ const AGENTS: Agent[] = [
         ml: "Auto-resolve",
         num2: "71%",
         delta: "4%",
+        route: "/chat",
     },
     {
         num: "AGENT · 03",
@@ -54,6 +57,7 @@ const AGENTS: Agent[] = [
         ml: "Sites",
         num2: "12",
         delta: "+2",
+        route: "/modeling-agent",
     },
     {
         num: "AGENT · 04",
@@ -64,6 +68,7 @@ const AGENTS: Agent[] = [
         ml: "Integrations",
         num2: "87",
         delta: "3x",
+        route: "/chat",
     },
 ]
 
@@ -88,7 +93,7 @@ export function AgentCards() {
                 {AGENTS.map((a) => (
                     <article
                         key={a.num}
-                        onClick={() => router.push("/chat")}
+                        onClick={() => router.push(a.route)}
                         className="group flex cursor-pointer flex-col rounded-2xl border bg-white p-[18px] transition-all hover:-translate-y-[3px]"
                         style={{ borderColor: "var(--border-light)", boxShadow: "0 2px 10px rgba(22,28,52,.05)" }}
                     >

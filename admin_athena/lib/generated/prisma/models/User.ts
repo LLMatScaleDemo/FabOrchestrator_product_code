@@ -268,6 +268,9 @@ export type UserWhereInput = {
   usageRecords?: Prisma.UsageRecordListRelationFilter
   invitationsSent?: Prisma.InvitationListRelationFilter
   sessionLogs?: Prisma.UserSessionLogListRelationFilter
+  cmfPackages?: Prisma.PackageListRelationFilter
+  cmfRuns?: Prisma.RunListRelationFilter
+  cmfStagedUploads?: Prisma.StagedUploadListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -296,6 +299,9 @@ export type UserOrderByWithRelationInput = {
   usageRecords?: Prisma.UsageRecordOrderByRelationAggregateInput
   invitationsSent?: Prisma.InvitationOrderByRelationAggregateInput
   sessionLogs?: Prisma.UserSessionLogOrderByRelationAggregateInput
+  cmfPackages?: Prisma.PackageOrderByRelationAggregateInput
+  cmfRuns?: Prisma.RunOrderByRelationAggregateInput
+  cmfStagedUploads?: Prisma.StagedUploadOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -327,6 +333,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   usageRecords?: Prisma.UsageRecordListRelationFilter
   invitationsSent?: Prisma.InvitationListRelationFilter
   sessionLogs?: Prisma.UserSessionLogListRelationFilter
+  cmfPackages?: Prisma.PackageListRelationFilter
+  cmfRuns?: Prisma.RunListRelationFilter
+  cmfStagedUploads?: Prisma.StagedUploadListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -396,6 +405,9 @@ export type UserCreateInput = {
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -423,6 +435,9 @@ export type UserUncheckedCreateInput = {
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -450,6 +465,9 @@ export type UserUpdateInput = {
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -477,6 +495,9 @@ export type UserUncheckedUpdateInput = {
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -780,6 +801,48 @@ export type UserUpdateOneRequiredWithoutUsageRecordsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutUsageRecordsInput, Prisma.UserUpdateWithoutUsageRecordsInput>, Prisma.UserUncheckedUpdateWithoutUsageRecordsInput>
 }
 
+export type UserCreateNestedOneWithoutCmfPackagesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCmfPackagesInput, Prisma.UserUncheckedCreateWithoutCmfPackagesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCmfPackagesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutCmfPackagesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCmfPackagesInput, Prisma.UserUncheckedCreateWithoutCmfPackagesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCmfPackagesInput
+  upsert?: Prisma.UserUpsertWithoutCmfPackagesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCmfPackagesInput, Prisma.UserUpdateWithoutCmfPackagesInput>, Prisma.UserUncheckedUpdateWithoutCmfPackagesInput>
+}
+
+export type UserCreateNestedOneWithoutCmfStagedUploadsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCmfStagedUploadsInput, Prisma.UserUncheckedCreateWithoutCmfStagedUploadsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCmfStagedUploadsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutCmfStagedUploadsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCmfStagedUploadsInput, Prisma.UserUncheckedCreateWithoutCmfStagedUploadsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCmfStagedUploadsInput
+  upsert?: Prisma.UserUpsertWithoutCmfStagedUploadsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCmfStagedUploadsInput, Prisma.UserUpdateWithoutCmfStagedUploadsInput>, Prisma.UserUncheckedUpdateWithoutCmfStagedUploadsInput>
+}
+
+export type UserCreateNestedOneWithoutCmfRunsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCmfRunsInput, Prisma.UserUncheckedCreateWithoutCmfRunsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCmfRunsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutCmfRunsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCmfRunsInput, Prisma.UserUncheckedCreateWithoutCmfRunsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCmfRunsInput
+  upsert?: Prisma.UserUpsertWithoutCmfRunsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCmfRunsInput, Prisma.UserUpdateWithoutCmfRunsInput>, Prisma.UserUncheckedUpdateWithoutCmfRunsInput>
+}
+
 export type UserCreateWithoutRoleInput = {
   id?: string
   email: string
@@ -804,6 +867,9 @@ export type UserCreateWithoutRoleInput = {
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRoleInput = {
@@ -830,6 +896,9 @@ export type UserUncheckedCreateWithoutRoleInput = {
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRoleInput = {
@@ -903,6 +972,9 @@ export type UserCreateWithoutSessionsInput = {
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -929,6 +1001,9 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -971,6 +1046,9 @@ export type UserUpdateWithoutSessionsInput = {
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -997,6 +1075,9 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutConversationsInput = {
@@ -1023,6 +1104,9 @@ export type UserCreateWithoutConversationsInput = {
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutConversationsInput = {
@@ -1049,6 +1133,9 @@ export type UserUncheckedCreateWithoutConversationsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutConversationsInput = {
@@ -1091,6 +1178,9 @@ export type UserUpdateWithoutConversationsInput = {
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutConversationsInput = {
@@ -1117,6 +1207,9 @@ export type UserUncheckedUpdateWithoutConversationsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutArtifactsInput = {
@@ -1143,6 +1236,9 @@ export type UserCreateWithoutArtifactsInput = {
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutArtifactsInput = {
@@ -1169,6 +1265,9 @@ export type UserUncheckedCreateWithoutArtifactsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutArtifactsInput = {
@@ -1211,6 +1310,9 @@ export type UserUpdateWithoutArtifactsInput = {
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutArtifactsInput = {
@@ -1237,6 +1339,9 @@ export type UserUncheckedUpdateWithoutArtifactsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutMcpConnectionsInput = {
@@ -1263,6 +1368,9 @@ export type UserCreateWithoutMcpConnectionsInput = {
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutMcpConnectionsInput = {
@@ -1289,6 +1397,9 @@ export type UserUncheckedCreateWithoutMcpConnectionsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutMcpConnectionsInput = {
@@ -1331,6 +1442,9 @@ export type UserUpdateWithoutMcpConnectionsInput = {
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMcpConnectionsInput = {
@@ -1357,6 +1471,9 @@ export type UserUncheckedUpdateWithoutMcpConnectionsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutMemoryFilesInput = {
@@ -1383,6 +1500,9 @@ export type UserCreateWithoutMemoryFilesInput = {
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutMemoryFilesInput = {
@@ -1409,6 +1529,9 @@ export type UserUncheckedCreateWithoutMemoryFilesInput = {
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutMemoryFilesInput = {
@@ -1451,6 +1574,9 @@ export type UserUpdateWithoutMemoryFilesInput = {
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMemoryFilesInput = {
@@ -1477,6 +1603,9 @@ export type UserUncheckedUpdateWithoutMemoryFilesInput = {
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutInvitationsSentInput = {
@@ -1503,6 +1632,9 @@ export type UserCreateWithoutInvitationsSentInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutInvitationsSentInput = {
@@ -1529,6 +1661,9 @@ export type UserUncheckedCreateWithoutInvitationsSentInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutInvitationsSentInput = {
@@ -1571,6 +1706,9 @@ export type UserUpdateWithoutInvitationsSentInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInvitationsSentInput = {
@@ -1597,6 +1735,9 @@ export type UserUncheckedUpdateWithoutInvitationsSentInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -1623,6 +1764,9 @@ export type UserCreateWithoutAuditLogsInput = {
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -1649,6 +1793,9 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -1691,6 +1838,9 @@ export type UserUpdateWithoutAuditLogsInput = {
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -1717,6 +1867,9 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionLogsInput = {
@@ -1743,6 +1896,9 @@ export type UserCreateWithoutSessionLogsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionLogsInput = {
@@ -1769,6 +1925,9 @@ export type UserUncheckedCreateWithoutSessionLogsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionLogsInput = {
@@ -1811,6 +1970,9 @@ export type UserUpdateWithoutSessionLogsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionLogsInput = {
@@ -1837,6 +1999,9 @@ export type UserUncheckedUpdateWithoutSessionLogsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutUsageRecordsInput = {
@@ -1863,6 +2028,9 @@ export type UserCreateWithoutUsageRecordsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutUsageRecordsInput = {
@@ -1889,6 +2057,9 @@ export type UserUncheckedCreateWithoutUsageRecordsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutUsageRecordsInput = {
@@ -1931,6 +2102,9 @@ export type UserUpdateWithoutUsageRecordsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUsageRecordsInput = {
@@ -1957,6 +2131,405 @@ export type UserUncheckedUpdateWithoutUsageRecordsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutCmfPackagesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isAdmin?: boolean
+  status?: string
+  forcePasswordChange?: boolean
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutCmfPackagesInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  roleId?: string | null
+  isAdmin?: boolean
+  status?: string
+  forcePasswordChange?: boolean
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutCmfPackagesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCmfPackagesInput, Prisma.UserUncheckedCreateWithoutCmfPackagesInput>
+}
+
+export type UserUpsertWithoutCmfPackagesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCmfPackagesInput, Prisma.UserUncheckedUpdateWithoutCmfPackagesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCmfPackagesInput, Prisma.UserUncheckedCreateWithoutCmfPackagesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCmfPackagesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCmfPackagesInput, Prisma.UserUncheckedUpdateWithoutCmfPackagesInput>
+}
+
+export type UserUpdateWithoutCmfPackagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCmfPackagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutCmfStagedUploadsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isAdmin?: boolean
+  status?: string
+  forcePasswordChange?: boolean
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutCmfStagedUploadsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  roleId?: string | null
+  isAdmin?: boolean
+  status?: string
+  forcePasswordChange?: boolean
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutCmfStagedUploadsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCmfStagedUploadsInput, Prisma.UserUncheckedCreateWithoutCmfStagedUploadsInput>
+}
+
+export type UserUpsertWithoutCmfStagedUploadsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCmfStagedUploadsInput, Prisma.UserUncheckedUpdateWithoutCmfStagedUploadsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCmfStagedUploadsInput, Prisma.UserUncheckedCreateWithoutCmfStagedUploadsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCmfStagedUploadsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCmfStagedUploadsInput, Prisma.UserUncheckedUpdateWithoutCmfStagedUploadsInput>
+}
+
+export type UserUpdateWithoutCmfStagedUploadsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCmfStagedUploadsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutCmfRunsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isAdmin?: boolean
+  status?: string
+  forcePasswordChange?: boolean
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutCmfRunsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  roleId?: string | null
+  isAdmin?: boolean
+  status?: string
+  forcePasswordChange?: boolean
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutCmfRunsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCmfRunsInput, Prisma.UserUncheckedCreateWithoutCmfRunsInput>
+}
+
+export type UserUpsertWithoutCmfRunsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCmfRunsInput, Prisma.UserUncheckedUpdateWithoutCmfRunsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCmfRunsInput, Prisma.UserUncheckedCreateWithoutCmfRunsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCmfRunsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCmfRunsInput, Prisma.UserUncheckedUpdateWithoutCmfRunsInput>
+}
+
+export type UserUpdateWithoutCmfRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCmfRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyRoleInput = {
@@ -2000,6 +2573,9 @@ export type UserUpdateWithoutRoleInput = {
   usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleInput = {
@@ -2026,6 +2602,9 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutRoleInput = {
@@ -2060,6 +2639,9 @@ export type UserCountOutputType = {
   usageRecords: number
   invitationsSent: number
   sessionLogs: number
+  cmfPackages: number
+  cmfRuns: number
+  cmfStagedUploads: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2072,6 +2654,9 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   usageRecords?: boolean | UserCountOutputTypeCountUsageRecordsArgs
   invitationsSent?: boolean | UserCountOutputTypeCountInvitationsSentArgs
   sessionLogs?: boolean | UserCountOutputTypeCountSessionLogsArgs
+  cmfPackages?: boolean | UserCountOutputTypeCountCmfPackagesArgs
+  cmfRuns?: boolean | UserCountOutputTypeCountCmfRunsArgs
+  cmfStagedUploads?: boolean | UserCountOutputTypeCountCmfStagedUploadsArgs
 }
 
 /**
@@ -2147,6 +2732,27 @@ export type UserCountOutputTypeCountSessionLogsArgs<ExtArgs extends runtime.Type
   where?: Prisma.UserSessionLogWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCmfPackagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PackageWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCmfRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RunWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCmfStagedUploadsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.StagedUploadWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2174,6 +2780,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   usageRecords?: boolean | Prisma.User$usageRecordsArgs<ExtArgs>
   invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
   sessionLogs?: boolean | Prisma.User$sessionLogsArgs<ExtArgs>
+  cmfPackages?: boolean | Prisma.User$cmfPackagesArgs<ExtArgs>
+  cmfRuns?: boolean | Prisma.User$cmfRunsArgs<ExtArgs>
+  cmfStagedUploads?: boolean | Prisma.User$cmfStagedUploadsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2245,6 +2854,9 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   usageRecords?: boolean | Prisma.User$usageRecordsArgs<ExtArgs>
   invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
   sessionLogs?: boolean | Prisma.User$sessionLogsArgs<ExtArgs>
+  cmfPackages?: boolean | Prisma.User$cmfPackagesArgs<ExtArgs>
+  cmfRuns?: boolean | Prisma.User$cmfRunsArgs<ExtArgs>
+  cmfStagedUploads?: boolean | Prisma.User$cmfStagedUploadsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2267,6 +2879,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     usageRecords: Prisma.$UsageRecordPayload<ExtArgs>[]
     invitationsSent: Prisma.$InvitationPayload<ExtArgs>[]
     sessionLogs: Prisma.$UserSessionLogPayload<ExtArgs>[]
+    cmfPackages: Prisma.$PackagePayload<ExtArgs>[]
+    cmfRuns: Prisma.$RunPayload<ExtArgs>[]
+    cmfStagedUploads: Prisma.$StagedUploadPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2688,6 +3303,9 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   usageRecords<T extends Prisma.User$usageRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$usageRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UsageRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitationsSent<T extends Prisma.User$invitationsSentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitationsSentArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sessionLogs<T extends Prisma.User$sessionLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserSessionLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  cmfPackages<T extends Prisma.User$cmfPackagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$cmfPackagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PackagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  cmfRuns<T extends Prisma.User$cmfRunsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$cmfRunsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  cmfStagedUploads<T extends Prisma.User$cmfStagedUploadsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$cmfStagedUploadsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StagedUploadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3365,6 +3983,78 @@ export type User$sessionLogsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.UserSessionLogScalarFieldEnum | Prisma.UserSessionLogScalarFieldEnum[]
+}
+
+/**
+ * User.cmfPackages
+ */
+export type User$cmfPackagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Package
+   */
+  select?: Prisma.PackageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Package
+   */
+  omit?: Prisma.PackageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PackageInclude<ExtArgs> | null
+  where?: Prisma.PackageWhereInput
+  orderBy?: Prisma.PackageOrderByWithRelationInput | Prisma.PackageOrderByWithRelationInput[]
+  cursor?: Prisma.PackageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PackageScalarFieldEnum | Prisma.PackageScalarFieldEnum[]
+}
+
+/**
+ * User.cmfRuns
+ */
+export type User$cmfRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Run
+   */
+  select?: Prisma.RunSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Run
+   */
+  omit?: Prisma.RunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RunInclude<ExtArgs> | null
+  where?: Prisma.RunWhereInput
+  orderBy?: Prisma.RunOrderByWithRelationInput | Prisma.RunOrderByWithRelationInput[]
+  cursor?: Prisma.RunWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RunScalarFieldEnum | Prisma.RunScalarFieldEnum[]
+}
+
+/**
+ * User.cmfStagedUploads
+ */
+export type User$cmfStagedUploadsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the StagedUpload
+   */
+  select?: Prisma.StagedUploadSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the StagedUpload
+   */
+  omit?: Prisma.StagedUploadOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StagedUploadInclude<ExtArgs> | null
+  where?: Prisma.StagedUploadWhereInput
+  orderBy?: Prisma.StagedUploadOrderByWithRelationInput | Prisma.StagedUploadOrderByWithRelationInput[]
+  cursor?: Prisma.StagedUploadWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.StagedUploadScalarFieldEnum | Prisma.StagedUploadScalarFieldEnum[]
 }
 
 /**

@@ -126,12 +126,14 @@ export async function createConversation(data: {
   title?: string;
   model?: string;
   userId: string;
+  agent?: string;
 }): Promise<Conversation> {
   return prisma.conversation.create({
     data: {
       userId: data.userId,
       title: data.title || 'New Chat',
       model: data.model || 'claude-opus-4-8',
+      agent: data.agent || 'chat',
     },
   });
 }
@@ -147,9 +149,12 @@ export async function getConversation(id: string): Promise<(Conversation & { mes
   });
 }
 
-export async function getAllConversations(userId: string): Promise<Conversation[]> {
+export async function getAllConversations(
+  userId: string,
+  agent = 'chat'
+): Promise<Conversation[]> {
   return prisma.conversation.findMany({
-    where: { userId, deletedAt: null },
+    where: { userId, deletedAt: null, agent },
     orderBy: [
       { isPinned: 'desc' },
       { updatedAt: 'desc' },

@@ -121,3 +121,28 @@ export type PlatformSettings = Prisma.PlatformSettingsModel
  * 
  */
 export type ModelRegistry = Prisma.ModelRegistryModel
+/**
+ * Model Package
+ * 
+ */
+export type Package = Prisma.PackageModel
+/**
+ * Model StagedUpload
+ * 
+ */
+export type StagedUpload = Prisma.StagedUploadModel
+/**
+ * Model PackageFile
+ * 
+ */
+export type PackageFile = Prisma.PackageFileModel
+/**
+ * Model ValidationReport
+ * 
+ */
+export type ValidationReport = Prisma.ValidationReportModel
+/**
+ * Model Run
+ * 
+ */
+export type Run = Prisma.RunModel

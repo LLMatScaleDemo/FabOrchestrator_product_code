@@ -292,7 +292,7 @@ export function getAdminTools(adminUserId: string) {
         name: z.string().describe('Role name'),
         description: z.string().optional().describe('Role description'),
         allowedModels: z.array(z.string()).optional().describe('Array of allowed model IDs. If empty or not provided, return available models to choose from.'),
-        permissions: z.array(z.string()).optional().describe('Permissions: chat, mcp, artifacts, file_upload, web_search. Defaults to ["chat"] if not provided.'),
+        permissions: z.array(z.string()).optional().describe('Permissions: chat, mcp, artifacts, file_upload, web_search, modeling_agent (enables the CMF master-data loader). Defaults to ["chat"] if not provided.'),
         dailyRequestLimit: z.number().nullable().optional().describe('Daily request limit (null=unlimited)'),
         dailyTokenLimit: z.number().nullable().optional().describe('Daily token limit (null=unlimited)'),
         personalMcpEnabled: z.boolean().optional().describe('Allow personal MCP connections'),
@@ -312,7 +312,7 @@ export function getAdminTools(adminUserId: string) {
               { id: 'claude-opus-4-20250514', name: 'Claude 4 Opus', tier: 'Balanced' },
               { id: 'claude-sonnet-4-20250514', name: 'Claude 4 Sonnet', tier: 'Balanced' },
             ],
-            availablePermissions: ['chat', 'mcp', 'artifacts', 'file_upload', 'web_search'],
+            availablePermissions: ['chat', 'mcp', 'artifacts', 'file_upload', 'web_search', 'modeling_agent'],
             hint: 'Also specify permissions and daily limits if needed. Defaults: permissions=["chat"], limits=unlimited.',
             pendingRoleName: params.name,
             pendingDescription: params.description,
@@ -736,6 +736,69 @@ export function getAdminTools(adminUserId: string) {
           totalTokens: data.totalTokens,
           modelBreakdown: data.perModel,
         };
+      },
+    },
+
+    query_cmf_runs: {
+      description:
+        'Query CMF master-data LOAD/VALIDATE runs from the Modeling Agent (Data Loader). Use for "show CMF loads today", "who loaded X", "how many loads failed this week", "recent data-loader activity". Returns per-run: packageName, operation (LOAD/VALIDATE), status, result (0=success,1=failure), user email, startedAt/endedAt. Optional filters: userKey (fuzzy email/name), status, operation, dateFrom/dateTo, limit (default 50, cap 500).',
+      inputSchema: z.object({
+        userKey: z.string().optional().describe('Fuzzy match on the loading user (email or name).'),
+        operation: z.enum(['LOAD', 'VALIDATE']).optional(),
+        status: z.enum(['QUEUED', 'RUNNING', 'SUCCESS', 'FAILURE', 'EXPIRED']).optional(),
+        dateFrom: z.string().optional().describe('ISO 8601 lower bound on startedAt'),
+        dateTo: z.string().optional().describe('ISO 8601 upper bound on startedAt'),
+        limit: z.number().optional().describe('Max rows (default 50, cap 500).'),
+      }),
+      execute: async (input: {
+        userKey?: string;
+        operation?: 'LOAD' | 'VALIDATE';
+        status?: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILURE' | 'EXPIRED';
+        dateFrom?: string;
+        dateTo?: string;
+        limit?: number;
+      }) => {
+        const take = Math.min(Math.max(1, input.limit ?? 50), 500);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
+        if (input.operation) where.operation = input.operation;
+        if (input.status) where.status = input.status;
+        if (input.dateFrom || input.dateTo) {
+          where.startedAt = {};
+          if (input.dateFrom) where.startedAt.gte = new Date(input.dateFrom);
+          if (input.dateTo) where.startedAt.lte = new Date(input.dateTo);
+        }
+        if (input.userKey) {
+          where.user = {
+            OR: [
+              { email: { contains: input.userKey, mode: 'insensitive' } },
+              { name: { contains: input.userKey, mode: 'insensitive' } },
+            ],
+          };
+        }
+        try {
+          const runs = await prisma.run.findMany({
+            where,
+            take,
+            orderBy: { startedAt: 'desc' },
+            include: { package: { select: { name: true } }, user: { select: { email: true } } },
+          });
+          return {
+            total: runs.length,
+            rows: runs.map((r) => ({
+              packageName: r.package?.name ?? '—',
+              operation: r.operation,
+              status: r.status,
+              result: r.result,
+              publicResult: r.result === 0 ? 'Success' : r.result === 1 ? 'Failure' : null,
+              user: r.user?.email ?? '—',
+              startedAt: r.startedAt,
+              endedAt: r.endedAt,
+            })),
+          };
+        } catch (err) {
+          return { error: err instanceof Error ? err.message : 'Could not query CMF runs (table missing?)' };
+        }
       },
     },
 

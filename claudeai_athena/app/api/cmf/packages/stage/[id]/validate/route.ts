@@ -1,0 +1,95 @@
+import { NextRequest, NextResponse } from "next/server";
+
+import { getSessionUserId } from "@/lib/cmf/session";
+import { getStagedUpload, updateStagedUpload } from "@/lib/repo-cmf/validation";
+import { validateParsedSheets, readUploadSheets } from "@/lib/validation/template-check";
+import { explainErrors } from "@/lib/validation/llm-advisor";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * Validate a staged file against the master-data template (structure / columns).
+ * Template-conformance check only — no CMF round-trips, no rule-engine R1–R6,
+ * no cross-checks. Returns exact errors. The flow blocks Load/register
+ * until this returns ok=true.
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const userId = await getSessionUserId(request);
+    if (!userId) {
+      return NextResponse.json(
+        { error: { title: "Not signed in", description: "Sign in to continue." } },
+        { status: 401 },
+      );
+    }
+
+    const { id } = await params;
+    const staged = await getStagedUpload(id, userId);
+    if (!staged) {
+      return NextResponse.json(
+        { error: { title: "File not found", description: "Re-upload the file and try again." } },
+        { status: 404 },
+      );
+    }
+
+    // Read once (streaming), reuse the sheets for validation and LLM explanations.
+    let sheets;
+    try {
+      sheets = await readUploadSheets(staged.bytes);
+    } catch (parseErr) {
+      console.error("[api/cmf/packages/stage/:id/validate] could not parse workbook", parseErr);
+      return NextResponse.json({
+        ok: false,
+        errorCount: 1,
+        warningCount: 0,
+        infoCount: 0,
+        errorsByType: {
+          File: [
+            {
+              objectType: "File",
+              row: null,
+              column: null,
+              severity: "error",
+              message: "The file could not be read as an Excel workbook. Re-export it and try again.",
+            },
+          ],
+        },
+        explanations: [],
+      });
+    }
+    const result = validateParsedSheets(sheets);
+
+    // Record progress so an interrupted flow resumes at the right step.
+    await updateStagedUpload(id, userId, { status: result.ok ? "VALIDATED" : "UPLOADED" });
+
+    // When there are errors, ask the LLM to explain each one with its exact
+    // location and a concrete fix — best-effort, never gates the block.
+    let explanations: Awaited<ReturnType<typeof explainErrors>>["errors"] = [];
+    if (!result.ok) {
+      try {
+        explanations = (await explainErrors(sheets, result.errorsByType)).errors;
+      } catch (err) {
+        console.error("[api/cmf/packages/stage/:id/validate] explanation failed", err);
+      }
+    }
+
+    return NextResponse.json({
+      ok: result.ok,
+      errorCount: result.errorCount,
+      warningCount: result.warningCount,
+      infoCount: result.infoCount,
+      errorsByType: result.errorsByType,
+      explanations,
+    });
+  } catch (err) {
+    console.error("[api/cmf/packages/stage/:id/validate] failed", err);
+    return NextResponse.json(
+      { error: { title: "Validation failed to run", description: "Please try again." } },
+      { status: 500 },
+    );
+  }
+}

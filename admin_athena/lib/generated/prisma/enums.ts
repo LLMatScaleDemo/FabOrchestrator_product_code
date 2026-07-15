@@ -18,3 +18,22 @@ export const SessionStatus = {
 } as const
 
 export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus]
+
+
+export const Operation = {
+  VALIDATE: 'VALIDATE',
+  LOAD: 'LOAD'
+} as const
+
+export type Operation = (typeof Operation)[keyof typeof Operation]
+
+
+export const RunStatus = {
+  QUEUED: 'QUEUED',
+  RUNNING: 'RUNNING',
+  SUCCESS: 'SUCCESS',
+  FAILURE: 'FAILURE',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type RunStatus = (typeof RunStatus)[keyof typeof RunStatus]

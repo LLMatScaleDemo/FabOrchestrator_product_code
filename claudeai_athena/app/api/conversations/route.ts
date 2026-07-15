@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
   const { user } = auth;
 
   try {
-    const conversations = await getAllConversations(user.id);
+    const agent = req.nextUrl.searchParams.get('agent') || 'chat';
+    const conversations = await getAllConversations(user.id, agent);
 
     const mapped = conversations.map(c => ({
       id: c.id,
@@ -23,6 +24,7 @@ export async function GET(req: NextRequest) {
       isPinned: c.isPinned,
       isShared: c.isShared,
       model: c.model,
+      agent: c.agent,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
       lastMessage: null,
@@ -54,11 +56,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, model } = body;
+    const { title, model, agent } = body;
 
     const conversation = await createConversation({
       title: title || 'New Chat',
       model,
+      agent,
       userId: user.id,
     });
 

@@ -37,6 +37,7 @@ export const ALL_PERMISSIONS = [
   'artifacts',
   'file_upload',
   'web_search',
+  'modeling_agent', // enables the CMF master-data loader (Modeling Agent)
 ];
 
 export const ROLE_TEMPLATES: RoleTemplate[] = [

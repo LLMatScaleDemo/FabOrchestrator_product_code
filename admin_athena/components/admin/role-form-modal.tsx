@@ -283,6 +283,29 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
                 />
                 <p className="text-xs text-muted-foreground">{form.systemInstructions.length}/2000 characters</p>
               </div>
+              <div className="space-y-2">
+                <Label>Features</Label>
+                <label className="flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors hover:bg-muted/50">
+                  <Checkbox
+                    checked={form.permissions.includes("modeling_agent")}
+                    onCheckedChange={(v) =>
+                      setForm((f) => ({
+                        ...f,
+                        permissions:
+                          v === true
+                            ? Array.from(new Set([...f.permissions, "modeling_agent"]))
+                            : f.permissions.filter((p) => p !== "modeling_agent"),
+                      }))
+                    }
+                  />
+                  <span className="text-sm font-medium">
+                    Modeling Agent{" "}
+                    <span className="font-normal text-muted-foreground">
+                      — enable the CMF master-data loader for this role
+                    </span>
+                  </span>
+                </label>
+              </div>
             </>
           )}
 

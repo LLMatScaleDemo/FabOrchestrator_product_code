@@ -21,6 +21,13 @@ interface FileCardProps {
   sizeBytes?: number
   className?: string
   onPreview?: () => void
+  /**
+   * Optional override for where the bytes come from. Defaults to the Anthropic
+   * Files API (`/api/files/<fileId>/download`). The Modeling Agent passes its
+   * own staged-file endpoint so generated master-data .xlsx files reuse this
+   * exact card.
+   */
+  downloadUrl?: string
 }
 
 function getFileIcon(filename: string) {
@@ -61,7 +68,7 @@ function getFileCategoryAndType(filename: string): { category: string; type: str
   return { category: "File", type: filename.split(".").pop()?.toUpperCase() || "" }
 }
 
-export function FileCard({ fileId, filename, mimeType: _mimeType, sizeBytes, className, onPreview }: FileCardProps) {
+export function FileCard({ fileId, filename, mimeType: _mimeType, sizeBytes, className, onPreview, downloadUrl }: FileCardProps) {
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -72,7 +79,7 @@ export function FileCard({ fileId, filename, mimeType: _mimeType, sizeBytes, cla
 
     try {
       const token = localStorage.getItem("llmatscale_auth_token")
-      const res = await fetch(`/api/files/${fileId}/download`, {
+      const res = await fetch(downloadUrl ?? `/api/files/${fileId}/download`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
