@@ -115,6 +115,21 @@ otherwise a Terraform apply and the CLI will fight over the same env block.
 (If you prefer, move secrets to AWS Secrets Manager and read them at runtime, as
 the CMF token already is.)
 
+## Reconcile: resources created out-of-band (AWS CLI)
+
+Because Docker/Terraform were unavailable during the CMF cutover, a few things
+were done with the AWS CLI and are **not yet in Terraform state**. Reconcile on
+the next `terraform apply` (the config + `imports.tf` are already set up for it):
+
+- **Blue Fab env `faborchestratorai-cmf`** (`e-r4vtijxusf`) — has an `import`
+  block; a plan will adopt it. After the **CNAME swap** it serves the production
+  URL, and the old `faborchestratorai-prod` env is the rollback.
+- **IAM inline policy `cmf-loader-access`** on `aws-elasticbeanstalk-ec2-role`
+  (S3 staging buckets + `secretsmanager:GetSecretValue` on `cmf/mes-token`) —
+  not modelled in TF; add an `aws_iam_role_policy` resource if you want it managed.
+- **CMF/S3 env vars** on the blue env (`CMF_SQL_*`, `S3_BUCKET`, …) were set via
+  the CLI (secrets stay out of state on purpose).
+
 ## Why the Fab app must live in the CMF VPC (not just peer to it)
 
 VPC peering is **not transitive**: peering the shared VPC to the CMF VPC would

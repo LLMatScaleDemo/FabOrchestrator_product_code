@@ -45,9 +45,22 @@ locals {
 }
 
 resource "aws_elastic_beanstalk_application" "this" {
+  count       = var.create_application ? 1 : 0
   name        = var.app_name
   description = var.description
   tags        = var.tags
+}
+
+locals {
+  application_name = var.create_application ? aws_elastic_beanstalk_application.this[0].name : var.app_name
+}
+
+# The application resource gained a count; relocate the already-managed instance
+# (fab, admin) instead of destroy/recreate. Ignored for instances with no prior
+# state (a new blue env that reuses an existing application).
+moved {
+  from = aws_elastic_beanstalk_application.this
+  to   = aws_elastic_beanstalk_application.this[0]
 }
 
 resource "aws_s3_bucket" "build" {
@@ -58,7 +71,7 @@ resource "aws_s3_bucket" "build" {
 
 resource "aws_elastic_beanstalk_environment" "this" {
   name                = var.env_name
-  application         = aws_elastic_beanstalk_application.this.name
+  application         = local.application_name
   solution_stack_name = var.solution_stack_name
   tier                = "WebServer"
   version_label       = var.version_label

@@ -108,6 +108,12 @@ variable "extra_settings" {
   default = []
 }
 
+variable "create_application" {
+  description = "Create the EB application. Set false for a second environment (blue/green) that reuses an existing application by name."
+  type        = bool
+  default     = true
+}
+
 variable "create_build_bucket" {
   description = "Create the S3 bucket that holds deployment bundles."
   type        = bool

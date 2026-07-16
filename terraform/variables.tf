@@ -111,3 +111,13 @@ variable "create_admin_env" {
   type        = bool
   default     = false
 }
+
+variable "create_fab_cmf_env" {
+  description = <<-EOT
+    Create the blue/green Fab environment (faborchestratorai-cmf) in the CMF VPC.
+    Requires enable_cmf_networking = true. After it's healthy and Master Data
+    Load works, swap CNAMEs with faborchestratorai-prod.
+  EOT
+  type        = bool
+  default     = false
+}

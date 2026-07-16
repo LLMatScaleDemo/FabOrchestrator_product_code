@@ -59,6 +59,34 @@ module "fab" {
   environment_variables = var.fab_env
 }
 
+# Blue/green: a second Fab environment in the CMF VPC (for Master Data Load).
+# Reuses the existing "faborchestratorai" application and build bucket; runs in
+# the CMF private subnets with the egress SG. After it's verified healthy and
+# Master Data Load works, swap CNAMEs with faborchestratorai-prod.
+module "fab_cmf" {
+  source = "./modules/eb-app"
+  count  = var.create_fab_cmf_env ? 1 : 0
+
+  app_name            = "faborchestratorai"
+  create_application  = false # reuse the existing application
+  env_name            = "faborchestratorai-cmf"
+  description         = "FabOrchestrator.ai - CMF VPC (Master Data Load)"
+  solution_stack_name = "64bit Amazon Linux 2023 v4.12.0 running Docker"
+  create_build_bucket = false # reuse faborchestratorai-build-…
+
+  instance_type = "t3.large"
+  min_size      = 1
+  max_size      = 2
+  idle_timeout  = 600
+
+  vpc_id                   = var.cmf_vpc_id
+  instance_subnets         = module.cmf_networking[0].app_subnet_ids
+  elb_subnets              = var.cmf_public_subnets
+  instance_security_groups = [module.cmf_networking[0].app_security_group_id]
+
+  environment_variables = var.fab_env
+}
+
 module "admin" {
   source = "./modules/eb-app"
   count  = var.create_admin_env ? 1 : 0

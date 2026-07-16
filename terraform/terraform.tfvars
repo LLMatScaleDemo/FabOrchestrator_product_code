@@ -9,6 +9,9 @@ fab_use_cmf_vpc = false
 # Fab Admin App EB env (replaces App Runner).
 create_admin_env = true
 
+# Blue/green Fab env in the CMF VPC (Master Data Load). Swap CNAMEs after verify.
+create_fab_cmf_env = true
+
 # The one free /24 in the CMF VPC (10.200.0.0/22) split into two /25s.
 cmf_app_subnets = {
   "us-west-2a" = "10.200.0.0/25"
