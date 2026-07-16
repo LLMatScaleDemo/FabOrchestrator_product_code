@@ -2397,3 +2397,61 @@ pre[class*="language-"] span.linenumber {
 .sandpack-container .sp-cube-wrapper {
   color: var(--color-muted-foreground) !important;
 }
+
+/* ============================================================================
+   VALIDATION PROGRESS ANIMATIONS - Master Data Loader
+   ============================================================================ */
+
+/* Indeterminate sliding bar — used for the template (structure) check. */
+@keyframes validate-slide {
+  0%   { left: -40%; width: 40%; }
+  50%  { left: 25%;  width: 55%; }
+  100% { left: 100%; width: 40%; }
+}
+.validate-track {
+  position: relative;
+  height: 3px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-primary) 15%, transparent);
+}
+.validate-track > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  animation: validate-slide 1.15s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* Equalizer bars — used for CMF's server-side dry-run (feels like "work over
+   the wire", distinct from the local structure check above). */
+@keyframes validate-eq {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
+}
+.validate-eq {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 14px;
+}
+.validate-eq > i {
+  display: block;
+  width: 2.5px;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  transform-origin: center;
+  animation: validate-eq 0.9s ease-in-out infinite;
+}
+.validate-eq > i:nth-child(2) { animation-delay: 0.15s; }
+.validate-eq > i:nth-child(3) { animation-delay: 0.3s; }
+.validate-eq > i:nth-child(4) { animation-delay: 0.45s; }
+.validate-eq > i:nth-child(5) { animation-delay: 0.6s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .validate-track > span,
+  .validate-eq > i { animation-duration: 0.001ms; animation-iteration-count: 1; }
+}

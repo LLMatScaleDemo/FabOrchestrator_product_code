@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogClose,
@@ -24,6 +24,11 @@ type Props = {
   selected: UserFriendlyObjectType[];
   totalAvailable: number;
   onConfirm: () => void;
+  /**
+   * When set, the user must type this exact word (e.g. "LOAD") before the
+   * confirm button unlocks — a deliberate friction gate for production writes.
+   */
+  requireTypedConfirm?: string;
 };
 
 const INLINE_LIMIT = 8;
@@ -39,10 +44,21 @@ export function PreExecutionDialog({
   selected,
   totalAvailable,
   onConfirm,
+  requireTypedConfirm,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [typed, setTyped] = useState("");
 
   const isLoad = op === "load";
+  const typedOk =
+    !requireTypedConfirm ||
+    typed.trim().toUpperCase() === requireTypedConfirm.trim().toUpperCase();
+  const confirmDisabled = selected.length === 0 || !typedOk;
+
+  // Clear the typed gate whenever the dialog is reopened.
+  useEffect(() => {
+    if (!open) setTyped("");
+  }, [open]);
   const title = isLoad
     ? `About to load "${packageName}"`
     : `About to validate "${packageName}"`;
@@ -197,6 +213,34 @@ export function PreExecutionDialog({
               )}
             </p>
           </div>
+
+          {requireTypedConfirm && (
+            <div className="space-y-1.5">
+              <label htmlFor="typed-confirm" className="block text-xs text-muted-foreground">
+                Type{" "}
+                <span className="font-mono font-semibold text-foreground">
+                  {requireTypedConfirm}
+                </span>{" "}
+                to enable the button below.
+              </label>
+              <input
+                id="typed-confirm"
+                type="text"
+                autoComplete="off"
+                spellCheck={false}
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                placeholder={requireTypedConfirm}
+                className={cn(
+                  "h-9 w-full rounded-md border bg-background px-3 font-mono text-sm outline-none transition-colors",
+                  "focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                  typedOk && typed
+                    ? "border-emerald-500/50 focus-visible:ring-emerald-500/40"
+                    : "border-input focus-visible:ring-destructive/40",
+                )}
+              />
+            </div>
+          )}
         </div>
 
         <DialogFooter className="border-t border-border">
@@ -212,7 +256,7 @@ export function PreExecutionDialog({
             <button
               type="button"
               onClick={onConfirm}
-              disabled={selected.length === 0}
+              disabled={confirmDisabled}
               className={cn(
                 "inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
                 isLoad

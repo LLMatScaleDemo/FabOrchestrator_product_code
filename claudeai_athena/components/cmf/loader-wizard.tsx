@@ -14,16 +14,20 @@ import {
   XCircle,
   Lightbulb,
   FileSpreadsheet,
+  Upload,
+  ListChecks,
+  RotateCw,
+  FileText,
 } from "lucide-react";
 import { StepProgress, type WizardStep } from "@/components/cmf/step-progress";
 import { FileDropZone } from "@/components/cmf/file-drop-zone";
 import { ObjectTypeSelector } from "@/components/cmf/object-type-selector";
 import { ExecutionLogViewer } from "@/components/cmf/execution-log-viewer";
 import { PackageMetaCard } from "@/components/cmf/package-meta-card";
+import { PreExecutionDialog } from "@/components/cmf/pre-execution-dialog";
 import { ResultBadge, StatusBadge } from "@/components/cmf/status-badge";
 import { useExecutionRun } from "@/hooks/use-execution-run";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -35,10 +39,10 @@ import type { ExecutionLogEntry, ExecutionResult, MasterDataPackage, UserFriendl
 import { cn } from "@/lib/utils";
 
 const STEPS: WizardStep[] = [
-  { key: "upload", label: "Upload" },
-  { key: "validate", label: "Validate" },
-  { key: "select", label: "Select" },
-  { key: "load", label: "Load to MES" },
+  { key: "upload", label: "Upload", icon: Upload, hint: "Name the package and choose the .xlsx file to load." },
+  { key: "validate", label: "Validate", icon: ShieldCheck, hint: "We check the file against the template and CMF — no data is written yet." },
+  { key: "select", label: "Select", icon: ListChecks, hint: "Choose which object types from the file should be written to CMF." },
+  { key: "load", label: "Load to MES", icon: Database, hint: "Commit the selected object types to the live CMF database." },
 ];
 
 /** Sort errors first, warnings next, info last — so blockers float to the top. */
@@ -51,6 +55,42 @@ function sevClass(s: string): string {
   if (s === "error") return "text-destructive";
   if (s === "warning") return "text-amber-700 dark:text-amber-300";
   return "text-emerald-700 dark:text-emerald-300";
+}
+
+function formatBytes(size?: string | number | null): string {
+  if (size == null) return "";
+  const n = typeof size === "string" ? Number(size) : size;
+  if (!Number.isFinite(n)) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+  return `${(n / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+/** Ticks elapsed milliseconds while `active`, resets to 0 when it restarts. */
+function useElapsed(active: boolean): number {
+  const [ms, setMs] = useState(0);
+  const startRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!active) {
+      startRef.current = null;
+      return;
+    }
+    startRef.current = Date.now();
+    setMs(0);
+    const id = setInterval(() => {
+      if (startRef.current != null) setMs(Date.now() - startRef.current);
+    }, 250);
+    return () => clearInterval(id);
+  }, [active]);
+  return ms;
+}
+
+function fmtClock(ms: number): string {
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 type CheckError = {
@@ -93,11 +133,18 @@ export function LoaderWizard({
   const [packageId, setPackageId] = useState<string | null>(initialPackageId ?? null);
   const [stagingId, setStagingId] = useState<string | null>(null);
   const [pkgName, setPkgName] = useState("");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<number | null>(null);
   const [step, setStep] = useState<number>(initialPackageId ? 2 : 0);
   const [maxReachable, setMaxReachable] = useState<number>(initialPackageId ? 2 : 0);
   const [objectTypes, setObjectTypes] = useState<UserFriendlyObjectType[]>([]);
   const [selected, setSelected] = useState<UserFriendlyObjectType[]>([]);
   const [hydrating, setHydrating] = useState(!!initialPackageId || !!resumeDraftId);
+  const [loadDialogOpen, setLoadDialogOpen] = useState(false);
+  // True once a load has been submitted in THIS session — gates the receipt so
+  // a re-run from history (whose package already carries a prior result) doesn't
+  // render "Load complete" before the user has loaded anything.
+  const [loadSubmitted, setLoadSubmitted] = useState(false);
 
   const [validation, setValidation] = useState<ValidationData | null>(null);
   const [validating, setValidating] = useState(false);
@@ -106,9 +153,13 @@ export function LoaderWizard({
   const [cmfValidating, setCmfValidating] = useState(false);
   const [cmfErrors, setCmfErrors] = useState<{ name: string; message: string }[] | null>(null);
   const [cmfExplanations, setCmfExplanations] = useState<ErrorExplanation[]>([]);
+  const [cmfTimedOut, setCmfTimedOut] = useState(false);
 
   const run = useExecutionRun(packageId);
   const { pkg, setPkg, runningOp, submitting, log, result, attempts } = run;
+
+  // A committed load: freeze navigation and switch the Load step to its receipt.
+  const loaded = loadSubmitted && step === 3 && !runningOp && !submitting && result != null;
 
   // Guards: prevent double-invoking the register+CMF-validate sequence, and
   // ensure it auto-starts at most once per staged file.
@@ -125,6 +176,9 @@ export function LoaderWizard({
         if (cancelled) return;
         setPkg(d.instance);
         setObjectTypes(d.objectTypes);
+        setPkgName(d.instance?.Name ?? "");
+        setFileName(d.instance?.Package?.Filename ?? null);
+        setFileSize(d.instance?.Package?.Size != null ? Number(d.instance.Package.Size) : null);
         setHydrating(false);
       })
       .catch((e) => {
@@ -148,7 +202,7 @@ export function LoaderWizard({
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d?.error?.description ?? `HTTP ${r.status}`);
-        return d as { packageName?: string | null; packageCmfId?: string | null; status?: string };
+        return d as { packageName?: string | null; packageCmfId?: string | null; fileName?: string | null; fileSize?: number | null; status?: string };
       })
       .then((d) => {
         if (cancelled) return;
@@ -159,6 +213,8 @@ export function LoaderWizard({
         }
         setStagingId(resumeDraftId);
         setPkgName(d.packageName ?? "");
+        setFileName(d.fileName ?? null);
+        setFileSize(d.fileSize ?? null);
         setStep(1);
         setMaxReachable((m) => Math.max(m, 1));
         setHydrating(false);
@@ -174,7 +230,10 @@ export function LoaderWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeDraftId]);
 
-  const goto = useCallback((i: number) => setStep((s) => (i <= maxReachable ? i : s)), [maxReachable]);
+  const goto = useCallback(
+    (i: number) => setStep((s) => (!loaded && i <= maxReachable ? i : s)),
+    [maxReachable, loaded],
+  );
   const advanceTo = useCallback((i: number) => {
     setStep(i);
     setMaxReachable((m) => Math.max(m, i));
@@ -184,6 +243,9 @@ export function LoaderWizard({
     if (!stagingId) return;
     setValidating(true);
     setValidation(null);
+    setCmfErrors(null);
+    setCmfExplanations([]);
+    setCmfTimedOut(false);
     try {
       const res = await cmfFetch(`/api/cmf/packages/stage/${encodeURIComponent(stagingId)}/validate`, {
         method: "POST",
@@ -220,142 +282,174 @@ export function LoaderWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, stagingId]);
 
-  // After the template check passes: register the file in CMF, then run CMF's
-  // OWN validation (PerformMasterDataPackage op=1 — a dry-run that does NOT
-  // write). Only advance to Select if CMF validation is clean; otherwise show
-  // CMF's errors so the user can fix the file and try again.
-  const registerAndValidate = useCallback(async () => {
-    if (!stagingId || !validation?.ok) return;
-    if (cmfInFlightRef.current) return; // already registering/validating
-    cmfInFlightRef.current = true;
-    setRegistering(true);
-    setCmfErrors(null);
-    setCmfExplanations([]);
-    let cmfId: string | null = null;
-    try {
-      // 1) Register (creates the CMF package + uploads the file; no data load).
-      const res = await cmfFetch(`/api/cmf/packages/stage/${encodeURIComponent(stagingId)}/register`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: pkgName }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        packageId?: string;
-        objectTypes?: UserFriendlyObjectType[];
-        error?: { title?: string; description?: string };
-      };
-      if (!res.ok || !data.packageId) {
-        toast.error(data.error?.title ?? "Couldn't register the package", {
-          description: data.error?.description ?? `HTTP ${res.status}`,
-        });
-        return;
-      }
-      cmfId = data.packageId;
-      const types = data.objectTypes ?? [];
-      setPackageId(cmfId);
-      setObjectTypes(types);
-
-      // No CMF-detectable types → nothing to validate; proceed to Select.
-      if (types.length === 0) {
+  // Poll CMF for a given package until its execution completes; classify the
+  // result. Shared by the initial register-and-validate and the "Check again"
+  // retry (which must NOT re-register — that would create a duplicate package).
+  const pollCmfValidation = useCallback(
+    async (cmfId: string, types: UserFriendlyObjectType[]): Promise<void> => {
+      if (!types || types.length === 0) {
+        // Nothing CMF-detectable to validate — go straight to Select.
         router.replace(`/modeling-agent/loader/${encodeURIComponent(cmfId)}`);
         advanceTo(2);
         return;
       }
-
-      // 2) Kick off CMF validation (op=1, no write) over all detected types.
-      setRegistering(false);
       setCmfValidating(true);
-      const vRes = await cmfFetch(`/api/cmf/packages/${encodeURIComponent(cmfId)}/validate`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ selectedTypes: types }),
-      });
-      if (!vRes.ok && vRes.status !== 202) {
-        const vd = (await vRes.json().catch(() => ({}))) as { error?: { description?: string } };
-        toast.error("CMF validation couldn't start", {
-          description: vd.error?.description ?? `HTTP ${vRes.status}`,
+      setCmfErrors(null);
+      setCmfExplanations([]);
+      setCmfTimedOut(false);
+      try {
+        const vRes = await cmfFetch(`/api/cmf/packages/${encodeURIComponent(cmfId)}/validate`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ selectedTypes: types }),
         });
-        return;
-      }
+        if (!vRes.ok && vRes.status !== 202) {
+          const vd = (await vRes.json().catch(() => ({}))) as { error?: { description?: string } };
+          toast.error("CMF validation couldn't start", {
+            description: vd.error?.description ?? `HTTP ${vRes.status}`,
+          });
+          setCmfTimedOut(true);
+          return;
+        }
 
-      // 3) Poll CMF until the run completes (LastExecutionEndDate is set).
-      let logEntries: ExecutionLogEntry[] = [];
-      let resultCode: number | undefined;
-      for (let i = 0; i < 40; i++) {
-        await new Promise((r) => setTimeout(r, 1500));
-        const dRes = await cmfFetch(`/api/cmf/packages/${encodeURIComponent(cmfId)}`, { cache: "no-store" });
-        const dd = (await dRes.json().catch(() => ({}))) as { instance?: MasterDataPackage };
-        const inst = dd.instance;
-        if (inst?.LastExecutionEndDate) {
-          try {
-            logEntries = JSON.parse(inst.LastExecutionLog ?? "[]") as ExecutionLogEntry[];
-          } catch {
-            logEntries = [];
+        // Poll until the run completes (LastExecutionEndDate is set). Generous
+        // cap for slow VPN links — on exhaustion we offer "Check again" rather
+        // than dead-ending.
+        let logEntries: ExecutionLogEntry[] = [];
+        let resultCode: number | undefined;
+        let completed = false;
+        for (let i = 0; i < 80; i++) {
+          await new Promise((r) => setTimeout(r, 1500));
+          const dRes = await cmfFetch(`/api/cmf/packages/${encodeURIComponent(cmfId)}`, { cache: "no-store" });
+          const dd = (await dRes.json().catch(() => ({}))) as { instance?: MasterDataPackage };
+          const inst = dd.instance;
+          if (inst?.LastExecutionEndDate) {
+            try {
+              logEntries = JSON.parse(inst.LastExecutionLog ?? "[]") as ExecutionLogEntry[];
+            } catch {
+              logEntries = [];
+            }
+            resultCode = inst.LastExecutionResult as number | undefined;
+            completed = true;
+            break;
           }
-          resultCode = inst.LastExecutionResult as number | undefined;
-          break;
         }
+
+        if (!completed) {
+          setCmfTimedOut(true);
+          toast.warning("CMF is taking longer than expected", {
+            description: "It may still be running. Click “Check again” to re-check.",
+          });
+          return;
+        }
+
+        // State===3 entries are CMF failures (it stops at the first one).
+        const errs = logEntries
+          .filter((e) => (e as { State?: number }).State === 3)
+          .map((e) => ({
+            name: e.Name,
+            message:
+              (e.Messages ?? []).find((m) => /error/i.test(m)) ??
+              (e.Messages ?? []).join(" ") ??
+              "Validation failed.",
+          }));
+
+        if (resultCode === 0 && errs.length === 0) {
+          toast.success("CMF validation passed");
+          router.replace(`/modeling-agent/loader/${encodeURIComponent(cmfId)}`);
+          advanceTo(2);
+        } else if (errs.length > 0) {
+          setCmfErrors(errs);
+          toast.error(`CMF validation found ${errs.length} error${errs.length === 1 ? "" : "s"}`);
+          try {
+            const exRes = await cmfFetch(
+              `/api/cmf/packages/${encodeURIComponent(cmfId)}/validate/explain`,
+              {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                  errors: errs.map((e) => ({ objectType: e.name, message: e.message })),
+                }),
+              },
+            );
+            const exData = (await exRes.json().catch(() => ({}))) as {
+              explanations?: ErrorExplanation[];
+            };
+            setCmfExplanations(exData.explanations ?? []);
+          } catch {
+            /* enrichment is best-effort; the raw CMF error is still shown */
+          }
+        } else {
+          setCmfTimedOut(true);
+          toast.error("CMF validation didn't complete", { description: "Click “Check again” to retry." });
+        }
+      } finally {
+        setCmfValidating(false);
       }
+    },
+    [router, advanceTo],
+  );
 
-      // 4) Decide: State===3 entries are CMF failures (it stops at the first one).
-      const errs = logEntries
-        .filter((e) => (e as { State?: number }).State === 3)
-        .map((e) => ({
-          name: e.Name,
-          message:
-            (e.Messages ?? []).find((m) => /error/i.test(m)) ??
-            (e.Messages ?? []).join(" ") ??
-            "Validation failed.",
-        }));
+  // After the template check passes: register the file in CMF (once), then run
+  // CMF's OWN dry-run validation. If already registered, skip straight to the
+  // validation poll so retries never create a duplicate package.
+  const registerAndValidate = useCallback(async () => {
+    if (!validation?.ok) return;
+    if (cmfInFlightRef.current) return;
+    cmfInFlightRef.current = true;
+    try {
+      let cmfId = packageId;
+      // Types must travel as an explicit argument — reading them back from
+      // state here would see the pre-setObjectTypes value (React batches the
+      // update), sending an empty selectedTypes and tripping CMF's
+      // "choose at least one object type" guard.
+      let types = objectTypes;
 
-      if (resultCode === 0 && errs.length === 0) {
-        toast.success("CMF validation passed");
-        router.replace(`/modeling-agent/loader/${encodeURIComponent(cmfId)}`);
-        advanceTo(2);
-      } else if (errs.length > 0) {
-        setCmfErrors(errs);
-        toast.error(`CMF validation found ${errs.length} error${errs.length === 1 ? "" : "s"}`);
-        // Best-effort: enrich CMF's terse messages into exact problem/why/fix.
+      if (!cmfId) {
+        if (!stagingId) return;
+        setRegistering(true);
         try {
-          const exRes = await cmfFetch(
-            `/api/cmf/packages/${encodeURIComponent(cmfId)}/validate/explain`,
-            {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({
-                errors: errs.map((e) => ({ objectType: e.name, message: e.message })),
-              }),
-            },
-          );
-          const exData = (await exRes.json().catch(() => ({}))) as {
-            explanations?: ErrorExplanation[];
+          const res = await cmfFetch(`/api/cmf/packages/stage/${encodeURIComponent(stagingId)}/register`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ name: pkgName }),
+          });
+          const data = (await res.json().catch(() => ({}))) as {
+            packageId?: string;
+            objectTypes?: UserFriendlyObjectType[];
+            error?: { title?: string; description?: string };
           };
-          setCmfExplanations(exData.explanations ?? []);
-        } catch {
-          /* enrichment is best-effort; the raw CMF error is still shown */
+          if (!res.ok || !data.packageId) {
+            toast.error(data.error?.title ?? "Couldn't register the package", {
+              description: data.error?.description ?? `HTTP ${res.status}`,
+            });
+            return;
+          }
+          cmfId = data.packageId;
+          types = data.objectTypes ?? [];
+          setPackageId(cmfId);
+          setObjectTypes(types);
+        } finally {
+          setRegistering(false);
         }
-      } else {
-        toast.error("CMF validation didn't complete", { description: "Please try again." });
       }
+
+      await pollCmfValidation(cmfId, types);
     } catch (err) {
       toast.error("CMF validation failed", { description: String(err) });
     } finally {
-      setRegistering(false);
-      setCmfValidating(false);
       cmfInFlightRef.current = false;
     }
-  }, [stagingId, validation, pkgName, router, advanceTo]);
+  }, [validation, packageId, stagingId, pkgName, objectTypes, pollCmfValidation]);
 
-  // Auto-start CMF validation only when our pre-flight is squeaky clean —
-  // no errors AND no warnings. Files with warnings need an explicit click
-  // so the preparer reviews them first (warnings often surface real intent
-  // mismatches: enum strings on Int columns, FK names CMF will resolve,
-  // mostly-empty rows that may be intentional, etc.).
+  // Chain the two checks automatically: as soon as the template check passes,
+  // register + run CMF's dry-run without waiting for a button. Warnings no
+  // longer gate this — they're still shown, but the flow keeps moving (on a
+  // clean CMF result it advances straight to Select).
   useEffect(() => {
     if (
       step === 1 &&
       validation?.ok &&
-      (validation.warningCount ?? 0) === 0 &&
       stagingId &&
       !packageId &&
       autoCmfRef.current !== stagingId
@@ -365,100 +459,195 @@ export function LoaderWizard({
     }
   }, [step, validation, stagingId, packageId, registerAndValidate]);
 
+  const doLoad = useCallback(() => {
+    setLoadDialogOpen(false);
+    setLoadSubmitted(true);
+    void run.start("load", selected);
+  }, [run, selected]);
+
+  const currentStatus =
+    runningOp != null ? (
+      <StatusBadge status="running" label="Loading" code={`POLL-${attempts}`} />
+    ) : loaded ? (
+      <ResultBadge result={result} />
+    ) : null;
+
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <header className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <header className="flex flex-col gap-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="font-heading text-2xl font-semibold tracking-tight">Master DataLoader</h1>
+            <h1 className="font-heading text-2xl font-semibold tracking-tight">Master Data Loader</h1>
             <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-              Upload a package, validate it against the template and CMF (no data is written), choose
-              object types, then load to the MES.
+              Upload a package, validate it against the template and CMF (nothing is written yet),
+              choose object types, then load them into the MES.
             </p>
           </div>
-          {runningOp != null ? (
-            <StatusBadge status="running" label="Loading" code={`POLL-${attempts}`} />
-          ) : (
-            pkg && <ResultBadge result={result} />
-          )}
+          {currentStatus}
         </div>
-        <StepProgress steps={STEPS} current={step} maxReachable={maxReachable} onStepClick={goto} />
+        <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm">
+          {/* Display-only: steps don't navigate. Forward is via each step's
+              action button; backward is via the Back button below. */}
+          <StepProgress steps={STEPS} current={step} maxReachable={maxReachable} locked={loaded} />
+        </div>
       </header>
 
-      {hydrating ? (
-        <Card>
-          <CardContent className="flex flex-col gap-4">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-40 w-full" />
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent>
-            {step === 0 && (
-              <UploadStep
-                onStaged={(id, name) => {
-                  setStagingId(id);
-                  setPkgName(name);
-                  setValidation(null);
-                  advanceTo(1);
-                }}
-              />
-            )}
-
-            {step === 1 && (
-              <ValidateStep
-                loading={validating}
-                data={validation}
-                onRerun={runValidate}
-                onNext={registerAndValidate}
-                nextBusy={registering || cmfValidating}
-                registering={registering}
-                cmfValidating={cmfValidating}
-                cmfErrors={cmfErrors}
-                cmfExplanations={cmfExplanations}
-              />
-            )}
-
-            {step === 2 && (
-              <div className="flex flex-col gap-5">
-                {pkg && <PackageMetaCard pkg={pkg} />}
-                <ObjectTypeSelector objectTypes={objectTypes} selected={selected} onChange={setSelected} />
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs text-muted-foreground">
-                    {selected.length === 0
-                      ? "Select at least one object type to continue."
-                      : `${selected.length} object type${selected.length === 1 ? "" : "s"} selected.`}
-                  </p>
-                  <Button disabled={selected.length === 0} onClick={() => advanceTo(3)}>
-                    Next: Load to MES
-                    <ArrowRight data-icon="inline-end" aria-hidden />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <LoadStep
-                busy={runningOp === "load" || submitting}
-                done={!runningOp && !submitting && result != null}
-                result={result}
-                log={log}
-                selectedCount={selected.length}
-                onRun={() => run.start("load", selected)}
-              />
-            )}
-          </CardContent>
-        </Card>
+      {step > 0 && (
+        <ContextHeader
+          pkgName={pkgName}
+          fileName={fileName}
+          fileSize={fileSize}
+          typeCount={objectTypes.length}
+          selectedCount={selected.length}
+          step={step}
+        />
       )}
 
-      {step > 0 && (
+      {hydrating ? (
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          {step === 0 && (
+            <UploadStep
+              onStaged={(id, name, fName, fSize) => {
+                setStagingId(id);
+                setPkgName(name);
+                setFileName(fName);
+                setFileSize(fSize);
+                setValidation(null);
+                advanceTo(1);
+              }}
+            />
+          )}
+
+          {step === 1 && (
+            <ValidateStep
+              loading={validating}
+              data={validation}
+              onRerun={runValidate}
+              onNext={registerAndValidate}
+              nextBusy={registering || cmfValidating}
+              registering={registering}
+              cmfValidating={cmfValidating}
+              cmfErrors={cmfErrors}
+              cmfExplanations={cmfExplanations}
+              cmfTimedOut={cmfTimedOut}
+              onCheckAgain={() => packageId && void pollCmfValidation(packageId, objectTypes)}
+            />
+          )}
+
+          {step === 2 && (
+            <div className="flex flex-col gap-5">
+              <ObjectTypeSelector objectTypes={objectTypes} selected={selected} onChange={setSelected} />
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  {selected.length === 0
+                    ? "Select at least one object type to continue."
+                    : `${selected.length} object type${selected.length === 1 ? "" : "s"} selected.`}
+                </p>
+                <Button disabled={selected.length === 0} onClick={() => advanceTo(3)}>
+                  Next: Load to MES
+                  <ArrowRight data-icon="inline-end" aria-hidden />
+                </Button>
+              </div>
+              {pkg && (
+                <details className="group rounded-lg border border-border">
+                  <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+                    <FileText className="size-4" aria-hidden />
+                    Package details
+                    <ArrowRight className="ml-auto size-4 transition-transform group-open:rotate-90" aria-hidden />
+                  </summary>
+                  <div className="border-t border-border p-4">
+                    <PackageMetaCard pkg={pkg} className="border-0 shadow-none" />
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
+
+          {step === 3 && (
+            <LoadStep
+              busy={runningOp === "load" || submitting}
+              done={loaded}
+              result={result}
+              log={log}
+              selected={selected}
+              onRequestLoad={() => setLoadDialogOpen(true)}
+              onReset={() => router.push("/modeling-agent")}
+            />
+          )}
+        </div>
+      )}
+
+      {step > 0 && !loaded && (
         <div>
           <Button variant="ghost" size="sm" onClick={() => goto(step - 1)}>
             <ArrowLeft data-icon="inline-start" aria-hidden /> Back
           </Button>
         </div>
       )}
+
+      <PreExecutionDialog
+        open={loadDialogOpen}
+        onOpenChange={setLoadDialogOpen}
+        op="load"
+        packageName={pkgName}
+        fileName={fileName ?? undefined}
+        fileSizeBytes={fileSize ?? undefined}
+        checksum={pkg?.Package?.Checksum}
+        selected={selected}
+        totalAvailable={objectTypes.length}
+        onConfirm={doLoad}
+        requireTypedConfirm="LOAD"
+      />
+    </div>
+  );
+}
+
+/** Sticky summary of what's being loaded — visible on every step after Upload. */
+function ContextHeader({
+  pkgName,
+  fileName,
+  fileSize,
+  typeCount,
+  selectedCount,
+  step,
+}: {
+  pkgName: string;
+  fileName: string | null;
+  fileSize: number | null;
+  typeCount: number;
+  selectedCount: number;
+  step: number;
+}) {
+  const sizeText = formatBytes(fileSize);
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border bg-muted/30 px-4 py-3">
+      <span className="flex items-center gap-2 text-sm font-medium">
+        <FileSpreadsheet className="size-4 shrink-0 text-primary" aria-hidden />
+        <span className="truncate">{pkgName || "Untitled package"}</span>
+      </span>
+      {fileName && (
+        <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="truncate">{fileName}</span>
+          {sizeText && <span className="shrink-0 font-mono">· {sizeText}</span>}
+        </span>
+      )}
+      <div className="ml-auto flex items-center gap-2">
+        {typeCount > 0 && (
+          <Badge variant="secondary" className="text-[11px]">
+            {typeCount} object type{typeCount === 1 ? "" : "s"}
+          </Badge>
+        )}
+        {step >= 2 && selectedCount > 0 && (
+          <Badge className="text-[11px]">{selectedCount} selected</Badge>
+        )}
+      </div>
     </div>
   );
 }
@@ -521,46 +710,77 @@ function ExplanationsPanel({
   );
 }
 
-/** A compact pass / running / fail row for one of the two validation stages. */
+/** Five animated equalizer bars — the CMF (server-side) running indicator. */
+function EqBars() {
+  return (
+    <span className="validate-eq" role="img" aria-label="working">
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
+/**
+ * A compact pass / running / fail row for one of the two validation stages.
+ * `runKind` picks a distinct running animation: "slide" (indeterminate bar,
+ * for the local template check) or "eq" (equalizer bars, for CMF's dry-run).
+ */
 function CheckRow({
   label,
   state,
   okText,
   runningText,
   failText,
+  trailing,
+  runKind = "slide",
 }: {
   label: string;
   state: "pending" | "running" | "ok" | "fail";
   okText: string;
   runningText: string;
   failText: string;
+  trailing?: React.ReactNode;
+  runKind?: "slide" | "eq";
 }) {
+  const running = state === "running";
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <span className="shrink-0">
-        {state === "ok" && <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden />}
-        {state === "fail" && <XCircle className="size-5 text-destructive" aria-hidden />}
-        {state === "running" && <Spinner className="size-5 text-primary" />}
-        {state === "pending" && (
-          <span className="block size-5 rounded-full border-2 border-dashed border-muted-foreground/40" aria-hidden />
-        )}
-      </span>
-      <div className="min-w-0">
-        <p className="text-sm font-medium">{label}</p>
-        <p
-          className={cn(
-            "text-xs",
-            state === "ok" && "text-emerald-700 dark:text-emerald-400",
-            state === "fail" && "text-destructive",
-            (state === "running" || state === "pending") && "text-muted-foreground",
+    <div className="flex flex-col gap-2 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className="flex size-5 shrink-0 items-center justify-center">
+          {state === "ok" && <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden />}
+          {state === "fail" && <XCircle className="size-5 text-destructive" aria-hidden />}
+          {running && runKind === "eq" && <EqBars />}
+          {running && runKind === "slide" && <Spinner className="size-5 text-primary" />}
+          {state === "pending" && (
+            <span className="block size-5 rounded-full border-2 border-dashed border-muted-foreground/40" aria-hidden />
           )}
-        >
-          {state === "ok" && okText}
-          {state === "fail" && failText}
-          {state === "running" && runningText}
-          {state === "pending" && "Waiting…"}
-        </p>
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">{label}</p>
+          <p
+            className={cn(
+              "text-xs",
+              state === "ok" && "text-emerald-700 dark:text-emerald-400",
+              state === "fail" && "text-destructive",
+              (running || state === "pending") && "text-muted-foreground",
+            )}
+          >
+            {state === "ok" && okText}
+            {state === "fail" && failText}
+            {running && runningText}
+            {state === "pending" && "Waiting…"}
+          </p>
+        </div>
+        {trailing && <div className="shrink-0">{trailing}</div>}
       </div>
+      {running && runKind === "slide" && (
+        <div className="validate-track ml-8" aria-hidden>
+          <span />
+        </div>
+      )}
     </div>
   );
 }
@@ -575,6 +795,8 @@ function ValidateStep({
   cmfValidating,
   cmfErrors,
   cmfExplanations,
+  cmfTimedOut,
+  onCheckAgain,
 }: {
   loading: boolean;
   data: ValidationData | null;
@@ -585,6 +807,8 @@ function ValidateStep({
   cmfValidating: boolean;
   cmfErrors: { name: string; message: string }[] | null;
   cmfExplanations: ErrorExplanation[];
+  cmfTimedOut: boolean;
+  onCheckAgain: () => void;
 }) {
   // --- Derived validation state (single source of truth for the gate). ---
   const templateOk = !!data?.ok;
@@ -595,6 +819,9 @@ function ValidateStep({
   // Continue is allowed only when BOTH checks are clean and nothing is in flight.
   const canContinue = templateOk && !hasAnyError && !busy;
 
+  const cmfActive = cmfValidating || registering;
+  const elapsed = useElapsed(cmfActive);
+
   const templateState: "pending" | "running" | "ok" | "fail" = loading
     ? "running"
     : !data
@@ -604,7 +831,7 @@ function ValidateStep({
         : "fail";
   const cmfState: "pending" | "running" | "ok" | "fail" = !templateOk
     ? "pending"
-    : cmfValidating || registering
+    : cmfActive
       ? "running"
       : hasCmfErrors
         ? "fail"
@@ -615,11 +842,13 @@ function ValidateStep({
     ? "Fix the template errors below, then re-validate."
     : hasCmfErrors
       ? "CMF rejected the file — fix it and re-upload, then validate again."
-      : busy
-        ? "Validation is still running…"
-        : templateOk && warningCount > 0 && !hasCmfErrors
-          ? `Pre-flight passed with ${warningCount} warning${warningCount === 1 ? "" : "s"} — review above, then click Continue to send to CMF.`
-          : null;
+      : cmfTimedOut
+        ? "CMF didn't respond in time — it may still be running. Click “Check again”."
+        : busy
+          ? "Validation is still running…"
+          : templateOk && warningCount > 0 && !hasCmfErrors
+            ? `Pre-flight passed with ${warningCount} warning${warningCount === 1 ? "" : "s"} — worth a glance above; CMF validation continues automatically.`
+            : null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -627,7 +856,7 @@ function ValidateStep({
         <div>
           <h2 className="font-heading text-base font-medium">Validation</h2>
           <p className="mt-0.5 max-w-prose text-xs text-muted-foreground">
-            We run two checks before anything is written: a template check (sheets &amp; columns), then
+            Two checks run before anything is written: a template check (sheets &amp; columns), then
             CMF&apos;s own dry-run validation. Both must pass to continue.
           </p>
         </div>
@@ -638,10 +867,11 @@ function ValidateStep({
       </div>
 
       {/* Two-stage check summary */}
-      <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+      <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-background">
         <CheckRow
           label="1 · Template check"
           state={templateState}
+          runKind="slide"
           runningText="Checking sheets and columns…"
           okText="The file matches the master-data template."
           failText={
@@ -653,12 +883,22 @@ function ValidateStep({
         <CheckRow
           label="2 · CMF validation (dry-run, no write)"
           state={cmfState}
-          runningText="Registering and validating in CMF…"
+          runKind="eq"
+          runningText={registering ? "Registering the package in CMF…" : "CMF is validating the rows…"}
           okText="CMF accepted the file."
           failText={
             cmfErrors
               ? `${cmfErrors.length} error${cmfErrors.length === 1 ? "" : "s"} reported by CMF.`
               : "CMF reported errors."
+          }
+          trailing={
+            cmfActive ? (
+              <span className="font-mono text-xs tabular-nums text-muted-foreground">{fmtClock(elapsed)}</span>
+            ) : cmfTimedOut ? (
+              <Button variant="outline" size="sm" onClick={onCheckAgain}>
+                <RotateCw data-icon="inline-start" aria-hidden /> Check again
+              </Button>
+            ) : undefined
           }
         />
       </div>
@@ -764,7 +1004,7 @@ function ValidateStep({
 function UploadStep({
   onStaged,
 }: {
-  onStaged: (stagingId: string, name: string) => void;
+  onStaged: (stagingId: string, name: string, fileName: string, fileSize: number) => void;
 }) {
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -789,7 +1029,7 @@ function UploadStep({
         return;
       }
       toast.success("File uploaded — validating against template");
-      onStaged(data.stagingId, name.trim());
+      onStaged(data.stagingId, name.trim(), file.name, file.size);
     } catch (err) {
       toast.error("Upload failed", { description: String(err) });
     } finally {
@@ -799,6 +1039,12 @@ function UploadStep({
 
   return (
     <div className="flex flex-col gap-5">
+      <div>
+        <h2 className="font-heading text-base font-medium">Upload a package</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Give the package a recognisable name and choose the master-data .xlsx file to load.
+        </p>
+      </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="pkg-name">Package name</Label>
         <Input
@@ -809,7 +1055,7 @@ function UploadStep({
           disabled={busy}
         />
         <p className="text-xs text-muted-foreground">
-          A unique, recognisable name. This is how the package appears in CMF and in Recent.
+          This is how the package appears in CMF and in Recent.
         </p>
       </div>
       <FileDropZone disabled={busy} onFile={(f) => setFile(f)} onClear={() => setFile(null)} />
@@ -828,38 +1074,99 @@ function LoadStep({
   done,
   result,
   log,
-  selectedCount,
-  onRun,
+  selected,
+  onRequestLoad,
+  onReset,
 }: {
   busy: boolean;
   done: boolean;
   result: ExecutionResult | undefined;
   log: ExecutionLogEntry[];
-  selectedCount: number;
-  onRun: () => void;
+  selected: UserFriendlyObjectType[];
+  onRequestLoad: () => void;
+  onReset: () => void;
 }) {
+  const failed = log.filter((e) => (e as { State?: number }).State === 3);
+  const succeeded = Math.max(0, selected.length - failed.length);
+  const success = done && result === 0 && failed.length === 0;
+
   return (
     <div className="flex flex-col gap-5">
-      <Alert>
-        <Database aria-hidden />
-        <AlertTitle>Load to the live MES database</AlertTitle>
-        <AlertDescription>
-          This writes {selectedCount} object type{selectedCount === 1 ? "" : "s"} to production CMF. This
-          action commits data and cannot be undone from here.
-        </AlertDescription>
-      </Alert>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {done ? <ResultBadge result={result} /> : <span className="text-sm text-muted-foreground">Ready to load.</span>}
-        <Button variant="destructive" disabled={busy} onClick={onRun}>
-          {busy ? <Spinner data-icon="inline-start" /> : <Database data-icon="inline-start" aria-hidden />}
-          {busy ? "Loading…" : "Load to MES"}
-        </Button>
-      </div>
-      {(log.length > 0 || done) && (
+      {!done && (
+        <>
+          <div>
+            <h2 className="font-heading text-base font-medium">Load to MES</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Final step. This writes to the live CMF database.
+            </p>
+          </div>
+          <Alert variant="destructive">
+            <Database aria-hidden />
+            <AlertTitle>This commits data to production CMF</AlertTitle>
+            <AlertDescription>
+              {selected.length} object type{selected.length === 1 ? "" : "s"} will be created or updated.
+              This action cannot be undone from here — you&apos;ll be asked to confirm.
+            </AlertDescription>
+          </Alert>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm text-muted-foreground">
+              {busy ? "Loading…" : `Ready to load ${selected.length} object type${selected.length === 1 ? "" : "s"}.`}
+            </span>
+            <Button variant="destructive" disabled={busy} onClick={onRequestLoad}>
+              {busy ? <Spinner data-icon="inline-start" /> : <Database data-icon="inline-start" aria-hidden />}
+              {busy ? "Loading…" : "Load to MES"}
+            </Button>
+          </div>
+        </>
+      )}
+
+      {done && (
+        <div
+          className={cn(
+            "flex flex-col gap-3 rounded-lg border p-5",
+            success
+              ? "border-emerald-500/30 bg-emerald-500/5"
+              : "border-destructive/40 bg-destructive/5",
+          )}
+        >
+          <div className="flex items-center gap-3">
+            {success ? (
+              <CheckCircle2 className="size-6 text-emerald-600 dark:text-emerald-400" aria-hidden />
+            ) : (
+              <XCircle className="size-6 text-destructive" aria-hidden />
+            )}
+            <div>
+              <p className="text-sm font-semibold">
+                {success ? "Load complete" : "Load finished with errors"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {success
+                  ? `${succeeded} of ${selected.length} object type${selected.length === 1 ? "" : "s"} written to CMF.`
+                  : `${failed.length} of ${selected.length} object type${selected.length === 1 ? "" : "s"} failed — see the log below.`}
+              </p>
+            </div>
+            <div className="ml-auto">
+              <ResultBadge result={result} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Only the LOAD's own log — never the earlier CMF dry-run preview, which
+          would otherwise show created/updated/skipped counts before any load. */}
+      {done && (
         <>
           <Separator />
           <ExecutionLogViewer entries={log} />
         </>
+      )}
+
+      {done && (
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={onReset}>
+            <RotateCw data-icon="inline-start" aria-hidden /> Load another package
+          </Button>
+        </div>
       )}
     </div>
   );

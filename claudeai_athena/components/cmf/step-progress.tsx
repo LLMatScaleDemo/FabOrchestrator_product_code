@@ -1,11 +1,16 @@
 "use client";
 
 import { Check } from "lucide-react";
+import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
 
 export type WizardStep = {
   key: string;
   label: string;
+  /** Optional icon shown inside the node (falls back to the step number). */
+  icon?: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  /** One-line "what to do here", shown under the rail for the active step. */
+  hint?: string;
 };
 
 type Props = {
@@ -15,63 +20,96 @@ type Props = {
   /** Highest step index the user may jump back to (<= current). */
   maxReachable: number;
   onStepClick?: (index: number) => void;
+  /** When true, all navigation is frozen (e.g. after a committed load). */
+  locked?: boolean;
 };
 
-export function StepProgress({ steps, current, maxReachable, onStepClick }: Props) {
+export function StepProgress({ steps, current, maxReachable, onStepClick, locked = false }: Props) {
+  const active = steps[current];
   return (
-    <ol
-      className="flex w-full items-center gap-1.5 sm:gap-2"
-      aria-label={`Step ${current + 1} of ${steps.length}`}
-    >
-      {steps.map((step, i) => {
-        const done = i < current;
-        const active = i === current;
-        const reachable = i <= maxReachable;
-        const clickable = reachable && !!onStepClick && !active;
-        return (
-          <li
-            key={step.key}
-            className={cn("flex items-center gap-1.5 sm:gap-2", i < steps.length - 1 && "flex-1")}
-          >
-            <button
-              type="button"
-              disabled={!clickable}
-              onClick={() => clickable && onStepClick?.(i)}
-              aria-current={active ? "step" : undefined}
-              className={cn(
-                "group flex items-center gap-2 rounded-full py-1 pr-2.5 pl-1 text-sm transition-colors outline-none",
-                "focus-visible:ring-2 focus-visible:ring-ring/50",
-                active && "bg-primary/10 font-medium text-primary",
-                !active && done && "text-foreground",
-                !active && !done && "text-muted-foreground",
-                clickable && "hover:bg-muted",
-                !clickable && "cursor-default",
-              )}
+    <div className="flex flex-col gap-2.5">
+      <ol
+        className="flex w-full items-center"
+        aria-label={`Step ${current + 1} of ${steps.length}: ${active?.label ?? ""}`}
+      >
+        {steps.map((step, i) => {
+          const done = i < current;
+          const isActive = i === current;
+          const reachable = i <= maxReachable && !locked;
+          const clickable = reachable && !!onStepClick && !isActive;
+          const Icon = step.icon;
+          return (
+            <li
+              key={step.key}
+              className={cn("flex items-center", i < steps.length - 1 && "flex-1")}
             >
-              <span
+              <button
+                type="button"
+                disabled={!clickable}
+                onClick={() => clickable && onStepClick?.(i)}
+                aria-current={isActive ? "step" : undefined}
+                title={step.label}
                 className={cn(
-                  "inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium transition-colors",
-                  done && "border-primary bg-primary text-primary-foreground",
-                  active && "border-primary bg-background text-primary ring-2 ring-primary/20",
-                  !done && !active && "border-border bg-background text-muted-foreground",
+                  "group flex min-w-0 items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm outline-none transition-colors",
+                  "focus-visible:ring-2 focus-visible:ring-ring/50",
+                  clickable && "hover:bg-muted",
+                  !clickable && "cursor-default",
                 )}
               >
-                {done ? <Check className="size-3.5" aria-hidden /> : i + 1}
-              </span>
-              <span className="hidden whitespace-nowrap sm:inline">{step.label}</span>
-            </button>
-            {i < steps.length - 1 && (
-              <span
-                className={cn(
-                  "h-0.5 flex-1 rounded-full transition-colors",
-                  done ? "bg-primary" : "bg-border",
-                )}
-                aria-hidden
-              />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+                <span
+                  className={cn(
+                    "relative inline-flex size-9 shrink-0 items-center justify-center rounded-full border-2 transition-all",
+                    done && "border-primary bg-primary text-primary-foreground",
+                    isActive &&
+                      "border-primary bg-primary/10 text-primary ring-4 ring-primary/15",
+                    !done && !isActive && "border-border bg-background text-muted-foreground",
+                  )}
+                >
+                  {done ? (
+                    <Check className="size-5" aria-hidden />
+                  ) : Icon ? (
+                    <Icon className="size-5" aria-hidden />
+                  ) : (
+                    <span className="text-sm font-semibold">{i + 1}</span>
+                  )}
+                </span>
+                <span className="flex min-w-0 flex-col items-start leading-tight">
+                  <span
+                    className={cn(
+                      "text-[10px] font-medium tracking-wide uppercase",
+                      isActive ? "text-primary" : "text-muted-foreground/70",
+                    )}
+                  >
+                    Step {i + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      "truncate text-sm font-medium",
+                      isActive && "text-foreground",
+                      done && "text-foreground",
+                      !isActive && !done && "text-muted-foreground",
+                    )}
+                  >
+                    {step.label}
+                  </span>
+                </span>
+              </button>
+              {i < steps.length - 1 && (
+                <span
+                  className={cn(
+                    "mx-1 h-0.5 flex-1 rounded-full transition-colors sm:mx-2",
+                    done ? "bg-primary" : "bg-border",
+                  )}
+                  aria-hidden
+                />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {active?.hint && (
+        <p className="text-xs text-muted-foreground">{active.hint}</p>
+      )}
+    </div>
   );
 }
