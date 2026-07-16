@@ -14,7 +14,7 @@
 
 module "cmf_networking" {
   source = "./modules/cmf-networking"
-  count  = var.fab_use_cmf_vpc ? 1 : 0
+  count  = var.enable_cmf_networking ? 1 : 0
 
   name                       = "faborch-cmf"
   cmf_vpc_id                 = var.cmf_vpc_id

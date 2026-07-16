@@ -50,13 +50,22 @@ variable "rds_security_group_id" {
 
 # ---- Feature flag: put the Fab app in the CMF VPC so Master Data Load works ----
 
+variable "enable_cmf_networking" {
+  description = <<-EOT
+    Create the CMF-VPC networking (private subnets, egress SG, RDS peer). This is
+    independent of which VPC the Fab env runs in, because an EB environment's VPC
+    is IMMUTABLE — moving Fab to the CMF VPC requires a blue/green env + CNAME
+    swap, not an in-place change. Keep this on to hold the networking in place.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "fab_use_cmf_vpc" {
   description = <<-EOT
-    false (default) = Fab stays in the shared VPC exactly as it runs today (no
-    CMF reach; Master Data Load only works from a machine on the VPN).
-    true = Fab runs in the new private CMF subnets behind an ALB in the CMF
-    public subnets, with egress to CMF and RDS reached over a VPC peer.
-    Flipping this MOVES the environment's networking — plan carefully.
+    Which VPC the Fab env is CONFIGURED for. NOTE: EB will not change an existing
+    environment's VPC in place, so leave this false for the live env and use a
+    separate blue/green environment in the CMF VPC for Master Data Load.
   EOT
   type        = bool
   default     = false
@@ -65,9 +74,11 @@ variable "fab_use_cmf_vpc" {
 variable "cmf_app_subnets" {
   description = "New private subnets to create in the CMF VPC for the Fab app (>=2 AZ)."
   type        = map(string)
+  # CMF VPC is 10.200.0.0/22 (.0-.3 only); .1/.2/.3 are used, so the free
+  # 10.200.0.0/24 is split into two /25s for multi-AZ.
   default = {
-    "us-west-2a" = "10.200.4.0/24"
-    "us-west-2b" = "10.200.5.0/24"
+    "us-west-2a" = "10.200.0.0/25"
+    "us-west-2b" = "10.200.0.128/25"
   }
 }
 

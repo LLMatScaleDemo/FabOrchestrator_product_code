@@ -123,7 +123,7 @@ resource "aws_route" "shared_to_app" {
 resource "aws_vpc_security_group_ingress_rule" "rds_from_app" {
   for_each          = var.enable_rds_peering && var.rds_security_group_id != null ? var.app_subnets : {}
   security_group_id = var.rds_security_group_id
-  description       = "Fab app (CMF VPC ${each.key}) -> RDS PostgreSQL"
+  description       = "Fab app (CMF VPC ${each.key}) to RDS PostgreSQL"
   cidr_ipv4         = each.value
   ip_protocol       = "tcp"
   from_port         = 5432
