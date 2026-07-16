@@ -59,8 +59,8 @@ interface ArtifactPreviewProps {
   isStreaming?: boolean
   onClose?: () => void
   onNavigate?: (index: number) => void
-  onFetchFileContent?: (fileId: string, mimeType?: string) => Promise<string>
-  onFetchFileArrayBuffer?: (fileId: string) => Promise<ArrayBuffer>
+  onFetchFileContent?: (fileId: string, mimeType?: string, downloadUrl?: string) => Promise<string>
+  onFetchFileArrayBuffer?: (fileId: string, downloadUrl?: string) => Promise<ArrayBuffer>
   fileContentCache?: (fileId: string) => { content?: string; blobUrl?: string; loading: boolean; error?: string } | null
   /** Animation phase: 'entering' triggers slide-in, 'visible' is settled, 'exiting' triggers slide-out */
   animationPhase?: 'entering' | 'visible' | 'exiting'
@@ -210,7 +210,7 @@ export function ArtifactPreview({
       if (!onFetchFileArrayBuffer) return
       setFileLoading(true)
       setFileError(null)
-      onFetchFileArrayBuffer(artifact.fileId)
+      onFetchFileArrayBuffer(artifact.fileId, artifact.downloadUrl)
         .then((ab) => {
           setFileArrayBuffer(ab)
           setFileLoading(false)
@@ -241,7 +241,7 @@ export function ArtifactPreview({
 
     setFileLoading(true)
     setFileError(null)
-    onFetchFileContent(artifact.fileId, artifact.mimeType)
+    onFetchFileContent(artifact.fileId, artifact.mimeType, artifact.downloadUrl)
       .then((content) => {
         setFileContent(content)
         setFileLoading(false)
@@ -250,7 +250,7 @@ export function ArtifactPreview({
         setFileError(err instanceof Error ? err.message : 'Failed to load file')
         setFileLoading(false)
       })
-  }, [isFileArtifact, artifact.fileId, artifact.mimeType, strategy, onFetchFileContent, onFetchFileArrayBuffer, fileContentCache])
+  }, [isFileArtifact, artifact.fileId, artifact.mimeType, artifact.downloadUrl, strategy, onFetchFileContent, onFetchFileArrayBuffer, fileContentCache])
 
   // Reset file content when artifact changes
   useEffect(() => {
@@ -364,7 +364,7 @@ export function ArtifactPreview({
     if (needsArrayBuffer && onFetchFileArrayBuffer) {
       setFileLoading(true)
       setFileError(null)
-      onFetchFileArrayBuffer(artifact.fileId)
+      onFetchFileArrayBuffer(artifact.fileId, artifact.downloadUrl)
         .then((ab) => { setFileArrayBuffer(ab); setFileLoading(false) })
         .catch((err) => { setFileError(err instanceof Error ? err.message : 'Failed to load file'); setFileLoading(false) })
       return
@@ -372,10 +372,10 @@ export function ArtifactPreview({
     if (!onFetchFileContent) return
     setFileLoading(true)
     setFileError(null)
-    onFetchFileContent(artifact.fileId, artifact.mimeType)
+    onFetchFileContent(artifact.fileId, artifact.mimeType, artifact.downloadUrl)
       .then((content) => { setFileContent(content); setFileLoading(false) })
       .catch((err) => { setFileError(err instanceof Error ? err.message : 'Failed to load file'); setFileLoading(false) })
-  }, [artifact.fileId, artifact.mimeType, strategy, onFetchFileArrayBuffer, onFetchFileContent])
+  }, [artifact.fileId, artifact.mimeType, artifact.downloadUrl, strategy, onFetchFileArrayBuffer, onFetchFileContent])
 
   const hasMultipleArtifacts = artifacts.length > 1
   const badgeLabel = getBadgeLabel(artifact)

@@ -1868,6 +1868,9 @@ function ChatContent({
                                                 sizeBytes={fileData.sizeBytes}
                                                 downloadUrl={fileData.downloadUrl}
                                                 onPreview={isPreviewableFile(fileData.filename, fileData.mimeType) ? () => {
+                                                  // Pass downloadUrl so the preview reads the generated
+                                                  // .xlsx from the staged-file endpoint rather than the
+                                                  // Anthropic Files API (which has no such file → "Fetch failed").
                                                   const fileArt = createFileArtifact(fileData)
                                                   const currentArtifacts = [...allArtifacts]
                                                   const exists = currentArtifacts.find(a => a.id === fileArt.id)
@@ -2078,9 +2081,17 @@ function ChatContent({
                                       </div>
                                     )
                                   })()}
-                                  <MessageContent role="user" className="inline-block w-fit max-w-full">
-                                    {messageText}
-                                  </MessageContent>
+                                  {/* An entry-form submission is a machine payload (marker + JSON) meant
+                                      for the model. It's still sent and stored verbatim as the user
+                                      message, but rendering the raw blob looks awful — show a compact
+                                      summary chip instead. */}
+                                  {parseEntryFormSubmission(messageText) ? (
+                                    <EntryFormSubmissionChip summary={parseEntryFormSubmission(messageText)!} />
+                                  ) : (
+                                    <MessageContent role="user" className="inline-block w-fit max-w-full">
+                                      {messageText}
+                                    </MessageContent>
+                                  )}
                                   <MessageActions
                                     className={cn(
                                       "mr-1 mt-1 flex justify-end gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
@@ -2213,6 +2224,48 @@ function ChatContent({
           </>
         )}
       </PanelGroup>
+  )
+}
+
+/**
+ * The inline entry form submits a machine-readable payload (an `__entry_form__`
+ * marker plus a fenced JSON block) so the model can route it. That payload is
+ * genuinely the user's message — it is sent to the model and stored in the DB
+ * verbatim — but dumping the raw JSON into the transcript looks terrible. These
+ * two helpers detect that payload and render a compact summary chip instead.
+ */
+type EntryFormSummary = { objectType: string; rowCount: number; firstKeys: string[] }
+
+function parseEntryFormSubmission(text: string): EntryFormSummary | null {
+  if (!text || !text.startsWith("__entry_form__:")) return null
+  const json = text.match(/```json\s*([\s\S]*?)```/)
+  if (!json) return null
+  try {
+    const parsed = JSON.parse(json[1]) as { objectType?: string; rows?: Array<Record<string, string>> }
+    const rows = Array.isArray(parsed.rows) ? parsed.rows : []
+    if (!parsed.objectType || rows.length === 0) return null
+    // Prefer the Name column for the preview; fall back to the first filled cell.
+    const firstKeys = rows
+      .slice(0, 3)
+      .map((r) => r.Name ?? Object.values(r).find((v) => (v ?? "").trim().length > 0) ?? "")
+      .filter(Boolean)
+    return { objectType: parsed.objectType, rowCount: rows.length, firstKeys }
+  } catch {
+    return null
+  }
+}
+
+function EntryFormSubmissionChip({ summary }: { summary: EntryFormSummary }) {
+  const { objectType, rowCount, firstKeys } = summary
+  return (
+    <div className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-border bg-muted/50 px-3.5 py-2 text-sm">
+      <NavSvg><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></NavSvg>
+      <span className="truncate">
+        Submitted <span className="font-medium">{rowCount}</span> {rowCount === 1 ? "row" : "rows"} for{" "}
+        <span className="font-medium">{objectType}</span>
+        {firstKeys.length > 0 && <span className="text-muted-foreground"> — {firstKeys.join(", ")}</span>}
+      </span>
+    </div>
   )
 }
 

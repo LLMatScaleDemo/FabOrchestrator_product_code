@@ -22,7 +22,10 @@ export function useFileContent() {
     return cacheRef.current.get(fileId) ?? null
   }, [])
 
-  const fetchFileContent = useCallback(async (fileId: string, mimeType?: string): Promise<string> => {
+  // `downloadUrl` overrides where the bytes come from. Defaults to the
+  // Anthropic Files API; the Modeling Agent's generated .xlsx files pass their
+  // own staged-file endpoint instead.
+  const fetchFileContent = useCallback(async (fileId: string, mimeType?: string, downloadUrl?: string): Promise<string> => {
     // Return cached content if available
     const cached = cacheRef.current.get(fileId)
     if (cached?.content) return cached.content
@@ -50,7 +53,7 @@ export function useFileContent() {
 
     try {
       const token = localStorage.getItem("llmatscale_auth_token")
-      const res = await fetch(`/api/files/${fileId}/download`, {
+      const res = await fetch(downloadUrl ?? `/api/files/${fileId}/download`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
@@ -85,7 +88,7 @@ export function useFileContent() {
   const arrayBufferCacheRef = useRef<Map<string, ArrayBuffer>>(new Map())
   const arrayBufferFetchingRef = useRef<Set<string>>(new Set())
 
-  const fetchFileArrayBuffer = useCallback(async (fileId: string): Promise<ArrayBuffer> => {
+  const fetchFileArrayBuffer = useCallback(async (fileId: string, downloadUrl?: string): Promise<ArrayBuffer> => {
     // Return cached ArrayBuffer if available
     const cached = arrayBufferCacheRef.current.get(fileId)
     if (cached) return cached
@@ -113,7 +116,7 @@ export function useFileContent() {
 
     try {
       const token = localStorage.getItem("llmatscale_auth_token")
-      const res = await fetch(`/api/files/${fileId}/download`, {
+      const res = await fetch(downloadUrl ?? `/api/files/${fileId}/download`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 

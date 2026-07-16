@@ -25,6 +25,12 @@ export type Artifact = z.infer<typeof ArtifactSchema> & {
   filename?: string
   mimeType?: string
   sizeBytes?: number
+  /**
+   * Where to fetch the bytes from. Defaults to the Anthropic Files API
+   * (`/api/files/<fileId>/download`). The Modeling Agent's generated .xlsx
+   * files live in its own staging store, so they pass their own endpoint here.
+   */
+  downloadUrl?: string
   contentLoaded?: boolean
   renderStrategy?: RenderStrategy
   sandpackTemplate?: 'react' | 'react-ts' | 'vanilla' | 'vanilla-ts'
@@ -37,6 +43,7 @@ export function createFileArtifact(fileData: {
   filename: string
   mimeType?: string
   sizeBytes?: number
+  downloadUrl?: string
 }): Artifact {
   const classification = classifyFile(fileData.filename, fileData.mimeType)
   return {
@@ -50,6 +57,7 @@ export function createFileArtifact(fileData: {
     filename: fileData.filename,
     mimeType: fileData.mimeType,
     sizeBytes: fileData.sizeBytes,
+    downloadUrl: fileData.downloadUrl,
     contentLoaded: false,
     renderStrategy: classification.strategy,
     sandpackTemplate: classification.sandpackTemplate,

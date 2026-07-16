@@ -45,6 +45,10 @@ export function useKeyboardShortcuts({
     (event: KeyboardEvent) => {
       if (!enabled) return
 
+      // Some keydown events carry no `key` (autofill, IME composition, and
+      // programmatically-dispatched events); bail before touching it.
+      if (!event.key) return
+
       // Don't trigger shortcuts when typing in inputs (except Escape)
       const target = event.target as HTMLElement
       const isTyping =

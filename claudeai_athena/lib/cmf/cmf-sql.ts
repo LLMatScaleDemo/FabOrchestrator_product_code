@@ -34,13 +34,15 @@ function buildConfig(): sql.config {
       enableArithAbort: true,
     },
     pool: { max: 5, min: 0, idleTimeoutMillis: 30_000 },
-    // Fail fast. CMF sits behind a VPN, so a dropped tunnel is a normal event —
-    // the old 20s/30s waits left interactive callers (e.g. the entry form's FK
-    // dropdown) hanging for ~30s before erroring. These are short enough that a
-    // blip degrades quickly to the "type the value instead" fallback, and are
-    // env-overridable for slower links.
-    connectionTimeout: Number(process.env.CMF_SQL_CONNECT_TIMEOUT_MS ?? "8000"),
-    requestTimeout: Number(process.env.CMF_SQL_REQUEST_TIMEOUT_MS ?? "15000"),
+    // These defaults are the values proven to work against this CMF instance.
+    // Do NOT shorten them without measuring a healthy connect first: the server
+    // is a named instance behind a VPN, so every connect pays SQL Browser
+    // discovery (UDP 1434) plus a dynamic-port handshake. An earlier attempt to
+    // "fail fast" at 8s simply broke connections. Slow-link UX is handled in the
+    // UI instead — the entry form falls back to a typeable input when a lookup
+    // fails, rather than blocking on a dropdown that never loads.
+    connectionTimeout: Number(process.env.CMF_SQL_CONNECT_TIMEOUT_MS ?? "20000"),
+    requestTimeout: Number(process.env.CMF_SQL_REQUEST_TIMEOUT_MS ?? "30000"),
   };
 }
 
