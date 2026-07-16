@@ -15,7 +15,9 @@ admin-specific flow.
 
 | Item | Value |
 |------|-------|
-| **URL** | http://fab-admin-prod.eba-h6wfcmim.us-west-2.elasticbeanstalk.com |
+| **Public URL (HTTPS)** | **https://d1bruj0c9svh90.cloudfront.net** (CloudFront — use this) |
+| **Origin URL (EB, HTTP)** | http://fab-admin-prod.eba-h6wfcmim.us-west-2.elasticbeanstalk.com |
+| **CloudFront distribution** | `E3DEL8WM533ECX` |
 | **EB application** | `fab-admin` |
 | **EB environment** | `fab-admin-prod` |
 | **Region / account** | us-west-2 / 628203515088 |
@@ -72,6 +74,41 @@ The RDS security group must allow the admin instance SG on 5432 (same shared VPC
 so no peering needed — unlike the Fab CMF env).
 
 ---
+
+## 3a. HTTPS via CloudFront
+
+The EB environment only serves **HTTP** on its `…elasticbeanstalk.com` URL. To
+get a **secure (HTTPS) URL without a custom domain**, a CloudFront distribution
+fronts it:
+
+| | |
+|---|---|
+| **Distribution** | `E3DEL8WM533ECX` |
+| **HTTPS URL** | `https://d1bruj0c9svh90.cloudfront.net` |
+| **Origin** | `fab-admin-prod.eba-h6wfcmim…` (HTTP-only, port 80) |
+| **Viewer protocol** | `redirect-to-https` (HTTP is 301'd to HTTPS) |
+| **Cache policy** | `CachingDisabled` (dynamic app) |
+| **Origin request policy** | `AllViewer` (forwards cookies, auth headers, query strings, Host) |
+| **TLS cert** | the default `*.cloudfront.net` cert (valid, free) |
+
+`APP_URL` is set to the CloudFront URL so invite emails / self-links use HTTPS.
+
+Recreate / update the distribution:
+```bash
+# create (config in scripts or inline)
+aws cloudfront create-distribution --distribution-config file://admin-cloudfront.json
+# after changing config: get ETag, then update-distribution --if-match <ETag>
+aws cloudfront get-distribution-config --id E3DEL8WM533ECX
+# invalidate cache (rarely needed — caching is disabled)
+aws cloudfront create-invalidation --distribution-id E3DEL8WM533ECX --paths "/*"
+```
+
+> **SSE caveat:** CloudFront's default origin read timeout is 60s. The admin
+> dashboard is fine, but a >60s streaming response could be cut. Raise the
+> origin `OriginReadTimeout` (up to 180s, or request a quota increase) if needed.
+>
+> **Custom domain (optional):** add an `Aliases` (CNAME) + an ACM cert in
+> **us-east-1** to the distribution, then point DNS at the CloudFront domain.
 
 ## 4. Deploy new code
 

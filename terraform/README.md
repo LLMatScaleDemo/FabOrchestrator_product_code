@@ -129,6 +129,11 @@ the next `terraform apply` (the config + `imports.tf` are already set up for it)
   not modelled in TF; add an `aws_iam_role_policy` resource if you want it managed.
 - **CMF/S3 env vars** on the blue env (`CMF_SQL_*`, `S3_BUCKET`, …) were set via
   the CLI (secrets stay out of state on purpose).
+- **CloudFront distribution `E3DEL8WM533ECX`** (HTTPS front for the Fab Admin App,
+  origin = `fab-admin-prod` EB, viewer redirect-to-https, CachingDisabled +
+  AllViewer). Created via CLI; add an `aws_cloudfront_distribution` resource if
+  you want it managed. The Fab app has a similar pre-existing distribution
+  (`d7y8a8whrch88.cloudfront.net`).
 
 ## Why the Fab app must live in the CMF VPC (not just peer to it)
 

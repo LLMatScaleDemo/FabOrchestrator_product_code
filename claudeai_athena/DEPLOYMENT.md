@@ -27,7 +27,8 @@ CMF VPC and blue/green cutover are the parts that trip people up.
 
 | Item | Value |
 |------|-------|
-| **Production URL** | http://faborchestratorai-prod.eba-dk3f4zhh.us-west-2.elasticbeanstalk.com |
+| **Public URL (HTTPS)** | https://d7y8a8whrch88.cloudfront.net (CloudFront front for the Fab app) |
+| **Origin URL (EB, HTTP)** | http://faborchestratorai-prod.eba-dk3f4zhh.us-west-2.elasticbeanstalk.com |
 | **Serving environment** | `faborchestratorai-cmf` (env id `e-r4vtijxusf`) — runs in the **CMF VPC** |
 | **Rollback environment** | `faborchestratorai-prod` (env id `e-gdghmvt96r`) — old env in the shared VPC, parked at the `…-cmf` URL |
 | **Region / account** | us-west-2 / 628203515088 |
