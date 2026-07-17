@@ -349,10 +349,13 @@ export async function generateSkeletonBlank(
       if (input.scope === "full") visible.push(name);
       else hidden.push(name);
     } else {
-      // No-prefix sub-sheet that wasn't kept (belongs to another parent).
-      // Keep it visible — it'll have its header but no data, just like the
-      // meta sheets. CMF doesn't care; user can ignore it.
-      meta.push(name);
+      // No-prefix sub-sheet belonging to ANOTHER parent. (The requested
+      // object's own sub-sheets are already in keepRawNames and went to
+      // `visible` above.) In 'full' scope keep the whole layout visible; in
+      // 'narrow' HIDE it — otherwise "<Object> template only" leaks ~50
+      // unrelated sub-sheets and looks like the full template.
+      if (input.scope === "full") visible.push(name);
+      else hidden.push(name);
     }
   }
 
@@ -566,9 +569,16 @@ export async function generateFromSkeleton(
       }
     }
 
+    // Pure meta sheets stay visible; everything else must be explicitly kept
+    // (a written object, its sub-sheets, or a sheet the base file already
+    // showed). A bare `!isPrefixed` here used to leak EVERY no-prefix sub-sheet
+    // of every other object, so "<Object> template only" showed ~50 unrelated
+    // sheets and looked like the full template.
+    const metaSheets = new Set([
+      "Index", "Formats", "Assumptions", "Enums", "Config", "WorksheetNameMapping",
+    ]);
     for (const name of sheetByRawName.keys()) {
-      const isPrefixed = /^<[^>]+>/.test(name);
-      if (!isPrefixed || keepSet.has(name)) showSet.add(name);
+      if (keepSet.has(name) || metaSheets.has(name)) showSet.add(name);
       else hideSet.add(name);
     }
   } else {
