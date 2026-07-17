@@ -30,11 +30,20 @@ export function XlsxViewer({ arrayBuffer, isDarkMode, filename, onDownload }: Xl
         setError(null)
         const XLSX = await import("xlsx")
         const workbook = XLSX.read(arrayBuffer, { type: "array" })
-        const parsed = workbook.SheetNames.map((name) => {
-          const sheet = workbook.Sheets[name]
-          const data = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 })
-          return { name, data }
-        })
+        // Only preview sheets that are actually visible — the generated
+        // master-data files keep all ~213 template sheets present (CMF needs
+        // them) but hide the ones not relevant to the chosen object. Excel
+        // hides them too; the preview must match, or "<Object> template only"
+        // looks like the full template. Workbook.Sheets is index-aligned with
+        // SheetNames; Hidden is 0 (visible) / 1 (hidden) / 2 (very hidden).
+        const meta = workbook.Workbook?.Sheets ?? []
+        const parsed = workbook.SheetNames
+          .filter((_, i) => (meta[i]?.Hidden ?? 0) === 0)
+          .map((name) => {
+            const sheet = workbook.Sheets[name]
+            const data = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 })
+            return { name, data }
+          })
         if (!cancelled) {
           setSheets(parsed)
           setActiveSheet(0)
