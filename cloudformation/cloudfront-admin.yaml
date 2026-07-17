@@ -112,6 +112,10 @@ Conditions:
 Resources:
   AdminDistribution:
     Type: AWS::CloudFront::Distribution
+    # Retain on stack delete — required for CloudFormation resource import, and
+    # keeps the live distribution safe if this stack is ever removed.
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       DistributionConfig:
         Enabled: true

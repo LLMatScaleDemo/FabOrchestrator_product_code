@@ -7,14 +7,23 @@ manages the state.
 
 ```
 cloudformation/
-├── networking.yaml        # CMF VPC subnets, egress SG, peering, routes, RDS ingress   → IMPORT
-├── iam.yaml               # cmf-loader-access (S3 + Secrets Manager) as a managed policy → IMPORT/create
-├── elasticbeanstalk.yaml  # Fab (CMF VPC) + Admin EB app/env definitions               → reference / create-new
-└── cloudfront-admin.yaml  # Admin HTTPS distribution (E3DEL8WM533ECX)                    → IMPORT
+├── networking.yaml        # CMF VPC subnets, egress SG, peering, routes, RDS ingress   → reference *
+├── iam.yaml               # cmf-loader-access (S3 + Secrets Manager) as a managed policy → DEPLOYED ✅
+├── elasticbeanstalk.yaml  # Fab (CMF VPC) + Admin EB app/env definitions               → reference **
+└── cloudfront-admin.yaml  # Admin HTTPS distribution (E3DEL8WM533ECX)                    → IMPORTED ✅
 ```
 
 **4 stacks**, split by concern (independent deploy / rollback / cadence). Region
 `us-west-2`, account `628203515088`.
+
+### Migration status (what's actually under CloudFormation)
+
+| Stack | Status | Notes |
+|-------|--------|-------|
+| `faborch-admin-cloudfront` | **live — imported** | owns distribution `E3DEL8WM533ECX` (DeletionPolicy: Retain) |
+| `faborch-iam` | **live — deployed** | managed policy `cmf-loader-access`; the old inline policy was removed |
+| networking.yaml | **reference only** | * mixes importable (subnet/SG/peering) with **non-importable** types (`AWS::EC2::Route`, `AWS::EC2::SecurityGroupIngress`); an IMPORT change set needs *every* resource importable, so the live networking stays as-is. Template creates it fresh in a new account/region. |
+| elasticbeanstalk.yaml | **reference only** | ** live EB envs are EB-managed CFN stacks — can't be imported. For new/replacement envs. |
 
 ---
 
