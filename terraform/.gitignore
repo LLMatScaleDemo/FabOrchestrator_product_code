@@ -1,9 +1,0 @@
-# Terraform local state, plans, provider cache
-.terraform/
-.terraform.tfstate.lock.info
-*.tfstate
-*.tfstate.*
-*.tfplan
-*.plan.txt
-
-# Keep: *.tf, .terraform.lock.hcl, terraform.tfvars (no secrets), *.example
