@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+# =============================================================================
+# CloudFront — HTTPS front for the Fab Admin App.
+#
+# This template REPLACES the Terraform/CLI-managed CloudFront distribution that
+# fronts the fab-admin-prod Elastic Beanstalk environment. It reproduces the
+# live configuration exactly so the existing distribution can be adopted via
+# CloudFormation resource import, or recreated in another account/region.
+#
+# Account 628203515088, region us-west-2 (CloudFront is global; the origin EB
+# env lives in us-west-2).
+#
+# -----------------------------------------------------------------------------
+# IMPORT MAPPING — logical resource  ->  existing physical ID
+#   AdminDistribution                ->  E3DEL8WM533ECX
+#                                        (domain d1bruj0c9svh90.cloudfront.net)
+#
+# For adoption of the existing distribution use:
+#   aws cloudformation create-change-set --change-set-type IMPORT \
+#     --stack-name faborch-cloudfront-admin \
+#     --template-body file://cloudfront-admin.yaml \
+#     --resources-to-import \
+#       '[{"ResourceType":"AWS::CloudFront::Distribution",
+#          "LogicalResourceId":"AdminDistribution",
+#          "ResourceIdentifier":{"Id":"E3DEL8WM533ECX"}}]' \
+#     --capabilities CAPABILITY_NAMED_IAM
+# The template properties must match the live config byte-for-byte for import
+# to succeed with no drift.
+#
+# -----------------------------------------------------------------------------
+# NOTE — separate Fab (non-admin) distribution:
+#   The customer-facing Fab app already has its OWN pre-existing CloudFront
+#   distribution at d7y8a8whrch88.cloudfront.net. That distribution is NOT
+#   managed by this template and must not be imported here.
+#
+# NOTE — 60s origin read timeout & SSE:
+#   OriginReadTimeout is 60s (the maximum without an AWS quota increase). Any
+#   Server-Sent-Events / streaming response from the admin app that stays idle
+#   (no bytes) longer than 60s will be cut off by CloudFront. Keep SSE heartbeats
+#   under 60s, or request an origin-response-timeout quota increase and raise
+#   OriginReadTimeout accordingly.
+#
+# NOTE — adding a custom domain later:
+#   The distribution currently serves only the default *.cloudfront.net domain
+#   with the CloudFront default certificate. To put it on a custom domain:
+#     1. Request/import an ACM certificate for the domain in us-east-1
+#        (CloudFront only reads certs from us-east-1, regardless of origin region).
+#     2. Set the Aliases parameter to the domain name(s).
+#     3. Replace the ViewerCertificate CloudFrontDefaultCertificate block with
+#        AcmCertificateArn + SslSupportMethod: sni-only + MinimumProtocolVersion.
+#     4. Point DNS (Route 53 alias / CNAME) at d1bruj0c9svh90.cloudfront.net.
+# =============================================================================
+
+Description: >-
+  HTTPS front (CloudFront) for the Fab Admin App, pointing at the
+  fab-admin-prod Elastic Beanstalk environment (account 628203515088,
+  us-west-2). CloudFormation port of the Terraform/CLI-managed distribution
+  E3DEL8WM533ECX. Reproduces the live configuration exactly so the existing
+  distribution can be adopted via CloudFormation resource import, or recreated.
+
+Parameters:
+  DistributionComment:
+    Type: String
+    Default: HTTPS front for Fab Admin App (fab-admin-prod EB)
+    Description: Comment shown on the CloudFront distribution.
+
+  OriginDomainName:
+    Type: String
+    Default: fab-admin-prod.eba-h6wfcmim.us-west-2.elasticbeanstalk.com
+    Description: >-
+      Public DNS name of the fab-admin-prod Elastic Beanstalk environment used
+      as the custom origin.
+
+  PriceClass:
+    Type: String
+    Default: PriceClass_100
+    AllowedValues:
+      - PriceClass_100
+      - PriceClass_200
+      - PriceClass_All
+    Description: CloudFront price class (edge-location footprint).
+
+  CachePolicyId:
+    Type: String
+    Default: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+    Description: >-
+      Cache policy for the default behavior. Default is the AWS-managed
+      "CachingDisabled" policy (dynamic admin app — nothing cached).
+
+  OriginRequestPolicyId:
+    Type: String
+    Default: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    Description: >-
+      Origin request policy for the default behavior. Default is the AWS-managed
+      "AllViewer" policy (forwards all headers/cookies/query strings to the EB
+      origin).
+
+  Aliases:
+    Type: CommaDelimitedList
+    Default: ''
+    Description: >-
+      Optional custom domain name(s) (CNAMEs). Leave empty to serve only the
+      default *.cloudfront.net domain. If set, you must also supply an ACM
+      certificate in us-east-1 and switch the ViewerCertificate block (see the
+      header comment).
+
+Conditions:
+  # Empty CommaDelimitedList => Aliases omitted (default-cert-only setup).
+  HasAliases: !Not [ !Equals [ !Join [ '', !Ref Aliases ], '' ] ]
+
+Resources:
+  AdminDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Ref DistributionComment
+        PriceClass: !Ref PriceClass
+        HttpVersion: http2and3
+        # Aliases are only rendered when the HasAliases condition is true;
+        # otherwise the property is omitted (serving the default domain only).
+        Aliases: !If
+          - HasAliases
+          - !Ref Aliases
+          - !Ref AWS::NoValue
+
+        Origins:
+          - Id: fab-admin-prod-eb
+            DomainName: !Ref OriginDomainName
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginSSLProtocols:
+                - TLSv1.2
+              OriginReadTimeout: 60
+              OriginKeepaliveTimeout: 5
+
+        DefaultCacheBehavior:
+          TargetOriginId: fab-admin-prod-eb
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            - PUT
+            - POST
+            - PATCH
+            - DELETE
+          CachedMethods:
+            - GET
+            - HEAD
+          CachePolicyId: !Ref CachePolicyId
+          OriginRequestPolicyId: !Ref OriginRequestPolicyId
+
+        # Default CloudFront certificate (*.cloudfront.net). To move to a custom
+        # domain, replace this block with an AcmCertificateArn (us-east-1) +
+        # SslSupportMethod: sni-only (see the header comment).
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+Outputs:
+  DistributionId:
+    Description: CloudFront distribution ID (existing physical ID E3DEL8WM533ECX).
+    Value: !Ref AdminDistribution
+
+  DomainName:
+    Description: >-
+      CloudFront domain name for the admin app
+      (existing: d1bruj0c9svh90.cloudfront.net).
+    Value: !GetAtt AdminDistribution.DomainName

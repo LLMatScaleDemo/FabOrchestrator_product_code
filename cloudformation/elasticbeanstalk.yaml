@@ -1,0 +1,393 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+# =============================================================================
+# FabOrchestrator + Fab Admin — Elastic Beanstalk (Docker) — CloudFormation
+# =============================================================================
+#
+# AWS account: 628203515088   Region: us-west-2
+#
+# This template is the AWS-native (CloudFormation) equivalent of the retired
+# Terraform under `terraform/` (modules/eb-app + main.tf). It defines two
+# load-balanced Docker web apps behind an ALB (600s idle timeout, sticky
+# sessions), Nginx on port 80 reverse-proxying to the app container, and
+# enhanced health reporting.
+#
+# -----------------------------------------------------------------------------
+# ⚠️  IMPORTANT — DO NOT expect this to adopt the live environments
+# -----------------------------------------------------------------------------
+# The CURRENTLY-RUNNING environments —
+#     faborchestratorai-cmf, faborchestratorai-prod, fab-admin-prod
+# — were each created by Elastic Beanstalk itself, and EB backs every
+# environment with its OWN internally-managed CloudFormation stack (named
+# `awseb-e-xxxxxxxxxx-stack`). Those EB-managed stacks own the underlying ALB,
+# ASG, launch template, security groups, etc. Because of that ownership you
+# CANNOT cleanly `import` the live environments into this new stack — an import
+# would collide with the EB-managed stack that already controls those
+# resources.
+#
+# Therefore this template is for:
+#   (a) REFERENCE / PARITY — a reviewable, source-controlled record of the exact
+#       EB option settings the Terraform applied; and
+#   (b) creating NEW / REPLACEMENT environments (e.g. a blue/green cutover, a
+#       fresh region, or rebuilding from scratch).
+#
+# The existing live environments stay EB-managed until they are recreated from
+# this template. Do not point this stack at their names expecting a no-op.
+#
+# -----------------------------------------------------------------------------
+# ⚠️  ADMIN PORT CAVEAT (a wrong value = HTTP 502)
+# -----------------------------------------------------------------------------
+# The `aws:elasticbeanstalk:environment:process:default` Port below is 80 for
+# BOTH apps. That is the ALB -> Nginx port and MUST stay 80 (setting it to the
+# container port causes 502s — see DEPLOYMENT.md / the Terraform note).
+#
+# Separately, the APPLICATION's own listen port is carried by the PORT env var:
+#     - FabOrchestrator container listens on 3000  -> PORT=3000
+#     - Fab Admin  container listens on 3001 (Dockerfile `EXPOSE 3001`) -> PORT=3001
+# If the admin environment's PORT is not 3001, Nginx proxies to the wrong port
+# and every request returns 502. PORT is set here via option settings, but if it
+# is ever overridden out of band it MUST remain 3001 for admin.
+#
+# -----------------------------------------------------------------------------
+# SECRETS — set OUT OF BAND, never in this template
+# -----------------------------------------------------------------------------
+# Only NON-secret env vars are defined here (NODE_ENV, HOSTNAME, PORT,
+# NODE_OPTIONS). All secrets are injected separately (EB console / eb setenv /
+# CI pipeline) into namespace aws:elasticbeanstalk:application:environment:
+#
+#   FabOrchestrator (faborchestratorai-cmf) needs:
+#     DATABASE_URL, ANTHROPIC_API_KEY, KEY_ENCRYPTION_SECRET,
+#     CMF_SQL_HOST, CMF_SQL_PORT, CMF_SQL_USER, CMF_SQL_PASSWORD, CMF_SQL_DATABASE,
+#     CMF_REST_BASE_URL, CMF_REST_USER, CMF_REST_PASSWORD,
+#     S3_BUCKET, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY,
+#     SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
+#
+#   Fab Admin (fab-admin-prod) needs:
+#     DATABASE_URL, ANTHROPIC_API_KEY, KEY_ENCRYPTION_SECRET,
+#     S3_BUCKET, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY,
+#     SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
+#
+# (Exact secret set may evolve; treat the app's runtime config as the source of
+# truth. The point is: no secret VALUES live in this file.)
+# =============================================================================
+
+Description: >-
+  Elastic Beanstalk (Docker on Amazon Linux 2023) apps for FabOrchestrator.ai
+  (CMF VPC) and Fab Admin (shared VPC). CloudFormation port of the Terraform
+  eb-app module. For reference/parity and creating new/replacement environments;
+  the live EB-managed environments cannot be cleanly imported (see header).
+
+# -----------------------------------------------------------------------------
+Parameters:
+
+  SolutionStackName:
+    Type: String
+    Default: "64bit Amazon Linux 2023 v4.12.0 running Docker"
+    Description: EB platform solution stack (Docker on Amazon Linux 2023).
+
+  InstanceProfile:
+    Type: String
+    Default: aws-elasticbeanstalk-ec2-role
+    Description: IAM instance profile attached to the EC2 instances.
+
+  ServiceRole:
+    Type: String
+    Default: aws-elasticbeanstalk-service-role
+    Description: EB service role for enhanced health / managed updates.
+
+  # --- Deploy which app(s) -------------------------------------------------
+  CreateApplication:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "false"
+    Description: >-
+      Create the EB Application resources. Two Fab environments (prod + cmf)
+      share ONE `faborchestratorai` application, so leave this false when the
+      application already exists to avoid a duplicate-name conflict. Set true
+      for a first-time, from-scratch creation.
+
+  CreateFabEnv:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+    Description: Create the FabOrchestrator (faborchestratorai-cmf) environment.
+
+  CreateAdminEnv:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+    Description: Create the Fab Admin (fab-admin-prod) environment.
+
+  # --- FAB (CMF VPC) -------------------------------------------------------
+  FabInstanceType:
+    Type: String
+    Default: t3.large
+  FabVpcId:
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-0bfed5466dbec5bf2
+    Description: CMF VPC for the FabOrchestrator environment.
+  FabInstanceSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Default: "subnet-0cfc26eb17af33330,subnet-03de8d1716947ddfb"
+    Description: Private/instance subnets (CMF reach) for the Fab EC2 instances.
+  FabElbSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Default: "subnet-07e5d47cbc98ae7b6,subnet-05c2362dd87a7faa9"
+    Description: Public subnets for the Fab internet-facing ALB.
+  FabPort:
+    Type: String
+    Default: "3000"
+    Description: Container listen port for FabOrchestrator (PORT env var).
+  FabNodeOptions:
+    Type: String
+    Default: "--max-old-space-size=6144"
+    Description: NODE_OPTIONS for the Fab app (t3.large ~8 GiB).
+
+  # --- ADMIN (shared VPC) --------------------------------------------------
+  AdminInstanceType:
+    Type: String
+    Default: t3.medium
+  AdminVpcId:
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-0521d5dc5d2554e5a
+    Description: Shared VPC for the Fab Admin environment.
+  AdminSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Default: "subnet-06faf688f0ea464ac,subnet-0e0f6ddda096487f3,subnet-07a09ab450b741c55"
+    Description: >-
+      Shared public subnets used for BOTH the admin ALB and the admin EC2
+      instances (admin needs no CMF reach).
+  AdminPort:
+    Type: String
+    Default: "3001"
+    Description: >-
+      Container listen port for Fab Admin (PORT env var). MUST be 3001 —
+      Dockerfile EXPOSE 3001; a wrong value = 502.
+  AdminNodeOptions:
+    Type: String
+    Default: "--max-old-space-size=3072"
+    Description: NODE_OPTIONS for the Admin app (t3.medium ~4 GiB).
+
+# -----------------------------------------------------------------------------
+Conditions:
+  ShouldCreateApplication: !Equals [!Ref CreateApplication, "true"]
+  ShouldCreateFabEnv: !Equals [!Ref CreateFabEnv, "true"]
+  ShouldCreateAdminEnv: !Equals [!Ref CreateAdminEnv, "true"]
+
+# -----------------------------------------------------------------------------
+Resources:
+
+  # === FAB application (shared by faborchestratorai-cmf + -prod) ============
+  FabApplication:
+    Type: AWS::ElasticBeanstalk::Application
+    Condition: ShouldCreateApplication
+    Properties:
+      ApplicationName: faborchestratorai
+      Description: FabOrchestrator.ai - AI Chat Application
+
+  # === FAB environment (CMF VPC) ===========================================
+  FabEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Condition: ShouldCreateFabEnv
+    Properties:
+      ApplicationName: faborchestratorai
+      EnvironmentName: faborchestratorai-cmf
+      Description: FabOrchestrator.ai - CMF VPC (Master Data Load)
+      SolutionStackName: !Ref SolutionStackName
+      Tier:
+        Name: WebServer
+        Type: Standard
+      OptionSettings:
+        # --- compute ---
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: InstanceType
+          Value: !Ref FabInstanceType
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref InstanceProfile
+        - Namespace: aws:autoscaling:asg
+          OptionName: MinSize
+          Value: "1"
+        - Namespace: aws:autoscaling:asg
+          OptionName: MaxSize
+          Value: "2"
+        # --- environment / load balancer ---
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: LoadBalanced
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: LoadBalancerType
+          Value: application
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: ServiceRole
+          Value: !Ref ServiceRole
+        - Namespace: aws:elbv2:loadbalancer
+          OptionName: IdleTimeout
+          Value: "600"
+        # --- networking (CMF VPC) ---
+        - Namespace: aws:ec2:vpc
+          OptionName: VPCId
+          Value: !Ref FabVpcId
+        - Namespace: aws:ec2:vpc
+          OptionName: Subnets
+          Value: !Join [",", !Ref FabInstanceSubnets]
+        - Namespace: aws:ec2:vpc
+          OptionName: ELBSubnets
+          Value: !Join [",", !Ref FabElbSubnets]
+        - Namespace: aws:ec2:vpc
+          OptionName: ELBScheme
+          Value: public
+        # --- health ---
+        - Namespace: aws:elasticbeanstalk:healthreporting:system
+          OptionName: SystemType
+          Value: enhanced
+        # --- default process: Nginx on 80 (ALB target), sticky sessions ---
+        # Port stays 80. This is the ALB -> Nginx port, NOT the container port.
+        # Setting it to the app port (3000) causes 502s.
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: Port
+          Value: "80"
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: Protocol
+          Value: HTTP
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: StickinessEnabled
+          Value: "true"
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: StickinessLBCookieDuration
+          Value: "600"
+        # --- NON-secret app env vars (secrets set out of band; see header) ---
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: NODE_ENV
+          Value: production
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: HOSTNAME
+          Value: 0.0.0.0
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: PORT
+          Value: !Ref FabPort
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: NODE_OPTIONS
+          Value: !Ref FabNodeOptions
+
+  # === ADMIN application ====================================================
+  AdminApplication:
+    Type: AWS::ElasticBeanstalk::Application
+    Condition: ShouldCreateApplication
+    Properties:
+      ApplicationName: fab-admin
+      Description: Fab Admin App - admin console
+
+  # === ADMIN environment (shared VPC) ======================================
+  AdminEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Condition: ShouldCreateAdminEnv
+    Properties:
+      ApplicationName: fab-admin
+      EnvironmentName: fab-admin-prod
+      Description: Fab Admin App - admin console
+      SolutionStackName: !Ref SolutionStackName
+      Tier:
+        Name: WebServer
+        Type: Standard
+      OptionSettings:
+        # --- compute ---
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: InstanceType
+          Value: !Ref AdminInstanceType
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref InstanceProfile
+        - Namespace: aws:autoscaling:asg
+          OptionName: MinSize
+          Value: "1"
+        - Namespace: aws:autoscaling:asg
+          OptionName: MaxSize
+          Value: "2"
+        # --- environment / load balancer ---
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: LoadBalanced
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: LoadBalancerType
+          Value: application
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: ServiceRole
+          Value: !Ref ServiceRole
+        - Namespace: aws:elbv2:loadbalancer
+          OptionName: IdleTimeout
+          Value: "600"
+        # --- networking (shared VPC; same subnets for instances + ALB) ---
+        - Namespace: aws:ec2:vpc
+          OptionName: VPCId
+          Value: !Ref AdminVpcId
+        - Namespace: aws:ec2:vpc
+          OptionName: Subnets
+          Value: !Join [",", !Ref AdminSubnets]
+        - Namespace: aws:ec2:vpc
+          OptionName: ELBSubnets
+          Value: !Join [",", !Ref AdminSubnets]
+        - Namespace: aws:ec2:vpc
+          OptionName: ELBScheme
+          Value: public
+        # --- health ---
+        - Namespace: aws:elasticbeanstalk:healthreporting:system
+          OptionName: SystemType
+          Value: enhanced
+        # --- default process: Nginx on 80 (ALB target), sticky sessions ---
+        # Port stays 80 (ALB -> Nginx). The admin CONTAINER listens on 3001,
+        # carried by the PORT env var below — NOT by this Port setting.
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: Port
+          Value: "80"
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: Protocol
+          Value: HTTP
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: StickinessEnabled
+          Value: "true"
+        - Namespace: aws:elasticbeanstalk:environment:process:default
+          OptionName: StickinessLBCookieDuration
+          Value: "600"
+        # --- NON-secret app env vars (secrets set out of band; see header) ---
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: NODE_ENV
+          Value: production
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: HOSTNAME
+          Value: 0.0.0.0
+        # PORT MUST be 3001 for admin (Dockerfile EXPOSE 3001); wrong = 502.
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: PORT
+          Value: !Ref AdminPort
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: NODE_OPTIONS
+          Value: !Ref AdminNodeOptions
+
+# -----------------------------------------------------------------------------
+Outputs:
+  FabEnvironmentName:
+    Condition: ShouldCreateFabEnv
+    Description: FabOrchestrator EB environment name.
+    Value: !Ref FabEnvironment
+  FabEnvironmentCNAME:
+    Condition: ShouldCreateFabEnv
+    Description: FabOrchestrator environment CNAME (public DNS).
+    Value: !GetAtt FabEnvironment.EndpointURL
+  FabEnvironmentURL:
+    Condition: ShouldCreateFabEnv
+    Description: FabOrchestrator HTTP endpoint.
+    Value: !Sub "http://${FabEnvironment.EndpointURL}"
+
+  AdminEnvironmentName:
+    Condition: ShouldCreateAdminEnv
+    Description: Fab Admin EB environment name.
+    Value: !Ref AdminEnvironment
+  AdminEnvironmentCNAME:
+    Condition: ShouldCreateAdminEnv
+    Description: Fab Admin environment CNAME (public DNS).
+    Value: !GetAtt AdminEnvironment.EndpointURL
+  AdminEnvironmentURL:
+    Condition: ShouldCreateAdminEnv
+    Description: Fab Admin HTTP endpoint.
+    Value: !Sub "http://${AdminEnvironment.EndpointURL}"
