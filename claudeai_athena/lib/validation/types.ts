@@ -21,7 +21,10 @@ export type ValidationCategory =
   | "noop"
   | "dependent-sheet"
   | "parent-fk"
-  | "parent-fk-in-cmf";
+  | "parent-fk-in-cmf"
+  // Cross-sheet integrity (PK uniqueness + FK/key consistency across sheets).
+  | "pk-duplicate"
+  | "cross-sheet-fk";
 
 export type ValidationError = {
   objectType: string;

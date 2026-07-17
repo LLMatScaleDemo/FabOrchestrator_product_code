@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/cmf/session";
 import { getStagedUpload, updateStagedUpload } from "@/lib/repo-cmf/validation";
 import { validateParsedSheets, readUploadSheets } from "@/lib/validation/template-check";
+import { checkCrossSheetWithMetadata, mergeFindings } from "@/lib/validation/cross-sheet";
 import { explainErrors } from "@/lib/validation/llm-advisor";
 
 export const runtime = "nodejs";
@@ -61,7 +62,19 @@ export async function POST(
         explanations: [],
       });
     }
-    const result = validateParsedSheets(sheets);
+    const structural = validateParsedSheets(sheets);
+
+    // Layer on cross-sheet integrity (PK uniqueness + FK/key consistency across
+    // sheets). Uses CMF metadata to know which columns are keys/foreign-keys;
+    // degrades to PK-only when CMF is unreachable and never throws, so a CMF
+    // outage can't break the offline structural check.
+    let result = structural;
+    try {
+      const crossErrors = await checkCrossSheetWithMetadata(sheets);
+      result = mergeFindings(structural, crossErrors);
+    } catch (crossErr) {
+      console.error("[api/cmf/packages/stage/:id/validate] cross-sheet check failed", crossErr);
+    }
 
     // Record progress so an interrupted flow resumes at the right step.
     await updateStagedUpload(id, userId, { status: result.ok ? "VALIDATED" : "UPLOADED" });

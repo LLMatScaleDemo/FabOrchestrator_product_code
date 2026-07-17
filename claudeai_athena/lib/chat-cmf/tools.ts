@@ -7,6 +7,7 @@ import { generateSkeletonBlank, generateFromSkeleton, readSkeletonMarker } from 
 import { getComposition, parentOf } from "@/lib/validation/composition";
 import { createStagedUpload, getStagedUpload } from "@/lib/repo-cmf/validation";
 import { validateParsedSheets } from "@/lib/validation/template-check";
+import { checkCrossSheetWithMetadata, mergeFindings } from "@/lib/validation/cross-sheet";
 import { parseWorkbook } from "@/lib/validation/xlsx";
 import { prefillFormFromInput } from "@/lib/chat-cmf/prefill";
 import { lookupExisting } from "@/lib/chat-cmf/lookup-existing";
@@ -565,7 +566,16 @@ export function buildChatTools(userId: string) {
             };
           }
           const sheets = await parseWorkbook(staged.bytes);
-          const result = validateParsedSheets(sheets);
+          const structural = validateParsedSheets(sheets);
+          // Cross-sheet integrity (PK uniqueness + FK/key consistency). Never
+          // throws — degrades to PK-only when CMF metadata is unreachable.
+          let result = structural;
+          try {
+            const crossErrors = await checkCrossSheetWithMetadata(sheets);
+            result = mergeFindings(structural, crossErrors);
+          } catch (crossErr) {
+            console.error("[validateTemplate] cross-sheet check failed", crossErr);
+          }
           const errors = Object.entries(result.errorsByType).flatMap(([objectType, list]) =>
             list.map((e) => ({
               objectType,

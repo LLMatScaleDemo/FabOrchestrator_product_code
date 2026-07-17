@@ -13,6 +13,8 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "test:errors": "npx tsx --test __tests__/errors/faborch-errors.test.ts",
+    "test:validation": "npx tsx --test __tests__/validation/cross-sheet.test.ts",
+    "verify:templates": "npx tsx scripts/verify-template-assets.ts --strict",
     "test:a11y": "jest",
     "test:e2e": "playwright test",
     "lighthouse:a11y": "lighthouse http://localhost:3000 --only-categories=accessibility --output=json --output=html --output-path=./.lighthouse/faborch-a11y --chrome-flags=\"--headless=new\"",
