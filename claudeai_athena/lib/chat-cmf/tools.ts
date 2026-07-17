@@ -12,6 +12,7 @@ import { prefillFormFromInput } from "@/lib/chat-cmf/prefill";
 import { lookupExisting } from "@/lib/chat-cmf/lookup-existing";
 import { previewLoadImpact } from "@/lib/chat-cmf/load-preview";
 import { loadMasterData } from "@/lib/cmf/cmf-client";
+import { toModelSafeError } from "@/lib/cmf/cmf-errors";
 import { isSystemManaged } from "@/lib/validation/system-columns";
 import { isObjectRemoved, isColumnRemoved, getRemovedColumns } from "@/lib/validation/removal-policy";
 
@@ -654,7 +655,10 @@ export function buildChatTools(userId: string) {
 }
 
 function errMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+  // Business-facing agent: never leak host/IP/VPN/driver/config detail. A raw
+  // driver message like "Failed to connect to 10.10.1.224\ONLINE in 20000ms"
+  // becomes a calm, actionable line the model can relay verbatim.
+  return toModelSafeError(err);
 }
 
 export type ChatTools = ReturnType<typeof buildChatTools>;
