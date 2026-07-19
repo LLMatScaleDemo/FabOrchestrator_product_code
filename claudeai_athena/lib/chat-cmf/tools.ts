@@ -12,6 +12,7 @@ import { parseWorkbook } from "@/lib/validation/xlsx";
 import { prefillFormFromInput } from "@/lib/chat-cmf/prefill";
 import { lookupExisting } from "@/lib/chat-cmf/lookup-existing";
 import { browseCmfRecords } from "@/lib/chat-cmf/browse";
+import { fillFromExisting } from "@/lib/chat-cmf/fill-from-existing";
 import { previewLoadImpact } from "@/lib/chat-cmf/load-preview";
 import { loadMasterData } from "@/lib/cmf/cmf-client";
 import { toModelSafeError } from "@/lib/cmf/cmf-errors";
@@ -55,16 +56,31 @@ export function buildChatTools(userId: string) {
   return {
     resolveObjectType: tool({
       description:
-        "Map a user's free-text request (e.g. 'production orders', 'materials') to real CMF master-data object types. Returns ranked candidates; confirm the chosen type with the user before doing DB work.",
+        "Map a user's free-text request (e.g. 'production orders', 'materials') to a real CMF object type. Returns a DECISION, not just a list: when one type clearly wins it returns `confident: true` with `objectType` — proceed with it, do NOT ask the user to confirm. Only when `ambiguous: true` should you ask the user to pick from `candidates`. This keeps the choice deterministic (the tool decides), not a guess.",
       inputSchema: z.object({
         query: z.string().describe("The user's free-text description of what they want to load"),
       }),
       execute: async ({ query }) => {
-        const candidates = resolveObjectType(query).map((c) => ({
+        const ranked = resolveObjectType(query).map((c) => ({
           ...c,
           removed: isObjectRemoved(c.objectType),
         }));
-        return { candidates };
+        // Exact template-key match (incl. simple singular/plural), or a dominant
+        // top score, is confident — otherwise ask the user to pick.
+        const norm = query.trim().toLowerCase();
+        const exact =
+          SCHEMA_BY_LOWER.get(norm)?.objectType ??
+          SCHEMA_BY_LOWER.get(norm.replace(/s$/, ""))?.objectType ??
+          SCHEMA_BY_LOWER.get(norm.replace(/ies$/, "y"))?.objectType;
+        const [top, second] = ranked;
+        const dominant = !!top && top.score >= 0.6 && (!second || top.score - second.score >= 0.2);
+        const confident = !!exact || dominant;
+        return {
+          confident,
+          ambiguous: !confident && ranked.length > 0,
+          objectType: confident ? exact ?? top.objectType : undefined,
+          candidates: ranked.slice(0, 6),
+        };
       },
     }),
 
@@ -225,6 +241,59 @@ export function buildChatTools(userId: string) {
             total: result.total,
             returned: result.returned,
             truncated: result.truncated,
+          };
+        } catch (err) {
+          return { error: errMessage(err) };
+        }
+      },
+    }),
+
+    fillFromExisting: tool({
+      description:
+        "Build a template PRE-FILLED with EXISTING CMF records, so the user edits instead of typing from scratch. Reads live data and maps it into the template (relationships resolved to names), then stages a ready file. Use when the user wants to: start from existing data ('pre-fill a Resource template with the resources in the Assembly area'), CLONE a set ('make a Product template from the products in group BULK'), or BULK-EDIT existing records ('set Type=Standard on every product in group BULK' → pass `set`). Select records by `names`, or by `filterColumn`+`filterValue` (a direct field OR a related object's name, e.g. filter Resource by Area='Assembly'), or by `search`. The retrieved data comes straight from CMF — it is never invented. After this returns a stagingId, call validateTemplate then present the Download (same gate as generateExcel). Single-sheet objects for now. Tell the user how many rows were filled and remind them referenced parents must exist in CMF.",
+      inputSchema: z.object({
+        objectType: z.string().describe("Object type to fill, e.g. 'Resource', 'Product'. Fuzzy words are resolved."),
+        names: z.array(z.string()).optional().describe("Specific existing records to pull, by Name."),
+        filterColumn: z
+          .string()
+          .optional()
+          .describe("Field to match records on — a direct field or a related object's name (e.g. 'Area')."),
+        filterValue: z.string().optional().describe("Value for filterColumn (e.g. 'Assembly')."),
+        search: z.string().optional().describe("Keyword on Name/Description instead of an exact filter."),
+        set: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Bulk change applied to EVERY retrieved row before writing (column → new value). Use for bulk-edits."),
+        packageName: z.string().describe("A name for the package/file."),
+        scope: z.enum(["full", "narrow"]).optional().describe("narrow = just this object's sheet; full = whole layout."),
+        limit: z.number().optional().describe("Max records to pull (default 100, max 1000)."),
+      }),
+      execute: async ({ objectType, names, filterColumn, filterValue, search, set, packageName, scope, limit }) => {
+        try {
+          const canonical = SCHEMA_BY_LOWER.get(objectType.toLowerCase())
+            ? objectType
+            : resolveObjectType(objectType)[0]?.objectType ?? objectType;
+          const result = await fillFromExisting({
+            userId,
+            objectType: canonical,
+            selector: { names, filterColumn, filterValue, search, limit },
+            set,
+            packageName,
+            scope,
+          });
+          if (result.removed) return { error: `"${canonical}" isn't part of this template.` };
+          if (result.metadataMissing) return { error: `"${canonical}" can't be filled from existing data (no data table).` };
+          if (result.error) return { error: result.error };
+          return {
+            stagingId: result.stagingId,
+            filename: result.filename,
+            objectType: result.objectType,
+            rowCount: result.rowCount,
+            columnsFilled: result.columnsFilled,
+            total: result.total,
+            truncated: result.truncated,
+            applied: result.applied,
+            parentCheckPerformed: false as const,
           };
         } catch (err) {
           return { error: errMessage(err) };

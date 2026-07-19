@@ -7,7 +7,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import JSZip from "jszip";
-import { generateSkeletonBlank } from "@/lib/validation/ksp-skeleton";
+import { generateSkeletonBlank, generateFromSkeleton } from "@/lib/validation/ksp-skeleton";
 
 const META_SHEETS = new Set([
   "Index",
@@ -117,4 +117,48 @@ describe("Modeling Agent Excel template compatibility", () => {
       await assertDesktopExcelCompatible(generated.bytes);
     });
   }
+});
+
+/** Assert content types declared and no impossible row spans anywhere. */
+async function assertPrefilledValid(bytes: Buffer): Promise<void> {
+  const zip = await JSZip.loadAsync(bytes);
+  const ct = await zip.file("[Content_Types].xml")!.async("text");
+  assert.match(ct, /<Default Extension="json"/);
+  assert.match(ct, /<Default Extension="vml"/);
+  for (const name of Object.keys(zip.files)) {
+    if (!/^xl\/worksheets\/sheet\d+\.xml$/.test(name)) continue;
+    const xml = await zip.file(name)!.async("text");
+    for (const s of xml.matchAll(/spans="(\d+):(\d+)"/g)) {
+      assert.ok(Number(s[1]) <= Number(s[2]), `${name} has an invalid row span ${s[1]}:${s[2]}`);
+    }
+  }
+}
+
+describe("Modeling Agent pre-filled template compatibility", () => {
+  it("single-sheet Site fills its rows and stays Excel-valid", async () => {
+    const gen = await generateFromSkeleton({
+      rowsByType: {
+        Site: [
+          { Name: "SITE-A", Description: "Plant A" },
+          { Name: "SITE-B", Description: "Plant B" },
+        ],
+      },
+      scope: "narrow",
+    });
+    await assertPrefilledValid(gen.bytes);
+    const site = gen.sheetsWritten.find((s) => s.objectType === "Site");
+    assert.ok(site && site.rowsAppended === 2, "Site sheet should have 2 rows appended");
+  });
+
+  it("multi-sheet Step fills parent + sub-sheet and stays Excel-valid", async () => {
+    const gen = await generateFromSkeleton({
+      rowsByType: {
+        Step: [{ Name: "PS1", Type: "Process" }],
+        StepReason: [{ Step: "PS1", Reason: "R1" }],
+      },
+      scope: "narrow",
+    });
+    await assertPrefilledValid(gen.bytes);
+    assert.ok(gen.sheetsWritten.some((s) => s.objectType === "Step"), "Step parent sheet written");
+  });
 });
