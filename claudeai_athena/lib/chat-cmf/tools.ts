@@ -11,6 +11,7 @@ import { checkCrossSheetWithMetadata, mergeFindings } from "@/lib/validation/cro
 import { parseWorkbook } from "@/lib/validation/xlsx";
 import { prefillFormFromInput } from "@/lib/chat-cmf/prefill";
 import { lookupExisting } from "@/lib/chat-cmf/lookup-existing";
+import { browseCmfRecords } from "@/lib/chat-cmf/browse";
 import { previewLoadImpact } from "@/lib/chat-cmf/load-preview";
 import { loadMasterData } from "@/lib/cmf/cmf-client";
 import { toModelSafeError } from "@/lib/cmf/cmf-errors";
@@ -166,6 +167,65 @@ export function buildChatTools(userId: string) {
       execute: async ({ objectType, names }) => {
         try {
           return await lookupExisting(objectType, names);
+        } catch (err) {
+          return { error: errMessage(err) };
+        }
+      },
+    }),
+
+    browseCmfRecords: tool({
+      description:
+        "CMF database lookup for DISCOVERY — use when the user is looking for records but does NOT know the exact name(s): 'what flows exist?', 'list existing flow names', 'products and their flow', 'which products use flow F1', 'flows with wafer in the name'. Lists / searches the live CMF records of ANY object type (Flow, Product, Resource, Step, Area, …) and returns Name + Description + the object's link fields (e.g. Product → FlowPath), plus the TOTAL count so you can say 'showing 50 of 3,120'. Read-only. Use `search` for a keyword, `filterColumn`+`filterValue` for a reverse lookup ('which products use flow F1' → filterColumn 'FlowPath', filterValue 'F1'), and `columns` to request specific fields. This is the tool for browsing; use lookupExisting instead only when the user already gave exact Names to update/clone/inspect. Present results as a clean list in business language and offer to continue the build/load with a name the user picks.",
+      inputSchema: z.object({
+        objectType: z
+          .string()
+          .describe("Object type to browse, e.g. 'Flow', 'Product'. Fuzzy words like 'flows' are resolved automatically."),
+        search: z
+          .string()
+          .optional()
+          .describe("Keyword to filter by (substring match on Name/Description, case-insensitive)."),
+        filterColumn: z
+          .string()
+          .optional()
+          .describe("Field to exact-match for a reverse lookup, e.g. 'FlowPath' on Product. Must be a real field of the object."),
+        filterValue: z.string().optional().describe("Value for filterColumn."),
+        columns: z
+          .array(z.string())
+          .optional()
+          .describe("Specific fields to return; defaults to Name + Description + the object's link columns."),
+        limit: z.number().optional().describe("Max rows (default 50, max 200)."),
+      }),
+      execute: async ({ objectType, search, filterColumn, filterValue, columns, limit }) => {
+        try {
+          // Accept fuzzy words ('flows', 'product') by resolving to a canonical type.
+          const canonical = SCHEMA_BY_LOWER.get(objectType.toLowerCase())
+            ? objectType
+            : resolveObjectType(objectType)[0]?.objectType ?? objectType;
+          const result = await browseCmfRecords({
+            objectType: canonical,
+            search,
+            filterColumn,
+            filterValue,
+            columns,
+            limit,
+          });
+          if (result.removed) {
+            return { error: `"${canonical}" isn't part of this template, so it can't be browsed.` };
+          }
+          if (result.metadataMissing) {
+            return {
+              error: `"${canonical}" can't be listed on its own — it's part of another object. Ask about its parent instead.`,
+            };
+          }
+          if (result.error) return { error: result.error };
+          return {
+            objectType: result.objectType,
+            columns: result.columns,
+            rows: result.rows,
+            total: result.total,
+            returned: result.returned,
+            truncated: result.truncated,
+          };
         } catch (err) {
           return { error: errMessage(err) };
         }
