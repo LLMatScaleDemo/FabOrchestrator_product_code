@@ -1,0 +1,61 @@
+4.3 and 4.4 code error
+He wants control flow diagrams, functions and explanation of each function, and a file which talks about all of the extensions.
+One document for each file and then combine it all into one big master document and we can each review a couple of documents and then combine it into one big document.
+File name and purpose is a bit vague. Make it slightly more detailed but not too much.
+But we have to have one for each file.
+Jothi said that he wants one document per file. We should clarify this along with a longer plan.
+make a note of what functions are in each file in the catalogue.
+For each important file, ensure that you explain to him what functions are in it and what they do.
+Control flow diagrams should not include the functions.
+The file catalogue points to the important functions.
+You must also state what each important file contains and why. What functions each important file should contain.
+fix all the display errors- scenario -2-chat-turn- (5)
+remove - scenario -3 - final section
+mermaid diagram in scenario 4 is too light. It also makes it sound like we've done something wrong. Either remove that or change the wording. We don't need the validation part towards the end as well.
+scenario 5 - change the diagrams to make them look better. Also, remove the validation things at the end.
+
+
+Here's the full list of 26 files getting deep-dive pages, in batch order:
+
+**Batch 1 — Foundations (in progress now)**
+1. `lib/db.ts` (both apps) — database connection, SSL disabled ✅ done
+2. `lib/encryption.ts` (both apps) — AES-256-GCM secrets, scrypt passwords, tokens ✅ done
+3. `lib/auth-middleware.ts` (both apps) — the auth gate on every route ✅ done
+
+**Batch 2 — Audit & error subsystem (raw SQL)**
+4. `lib/session-audit.ts` (both) — session lifecycle audit; deletes live sessions
+5. `lib/prompt-audit.ts` (both) — prompt/response audit with PII + cost
+6. `lib/errors/error-audit.ts` (both) — error persistence, ERR-id generation
+7. `lib/errors/error-catalog-loader.ts` (Fab) — DB-backed error catalog with fallback
+8. `lib/errors/api-error-handler.ts` (both) — error classification and HTTP envelope
+9. `lib/errors/sql-guard.ts` (both) — the bypassable regex SQL allowlist
+
+**Batch 3 — Money**
+10. `lib/model-pricing.ts` (both) — billing rates; silent $0 on unknown models
+11. `lib/model-registry.ts` (Fab) — DB rate source with silent fallback
+
+**Batch 4 — The core chat turn (Fab)**
+12. `app/api/chat/route.ts` — the core chat endpoint
+13. `lib/mcp-client.ts` — MCP tool discovery/execution, credential decryption
+14. `lib/s3-upload.ts` — presigned URLs to private files
+15. `lib/context-window.ts` — message trimming before send
+16. `lib/storage.ts` — the ~40-function Prisma CRUD layer
+
+**Batch 5 — CMF/factory stack (highest risk)**
+17. `lib/cmf/types.ts` — the inverted op codes (0=commit, 1=validate)
+18. `lib/cmf/cmf-client.ts` — commits to the live MES; global TLS weakening
+19. `lib/cmf/cmf-auth.ts` — the MES write key from Secrets Manager
+20. `lib/chat-cmf/tools.ts` — LLM-reachable `loadToCmf` commit
+21. `lib/validation/rule-engine.ts` — the only hard pass/fail gate
+22. One combined page for the CMF-querying validation files (`metadata.ts`, `referential.ts`, `parent-precheck.ts`, `cross-check.ts`, `validate-rows.ts`, etc. — the SQL identifier-interpolation set)
+
+**Batch 6 — Admin destructive surface**
+23. `lib/admin-tools.ts` — ~30 chat tools incl. user deletion
+24. `lib/services/admin-user-service.ts` — delete/suspend/force-logout; missing last-admin check
+25. `lib/services/invitation-service.ts` — account creation, session minting
+26. `lib/email/smtp.ts` + the two email templates — SMTP egress, unescaped HTML
+
+**Batch 7 — Data model**
+27. `admin_athena/prisma/schema.prisma` + the raw-SQL audit tables (`error_audit_logs`, `prompt_audit_logs`, `error_catalog`, `*_daily_counter`)
+
+This is the 25-file High-priority list from `docs/03-review-hotspots.md`, plus `app/api/chat/route.ts` and `storage.ts` added because they're the core path everything else hangs off. A natural split with Colin: batches 2–4 (Fab core) for one of you, 5–7 (CMF + Admin) for the other.

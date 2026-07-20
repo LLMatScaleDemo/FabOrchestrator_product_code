@@ -38,8 +38,7 @@ iam/
 # ---- deploy artifacts ----
 *.zip
 
-# ---- generated docs & sample data (kept on disk, not tracked) ----
-docs/
+# ---- sample data (kept on disk, not tracked) ----
 sample-cmf-inputs/
 
 # ---- logs / os ----
