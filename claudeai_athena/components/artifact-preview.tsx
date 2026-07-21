@@ -468,7 +468,6 @@ export function ArtifactPreview({
             arrayBuffer={fileArrayBuffer}
             isDarkMode={isDarkMode}
             filename={artifact.filename}
-            onDownload={handleDownload}
           />
         </div>
       )
@@ -776,7 +775,7 @@ export function ArtifactPreview({
           )}
 
           {/* Download only for image-preview and document strategies */}
-          {(strategy === 'image-preview' || isDocumentStrategy) && (
+          {(strategy === 'image-preview' || isDocumentStrategy) && strategy !== 'xlsx-preview' && (
             <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={handleDownload}>
               <Download className="h-3 w-3 mr-1" />
               Download
