@@ -1,22 +1,30 @@
 # Scenario 05 — Admin Forces a User to Log Out
 
-> Version: commit `7976c78` on `main`. See [README](../README.md).
-> **Validation: 🔵 Static** — traced directly from the route + service + session-audit code.
+> Version: commit `abe8706` on `main` (re-verified 2026-07-22; originally traced at `7976c78`). See [README](../README.md).
+> **Validation: 🔵 Static** — traced from the route + service + session-audit code. §1's
+> dual-path claim was corrected after a static check (see the §1 correction box).
 
 This scenario shows the admin app's defining pattern: **the audit record is written inside
-the same database transaction as the change**, and the **same service function** is reachable
-from both a REST route and the admin AI chat.
+the same database transaction as the change.**
+
+> **Correction (verified at `abe8706`, 2026-07-22):** an earlier draft claimed the admin AI
+> chat could also trigger force-logout via the **same** `forceLogoutUser` service function.
+> That is **wrong** — `admin_athena/lib/admin-tools.ts` exposes **no force-logout tool**.
+> Force-logout is **REST-route-only**. (Other admin-chat tools such as suspend/delete *do*
+> evict sessions, but through different service calls, not `forceLogoutUser`.) See
+> [tracker discrepancy #18](../07-signoff-tracker.md#76-doc-vs-code-discrepancies-found-by-the-file-deep-dives).
 
 ---
 
-## 1. Entry points — two paths, one service function
+## 1. Entry point — one route, one service function
 
 | Path | Entry | File | Calls |
 |------|-------|------|-------|
 | REST | `POST /api/admin/users/[id]/force-logout` | `admin_athena/app/api/admin/users/[id]/force-logout/route.ts` | `forceLogoutUser(id, adminId, ip)` |
-| Admin AI chat | force-logout tool | `admin_athena/lib/admin-tools.ts` (invoked via `POST /api/admin/chat`) | same `forceLogoutUser(...)` |
 
-Both call **`forceLogoutUser`** in `lib/services/admin-user-service.ts` — identical behavior whether triggered by a button or by the AI.
+The route calls **`forceLogoutUser`** in `lib/services/admin-user-service.ts`. There is **no
+admin-AI-chat path** to this function (confirmed statically: no `force.?logout` tool in
+`admin-tools.ts`).
 
 ---
 
@@ -79,8 +87,8 @@ request fails `validateSession` → **401** and they are logged out. Their audit
 > - `closeAllUserSessions` targets by `user_id` (Prisma-safe here). The related
 >   `reconcileStaleActiveSessions` path matches by `sha256(token)` and filters `is_admin=false`
 >   — confirm an admin can't be force-logged-out through that path.
-> - The chat-tool path should enforce the same `confirm=true` guard and audit; verify the tool
->   body actually calls `forceLogoutUser` (which audits) rather than deleting sessions directly.
+> - There is **no chat-tool path** to force-logout (see the §1 correction). The suspend/delete
+>   chat tools that *do* evict sessions should be checked separately for their own audit coverage.
 
 ## 5. Mermaid sequence diagram
 
@@ -109,6 +117,6 @@ sequenceDiagram
 
 ## 6. Open validation items
 
-- [ ] Verify the admin-chat force-logout tool calls `forceLogoutUser` (so it audits) and requires confirmation.
-- [ ] Verify a self-targeted force-logout cannot lock the admin out of the console.
+- [x] ✅ **Resolved (static, `abe8706`):** there is no admin-chat force-logout tool — force-logout is REST-only. §1 corrected.
+- [ ] Verify a self-targeted force-logout cannot lock the admin out of the console (no self/last-admin guard exists in the service).
 - [ ] Verify the target user receives 401 on their next request.
