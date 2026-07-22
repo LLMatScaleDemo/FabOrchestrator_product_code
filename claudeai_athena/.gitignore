@@ -45,7 +45,11 @@ iam/
 .agents/
 .claude/skills/
 docs/
-scripts/
+scripts/*
+# …but keep the reproducible template-asset verifier tracked (excluded from the
+# EB deploy bundle separately, in DEPLOYMENT.md). Needs `scripts/*` above (not
+# `scripts/`) so git can descend into the dir to honour this negation.
+!scripts/verify-template-assets.ts
 app-logs.json
 test-resolve.js
 test-resolve-file.js

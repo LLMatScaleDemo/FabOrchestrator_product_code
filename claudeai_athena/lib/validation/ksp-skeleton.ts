@@ -59,6 +59,16 @@ function escapeXml(s: string): string {
  * strings index to manage). CMF accepts both shared and inline strings.
  */
 function rewriteHeaderRow(sheetXml: string, headers: string[]): string {
+  // An object can remain in the client template while every one of its columns
+  // is removed by policy (CompatibleService is the current example). Excel
+  // repairs `spans="1:0"` as corrupt cell information, so represent that case
+  // as a valid empty row instead of emitting an impossible span.
+  if (headers.length === 0) {
+    return sheetXml.replace(
+      /<row\b[^>]*\br="1"[^>]*(?:>[\s\S]*?<\/row>|\/>)/,
+      '<row r="1"/>',
+    );
+  }
   const cells = headers
     .map(
       (name, i) =>
@@ -136,7 +146,29 @@ function stripDataRows(sheetXml: string): { newXml: string; removed: number } {
   const openTagMatch = /<sheetData(\s[^>]*)?>/.exec(sheetXml);
   const openTag = openTagMatch ? openTagMatch[0] : "<sheetData>";
   const newSheetData = `${openTag}${keptRows.join("")}</sheetData>`;
-  return { newXml: sheetXml.replace(sheetDataRe, () => newSheetData), removed };
+  const stripped = sheetXml.replace(sheetDataRe, () => newSheetData);
+  // Only row 1 survives, so drop any merged-cell definition that reaches into a
+  // deleted row (its cells no longer exist). Leaving them dangling is tolerated
+  // by Excel but we clear them for a fully self-consistent workbook.
+  return { newXml: dropMergeCellsBeyondRow(stripped, 1), removed };
+}
+
+/**
+ * Remove `<mergeCell>` entries whose range reaches past `maxRow`, and fix the
+ * `<mergeCells count>` (dropping the element entirely if none remain).
+ */
+function dropMergeCellsBeyondRow(sheetXml: string, maxRow: number): string {
+  const blockRe = /<mergeCells\b[^>]*>([\s\S]*?)<\/mergeCells>/;
+  const block = sheetXml.match(blockRe);
+  if (!block) return sheetXml;
+  const kept = [...block[1].matchAll(/<mergeCell\b[^>]*\bref="([^"]+)"\s*\/>/g)].filter((c) =>
+    [...c[1].matchAll(/[A-Za-z]+(\d+)/g)].every((r) => Number(r[1]) <= maxRow),
+  );
+  if (kept.length === 0) return sheetXml.replace(blockRe, "");
+  return sheetXml.replace(
+    blockRe,
+    `<mergeCells count="${kept.length}">${kept.map((c) => c[0]).join("")}</mergeCells>`,
+  );
 }
 
 /**
@@ -256,6 +288,47 @@ export type GenerateSkeletonResult = {
  *    untouched. CMF accepts the file because every OOXML piece its
  *    GetMasterDataPackageObjectTypes endpoint dictionaries-into is intact.
  */
+/**
+ * The MIME types OPC needs declared for the part extensions we ship. Every part
+ * in a package must have its content type resolvable via a `Default` (by
+ * extension) or `Override` (by part name); an undeclared extension makes the
+ * package non-conformant and Excel shows "We found a problem with some content …
+ * try to recover" on open.
+ *
+ * Two extensions need this:
+ *  - `json` — our own `xl/_kspSkeletonMarker.json` detection marker.
+ *  - `vml`  — KSP_DL ships ~151 legacy VML drawing parts (comments/shapes) but
+ *             its `[Content_Types].xml` never declared `vml`. Excel is lenient
+ *             about VML alone, but combined with the json part it trips the
+ *             repair prompt, so we declare both.
+ */
+const REQUIRED_DEFAULTS: Record<string, string> = {
+  json: "application/json",
+  vml: "application/vnd.openxmlformats-officedocument.vmlDrawing",
+};
+
+/**
+ * Write the skeleton-detection marker part and ensure every extension present in
+ * the package (json marker + any legacy vml) is declared in `[Content_Types].xml`,
+ * so the workbook opens in Excel without a "problem with content" repair prompt.
+ * The marker stays readable by `readSkeletonMarker`.
+ */
+async function stampSkeletonMarker(zip: JSZip, marker: unknown): Promise<void> {
+  zip.file("xl/_kspSkeletonMarker.json", JSON.stringify(marker));
+  const ctEntry = zip.file("[Content_Types].xml");
+  if (!ctEntry) return;
+  let ct = await ctEntry.async("text");
+  let changed = false;
+  for (const [ext, type] of Object.entries(REQUIRED_DEFAULTS)) {
+    const present = ext === "json" || zip.file(new RegExp(`\\.${ext}$`, "i")).length > 0;
+    if (present && !new RegExp(`Extension="${ext}"`, "i").test(ct)) {
+      ct = ct.replace("</Types>", `<Default Extension="${ext}" ContentType="${type}"/></Types>`);
+      changed = true;
+    }
+  }
+  if (changed) zip.file("[Content_Types].xml", ct);
+}
+
 export async function generateSkeletonBlank(
   input: GenerateSkeletonInput,
 ): Promise<GenerateSkeletonResult> {
@@ -375,12 +448,11 @@ export async function generateSkeletonBlank(
   // Drop a small marker so `validateTemplate` can detect this is a
   // skeleton-built workbook (and skip the expensive ExcelJS re-parse path,
   // which hangs on the rich KSP_DL content even after row stripping).
-  const marker = {
+  await stampSkeletonMarker(zip, {
     skeleton: true,
     visibleSheets: visible,
     rowsStripped: totalStripped,
-  };
-  zip.file("xl/_kspSkeletonMarker.json", JSON.stringify(marker));
+  });
 
   const outBytes = await zip.generateAsync({
     type: "uint8array",
@@ -596,10 +668,11 @@ export async function generateFromSkeleton(
   // preserves the KSP_DL structure byte-for-byte; we only append <row>
   // elements. That makes the output loader-conformant by construction —
   // the same guarantee blank templates carry.
-  zip.file(
-    "xl/_kspSkeletonMarker.json",
-    JSON.stringify({ skeleton: true, visibleSheets: visibleForMarker, rowsStripped: 0 }),
-  );
+  await stampSkeletonMarker(zip, {
+    skeleton: true,
+    visibleSheets: visibleForMarker,
+    rowsStripped: 0,
+  });
 
   const out = await zip.generateAsync({
     type: "uint8array",

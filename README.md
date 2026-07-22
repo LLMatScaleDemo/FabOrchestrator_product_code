@@ -4,10 +4,10 @@ Monorepo holding the two sibling **Next.js (TypeScript)** applications of the Fa
 Orchestration — Auditing & Error-handling platform. Both apps share one PostgreSQL
 database (`claude_ai_athena` on AWS RDS, us-west-2).
 
-| App | Folder | Role | Hosting |
-|-----|--------|------|---------|
-| **FabOrchestrator.AI** (LLMatscale.ai) | [`claudeai_athena/`](./claudeai_athena) | End-user streaming Claude chat, MCP tools, file uploads, document generation | AWS Elastic Beanstalk (Docker) |
-| **NexusOps AI** (Admin) | [`admin_athena/`](./admin_athena) | Chat-driven admin console: users, roles, **models**, MCP registry, usage/cost analytics, audit logs, error catalog | AWS App Runner (ECR via CodeBuild) |
+| App                                          | Folder                                   | Role                                                                                                                    | Hosting                            |
+| -------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| **FabOrchestrator.AI** (LLMatscale.ai) | [`claudeai_athena/`](./claudeai_athena) | End-user streaming Claude chat, MCP tools, file uploads, document generation                                            | AWS Elastic Beanstalk (Docker)     |
+| **NexusOps AI** (Admin)                | [`admin_athena/`](./admin_athena)       | Chat-driven admin console: users, roles,**models**, MCP registry, usage/cost analytics, audit logs, error catalog | AWS App Runner (ECR via CodeBuild) |
 
 Both satisfy the four-part audit-and-error spec: error catalog (REQ-01), session audit
 (REQ-02), error audit (REQ-03), and prompt audit with token + USD-cost columns (REQ-04).
@@ -32,11 +32,11 @@ mirrors the shared set.
 
 The Fab app exposes three branded models (user-facing label → Anthropic model id):
 
-| Label | Model id | Default |
-|-------|----------|---------|
-| FabOrchestrator 1.0 | `claude-opus-4-7` | |
-| FabOrchestrator 1.1 | `claude-sonnet-5` | |
-| **FabOrchestrator 2.0** | `claude-opus-4-8` | ✓ |
+| Label                         | Model id            | Default |
+| ----------------------------- | ------------------- | ------- |
+| FabOrchestrator 1.0           | `claude-opus-4-7` |         |
+| FabOrchestrator 1.1           | `claude-sonnet-5` |         |
+| **FabOrchestrator 2.0** | `claude-opus-4-8` | ✓      |
 
 Models — their display name, model id, per-token pricing (input / output / cache read /
 cache write), thinking mode, active flag and default — are **configured from the admin UI**
@@ -86,6 +86,6 @@ npm run test:a11y    # accessibility tests (jest-axe)
 ## Deployment
 
 Per-app runbooks:
+
 - FabOrchestrator.AI → [`claudeai_athena/DEPLOYMENT.md`](./claudeai_athena/DEPLOYMENT.md)
 - NexusOps AI → [`admin_athena/DEPLOYMENT.md`](./admin_athena/DEPLOYMENT.md)
-</content>

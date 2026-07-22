@@ -119,7 +119,8 @@ VERSION="v$(date +%Y%m%d-%H%M%S)-admin"
 
 zip -r eb-deploy.zip . \
   -x "node_modules/*" ".next/*" "*.zip" ".env" ".env.local" ".env.*.local" \
-     ".claude/*" "iam/*" ".git/*" "ref_docs/*" "scripts/*" "*.log"
+     ".claude/*" "iam/*" ".git/*" "ref_docs/*" "scripts/*" "*.log" \
+     "docs/*" "sample-cmf-inputs/*" ".playwright-mcp/*"
 
 aws s3 cp eb-deploy.zip "s3://$BUCKET/eb-deploy.zip" --region us-west-2
 aws elasticbeanstalk create-application-version --application-name fab-admin \

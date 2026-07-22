@@ -7,11 +7,15 @@ import { generateSkeletonBlank, generateFromSkeleton, readSkeletonMarker } from 
 import { getComposition, parentOf } from "@/lib/validation/composition";
 import { createStagedUpload, getStagedUpload } from "@/lib/repo-cmf/validation";
 import { validateParsedSheets } from "@/lib/validation/template-check";
+import { checkCrossSheetWithMetadata, mergeFindings } from "@/lib/validation/cross-sheet";
 import { parseWorkbook } from "@/lib/validation/xlsx";
 import { prefillFormFromInput } from "@/lib/chat-cmf/prefill";
 import { lookupExisting } from "@/lib/chat-cmf/lookup-existing";
+import { browseCmfRecords } from "@/lib/chat-cmf/browse";
+import { fillFromExisting } from "@/lib/chat-cmf/fill-from-existing";
 import { previewLoadImpact } from "@/lib/chat-cmf/load-preview";
 import { loadMasterData } from "@/lib/cmf/cmf-client";
+import { toModelSafeError } from "@/lib/cmf/cmf-errors";
 import { isSystemManaged } from "@/lib/validation/system-columns";
 import { isObjectRemoved, isColumnRemoved, getRemovedColumns } from "@/lib/validation/removal-policy";
 
@@ -52,16 +56,31 @@ export function buildChatTools(userId: string) {
   return {
     resolveObjectType: tool({
       description:
-        "Map a user's free-text request (e.g. 'production orders', 'materials') to real CMF master-data object types. Returns ranked candidates; confirm the chosen type with the user before doing DB work.",
+        "Map a user's free-text request (e.g. 'production orders', 'materials') to a real CMF object type. Returns a DECISION, not just a list: when one type clearly wins it returns `confident: true` with `objectType` — proceed with it, do NOT ask the user to confirm. Only when `ambiguous: true` should you ask the user to pick from `candidates`. This keeps the choice deterministic (the tool decides), not a guess.",
       inputSchema: z.object({
         query: z.string().describe("The user's free-text description of what they want to load"),
       }),
       execute: async ({ query }) => {
-        const candidates = resolveObjectType(query).map((c) => ({
+        const ranked = resolveObjectType(query).map((c) => ({
           ...c,
           removed: isObjectRemoved(c.objectType),
         }));
-        return { candidates };
+        // Exact template-key match (incl. simple singular/plural), or a dominant
+        // top score, is confident — otherwise ask the user to pick.
+        const norm = query.trim().toLowerCase();
+        const exact =
+          SCHEMA_BY_LOWER.get(norm)?.objectType ??
+          SCHEMA_BY_LOWER.get(norm.replace(/s$/, ""))?.objectType ??
+          SCHEMA_BY_LOWER.get(norm.replace(/ies$/, "y"))?.objectType;
+        const [top, second] = ranked;
+        const dominant = !!top && top.score >= 0.6 && (!second || top.score - second.score >= 0.2);
+        const confident = !!exact || dominant;
+        return {
+          confident,
+          ambiguous: !confident && ranked.length > 0,
+          objectType: confident ? exact ?? top.objectType : undefined,
+          candidates: ranked.slice(0, 6),
+        };
       },
     }),
 
@@ -164,6 +183,118 @@ export function buildChatTools(userId: string) {
       execute: async ({ objectType, names }) => {
         try {
           return await lookupExisting(objectType, names);
+        } catch (err) {
+          return { error: errMessage(err) };
+        }
+      },
+    }),
+
+    browseCmfRecords: tool({
+      description:
+        "CMF database lookup for DISCOVERY — use when the user is looking for records but does NOT know the exact name(s): 'what flows exist?', 'list existing flow names', 'products and their flow', 'which products use flow F1', 'flows with wafer in the name'. Lists / searches the live CMF records of ANY object type (Flow, Product, Resource, Step, Area, …) and returns Name + Description + the object's link fields (e.g. Product → FlowPath), plus the TOTAL count so you can say 'showing 50 of 3,120'. Read-only. Use `search` for a keyword, `filterColumn`+`filterValue` for a reverse lookup ('which products use flow F1' → filterColumn 'FlowPath', filterValue 'F1'), and `columns` to request specific fields. This is the tool for browsing; use lookupExisting instead only when the user already gave exact Names to update/clone/inspect. Present results as a clean list in business language and offer to continue the build/load with a name the user picks.",
+      inputSchema: z.object({
+        objectType: z
+          .string()
+          .describe("Object type to browse, e.g. 'Flow', 'Product'. Fuzzy words like 'flows' are resolved automatically."),
+        search: z
+          .string()
+          .optional()
+          .describe("Keyword to filter by (substring match on Name/Description, case-insensitive)."),
+        filterColumn: z
+          .string()
+          .optional()
+          .describe("Field to exact-match for a reverse lookup, e.g. 'FlowPath' on Product. Must be a real field of the object."),
+        filterValue: z.string().optional().describe("Value for filterColumn."),
+        columns: z
+          .array(z.string())
+          .optional()
+          .describe("Specific fields to return; defaults to Name + Description + the object's link columns."),
+        limit: z.number().optional().describe("Max rows (default 50, max 200)."),
+      }),
+      execute: async ({ objectType, search, filterColumn, filterValue, columns, limit }) => {
+        try {
+          // Accept fuzzy words ('flows', 'product') by resolving to a canonical type.
+          const canonical = SCHEMA_BY_LOWER.get(objectType.toLowerCase())
+            ? objectType
+            : resolveObjectType(objectType)[0]?.objectType ?? objectType;
+          const result = await browseCmfRecords({
+            objectType: canonical,
+            search,
+            filterColumn,
+            filterValue,
+            columns,
+            limit,
+          });
+          if (result.removed) {
+            return { error: `"${canonical}" isn't part of this template, so it can't be browsed.` };
+          }
+          if (result.metadataMissing) {
+            return {
+              error: `"${canonical}" can't be listed on its own — it's part of another object. Ask about its parent instead.`,
+            };
+          }
+          if (result.error) return { error: result.error };
+          return {
+            objectType: result.objectType,
+            columns: result.columns,
+            rows: result.rows,
+            total: result.total,
+            returned: result.returned,
+            truncated: result.truncated,
+          };
+        } catch (err) {
+          return { error: errMessage(err) };
+        }
+      },
+    }),
+
+    fillFromExisting: tool({
+      description:
+        "Build a template PRE-FILLED with EXISTING CMF records, so the user edits instead of typing from scratch. Reads live data and maps it into the template (relationships resolved to names), then stages a ready file. Use when the user wants to: start from existing data ('pre-fill a Resource template with the resources in the Assembly area'), CLONE a set ('make a Product template from the products in group BULK'), or BULK-EDIT existing records ('set Type=Standard on every product in group BULK' → pass `set`). Select records by `names`, or by `filterColumn`+`filterValue` (a direct field OR a related object's name, e.g. filter Resource by Area='Assembly'), or by `search`. The retrieved data comes straight from CMF — it is never invented. After this returns a stagingId, call validateTemplate then present the Download (same gate as generateExcel). Single-sheet objects for now. Tell the user how many rows were filled and remind them referenced parents must exist in CMF.",
+      inputSchema: z.object({
+        objectType: z.string().describe("Object type to fill, e.g. 'Resource', 'Product'. Fuzzy words are resolved."),
+        names: z.array(z.string()).optional().describe("Specific existing records to pull, by Name."),
+        filterColumn: z
+          .string()
+          .optional()
+          .describe("Field to match records on — a direct field or a related object's name (e.g. 'Area')."),
+        filterValue: z.string().optional().describe("Value for filterColumn (e.g. 'Assembly')."),
+        search: z.string().optional().describe("Keyword on Name/Description instead of an exact filter."),
+        set: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Bulk change applied to EVERY retrieved row before writing (column → new value). Use for bulk-edits."),
+        packageName: z.string().describe("A name for the package/file."),
+        scope: z.enum(["full", "narrow"]).optional().describe("narrow = just this object's sheet; full = whole layout."),
+        limit: z.number().optional().describe("Max records to pull (default 100, max 1000)."),
+      }),
+      execute: async ({ objectType, names, filterColumn, filterValue, search, set, packageName, scope, limit }) => {
+        try {
+          const canonical = SCHEMA_BY_LOWER.get(objectType.toLowerCase())
+            ? objectType
+            : resolveObjectType(objectType)[0]?.objectType ?? objectType;
+          const result = await fillFromExisting({
+            userId,
+            objectType: canonical,
+            selector: { names, filterColumn, filterValue, search, limit },
+            set,
+            packageName,
+            scope,
+          });
+          if (result.removed) return { error: `"${canonical}" isn't part of this template.` };
+          if (result.metadataMissing) return { error: `"${canonical}" can't be filled from existing data (no data table).` };
+          if (result.error) return { error: result.error };
+          return {
+            stagingId: result.stagingId,
+            filename: result.filename,
+            objectType: result.objectType,
+            rowCount: result.rowCount,
+            columnsFilled: result.columnsFilled,
+            total: result.total,
+            truncated: result.truncated,
+            applied: result.applied,
+            parentCheckPerformed: false as const,
+          };
         } catch (err) {
           return { error: errMessage(err) };
         }
@@ -564,7 +695,16 @@ export function buildChatTools(userId: string) {
             };
           }
           const sheets = await parseWorkbook(staged.bytes);
-          const result = validateParsedSheets(sheets);
+          const structural = validateParsedSheets(sheets);
+          // Cross-sheet integrity (PK uniqueness + FK/key consistency). Never
+          // throws — degrades to PK-only when CMF metadata is unreachable.
+          let result = structural;
+          try {
+            const crossErrors = await checkCrossSheetWithMetadata(sheets);
+            result = mergeFindings(structural, crossErrors);
+          } catch (crossErr) {
+            console.error("[validateTemplate] cross-sheet check failed", crossErr);
+          }
           const errors = Object.entries(result.errorsByType).flatMap(([objectType, list]) =>
             list.map((e) => ({
               objectType,
@@ -654,7 +794,10 @@ export function buildChatTools(userId: string) {
 }
 
 function errMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+  // Business-facing agent: never leak host/IP/VPN/driver/config detail. A raw
+  // driver message like "Failed to connect to 10.10.1.224\ONLINE in 20000ms"
+  // becomes a calm, actionable line the model can relay verbatim.
+  return toModelSafeError(err);
 }
 
 export type ChatTools = ReturnType<typeof buildChatTools>;

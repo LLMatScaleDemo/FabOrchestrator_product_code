@@ -115,7 +115,7 @@ export function toFriendly(err: unknown): FriendlyError {
   // Generic JS / network errors
   const msg = err instanceof Error ? err.message : String(err);
   if (
-    /ENOTFOUND|ECONNREFUSED|ECONNRESET|fetch failed|ETIMEDOUT/i.test(msg)
+    /ENOTFOUND|ECONNREFUSED|ECONNRESET|fetch failed|ETIMEDOUT|ETIMEOUT|ESOCKET|EPIPE|socket hang up|Failed to connect|Could not connect|SQL Browser|getaddrinfo/i.test(msg)
   ) {
     return {
       title: "Can't reach the CMF server",
@@ -141,6 +141,38 @@ export function toFriendly(err: unknown): FriendlyError {
     action: undefined,
     httpStatus: 500,
   };
+}
+
+/** Matches an IPv4 address or a `HOST\INSTANCE` token — anything we must never
+ *  hand to the business-facing chat agent. */
+const HOST_OR_IP = /\b\d{1,3}(?:\.\d{1,3}){3}\b|\b[A-Za-z0-9_.-]+\\[A-Za-z0-9_.-]+\b/g;
+
+/**
+ * Error text safe to hand to the CHAT AGENT (Modeling Agent), which surfaces it
+ * to a business user. Unlike `toFriendly` (used by the operator-facing loader
+ * wizard, where "check the VPN / CMF host" is helpful), this never mentions a
+ * host, IP address, port, VPN, driver code, or internal config setting.
+ *
+ * - Any reachability / timeout failure collapses to one calm line.
+ * - Internal misconfiguration is kept generic (never names the env var).
+ * - Genuine CMF business messages (e.g. duplicate name) pass through, but with
+ *   any host/IP token scrubbed as a last line of defence.
+ */
+export function toModelSafeError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  if (
+    /ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|ETIMEOUT|ESOCKET|EPIPE|socket hang up|Failed to connect|Could not connect|connection is closed|connection timeout|SQL Browser|getaddrinfo|fetch failed|network error/i.test(
+      raw,
+    )
+  ) {
+    return "The manufacturing system is temporarily unavailable. Please try again in a few moments, and let your administrator know if it keeps happening.";
+  }
+  if (/not configured|is not set|missing .*env|environment variable/i.test(raw)) {
+    return "This capability isn't available right now. Please contact your administrator.";
+  }
+  const f = toFriendly(err);
+  const text = f.cmfMessage ?? f.description ?? raw;
+  return text.replace(HOST_OR_IP, "the system").slice(0, 400);
 }
 
 /**
