@@ -1,11 +1,12 @@
-# `lib/validation/*` + `lib/chat-cmf/*` (CMF-querying) — the eight files that build SQL against live CMF tables
+# `lib/validation/*` + `lib/chat-cmf/*` (CMF-querying) — the nine files that build SQL against live CMF tables
 
-> Version: commit `7976c78` on `main`. Validation: 🔵 Static — written by reading code,
-> not yet confirmed by a code owner or runtime.
+> Version: commit `abe8706` on `main` (re-verified 2026-07-22; originally written at
+> `7976c78`). Validation: 🔵 Static — written by reading code, not yet confirmed by a
+> code owner or runtime.
 > App: **Fab only** (`claudeai_athena`) · Review priority: **High** ·
 > Catalog row: [01 — File catalog](../01-file-catalog.md) · Hotspot: [03 §1 row 19](../03-review-hotspots.md#1-the-high-priority-files-at-a-glance) + [03 §5](../03-review-hotspots.md#5-raw-sql--injection-surface)
 
-One combined page for the eight Fab files that share a single pattern: **SQL text built by
+One combined page for the nine Fab files that share a single pattern: **SQL text built by
 string-interpolating `[schema].[table]` (and sometimes column) identifiers, with all
 *values* passed as mssql parameters**, executed through the shared read-only CMF SQL
 connection ([`lib/cmf/cmf-sql.ts`](#the-connection-libcmfcmf-sqlts)). The files:
@@ -16,6 +17,7 @@ connection ([`lib/cmf/cmf-sql.ts`](#the-connection-libcmfcmf-sqlts)). The files:
 | `lib/validation/referential.ts` | Parent-existence resolver (file + CMF) for the rule engine |
 | `lib/validation/parent-precheck.ts` | FK check of child rows against live CMF parent tables |
 | `lib/validation/cross-check.ts` | CMF round-trip: exists / update / no-op, dependent sheets, parent-in-CMF notes |
+| `lib/validation/cross-sheet.ts` | Cross-sheet PK-uniqueness + FK integrity for the staged-upload validate gate *(new at `abe8706`)* |
 | `lib/validation/validate-rows.ts` | File-less rule run over in-memory rows (built for the chatbot path) |
 | `lib/chat-cmf/load-preview.ts` | Per-row CREATE / UPDATE / SKIP / CONFLICT preview of a staged .xlsx |
 | `lib/chat-cmf/lookup-existing.ts` | Look up existing CMF rows by Name (`select *`) for update/clone/inspect intents |
@@ -38,7 +40,7 @@ then interpolates into its own queries.
 
 ## Depends on / consumed by
 
-**Depends on (all eight):** `cmfQuery` from `lib/cmf/cmf-sql.ts` (mssql pool; env
+**Depends on (all nine):** `cmfQuery` from `lib/cmf/cmf-sql.ts` (mssql pool; env
 `CMF_SQL_SERVER/DB/USER/PASS/INSTANCE`), and — for all but `metadata.ts` itself —
 `loadRuleset` from `metadata.ts`. Extras: `parent-precheck.ts` + `load-preview.ts` +
 `prefill.ts` use `removal-policy.ts`; `cross-check.ts` uses `structure-check.ts`
@@ -49,26 +51,33 @@ then interpolates into its own queries.
 **Consumed by** (verified by import grep at the pinned commit — **and this is the page's
 biggest surprise**):
 
-| File | Consumers at `7976c78` |
+| File | Consumers at `abe8706` |
 |---|---|
-| `metadata.ts` | `chat-cmf/tools.ts` (LLM toolset), `chat-cmf/{load-preview,lookup-existing,prefill}.ts`, `app/api/modeling-agent/chat/parent-options/[targetType]/route.ts`, and the four unwired files below; `rule-engine.ts` (types only) |
+| `metadata.ts` | `chat-cmf/tools.ts` (LLM toolset), `chat-cmf/{load-preview,lookup-existing,prefill}.ts`, `app/api/modeling-agent/chat/parent-options/[targetType]/route.ts`, `validation/cross-sheet.ts`, and the four unwired files below; `rule-engine.ts` (types only) |
 | `load-preview.ts` | `chat-cmf/tools.ts` → LLM tool `previewLoadImpact` (also referenced by `app/api/modeling-agent/chat/route.ts`) |
 | `lookup-existing.ts` | `chat-cmf/tools.ts` → LLM tool `lookupExisting` |
 | `prefill.ts` | `chat-cmf/tools.ts` → LLM tool `prefillFormFromInput` |
+| `cross-sheet.ts` | `app/api/cmf/packages/stage/[id]/validate/route.ts` (POST — the shipped staged-upload validate button) |
 | `referential.ts` | **only** `validate.ts` and `validate-rows.ts` — both themselves unconsumed (below) |
 | `cross-check.ts` | **only** `validate.ts` — itself unconsumed |
 | `validate-rows.ts` | **none found** (no static or dynamic import anywhere in the app) |
 | `parent-precheck.ts` | **none found** |
 
 `lib/validation/validate.ts` (`validateFile` / `validatePreflightFromSheets`, the
-orchestrator that would wire `referential` + `cross-check` into an upload flow) also has
-**no importers** at this commit. The staging validate route
-(`app/api/cmf/packages/stage/[id]/validate/route.ts`) runs only the template/structure
-check and explicitly documents "no CMF round-trips, no rule-engine R1–R6, no
-cross-checks". So at `7976c78` **the only live paths into this group are the three
-chat-CMF LLM tools + the parent-options dropdown route**, all rooted in `loadRuleset`.
-The other four files look like a built-but-not-yet-wired (or no-longer-wired) loader
-pipeline — a code owner must say which.
+orchestrator that would wire `referential` + `cross-check` into an upload flow) still has
+**no importers** at this commit. But the staging validate route
+(`app/api/cmf/packages/stage/[id]/validate/route.ts`) is **no longer template-only**:
+since `abe8706` it layers `checkCrossSheetWithMetadata` + `mergeFindings` from
+`cross-sheet.ts` on top of the template/structure check, and a blocking finding there
+denies `VALIDATED` status. (The route's docstring still claims "no CMF round-trips …
+no cross-checks" — that comment is stale.) So at `abe8706` **the live paths into this
+group are four: the three chat-CMF LLM tools + the parent-options dropdown route** (all
+rooted in `loadRuleset`) **+ the stage validate route** → `cross-sheet.ts` →
+`loadRuleset` (cross-sheet.ts:224, 255) and direct `cmfQuery` against parent tables
+(cross-sheet.ts:266-270). The other four files (`parent-precheck.ts`,
+`validate-rows.ts`, `referential.ts`, `cross-check.ts`) still look like a
+built-but-not-yet-wired (or no-longer-wired) loader pipeline — a code owner must say
+which.
 
 ## Shared mechanics
 
@@ -98,7 +107,7 @@ Every query in the group has the same shape:
   in chunks of 500 to stay under SQL Server's 2100-parameter cap. No user *value* is ever
   concatenated into SQL. ✔ (matches the hotspot doc)
 - **Identifiers are always interpolated**, bracket-quoted but **not `]]`-escaped**:
-  table names (all eight files + the parent-options route), column lists
+  table names (all nine files + the parent-options route), column lists
   (`cross-check.ts` `fetchCmfRows`, `load-preview.ts` step 1), and numeric caps
   (`top ${FK_QUERY_CAP}` = 5000, `top ${FK_OPTION_CAP + 1}` = 1001, `top ${MAX_OPTIONS + 1}`
   = 501 — all module-level constants, never inputs).
@@ -109,8 +118,9 @@ Where do the interpolated identifiers actually come from? The chain, traced end-
 
 1. **The entry input is user/LLM-influenced.** `objectType` arrives as an LLM tool
    argument (`chat-cmf/tools.ts`), a URL path segment (`parent-options/[targetType]`),
-   or an uploaded workbook's sheet name (`load-preview`, and the unwired `validate.ts`
-   path). Any of these can be arbitrary text.
+   or an uploaded workbook's sheet name (`load-preview`, `cross-sheet.ts` via the stage
+   validate route, and the unwired `validate.ts` path). Any of these can be arbitrary
+   text.
 2. **But it is only ever used as a parameterized value.** `loadRuleset(objectType)` runs
    three metadata queries (Smart → Generic → Entity tables `T_SmartTableProperty` etc.)
    with `@name = objectType`. No metadata match → `null` ruleset → every caller bails
@@ -185,6 +195,30 @@ sheet-level error listing parents that are in neither the file nor CMF); and
 **parent-in-CMF info** notes. Emits `ValidationError`s with severity `info`/`error`.
 *Unwired at this commit* (only via `validate.ts`).
 
+### `cross-sheet.ts` — `checkCrossSheet`, `checkCrossSheetWithMetadata`, `mergeFindings` *(new at `abe8706`)*
+
+The one validation-side file that **is** live: the stage validate route calls it after
+the structural check. The pure core `checkCrossSheet` (parent-existence injected, no I/O)
+checks (1) **PK uniqueness** per sheet — key columns from metadata `isKey` props, falling
+back to `Name`; composite keys joined with a non-printing separator; case-insensitive —
+where duplicates are **always blocking** `pk-duplicate` errors; and (2) **FK / key
+consistency** — every `referenceTargetType` value must resolve to the parent's own sheet
+in the file or to live CMF, with a bounded-edit-distance "did you mean" suggestion from
+in-file candidates. An unresolved FK is a blocking `cross-sheet-fk` **error only when CMF
+was reachable** to confirm the parent's absence; otherwise it is downgraded to a warning
+and the check degrades to PK-only. The async wrapper `checkCrossSheetWithMetadata`
+(~lines 140-205 core / 214-283 wrapper) loads rulesets via `loadRuleset` and builds
+per-target CMF existence sets with the group's standard query —
+`` `select Name from [${parentRs.table.schema}].[${parentRs.table.name}] where Name in (…)` ``
+(cross-sheet.ts:267) — values parameterized, chunked ×500 (~line 259); any CMF failure
+flips `cmfReachable` false. `mergeFindings` folds the findings into the structural
+`ValidationResult` and **recomputes `ok = errorCount === 0`** (~lines 290-311), which is
+what makes this a real gate: the route sets `VALIDATED` only when the merged `ok` holds.
+It also introduces the two new `ValidationCategory` values `pk-duplicate` and
+`cross-sheet-fk` (`lib/validation/types.ts:24-27`). The identifier-provenance verdict
+above extends to it unchanged: the interpolated `[schema].[name]` comes from
+`loadRuleset`'s `INFORMATION_SCHEMA`-resolved metadata, never from user input.
+
 ### `validate-rows.ts` — `validateRows`, `checkExistingNames`, `checkParents`
 
 The file-less twin of the loader validation: runs the same `runRules` R1–R6 over
@@ -234,13 +268,16 @@ No metadata at all → every cell passes through as `"ok"` with `metadataMissing
 
 ## Failure modes & gotchas
 
-- **Half the group is unreachable at the pinned commit.** `parent-precheck.ts`,
+- **Four of the group are still unreachable at the pinned commit.** `parent-precheck.ts`,
   `validate-rows.ts`, `referential.ts`, `cross-check.ts` (and their orchestrator
-  `validate.ts`) have no live callers — the staging validate route runs only the
-  template check. Either the deep pre-flight pipeline was never wired in, or it was
-  unwired. Until that's resolved, statements like "cross-checks run before load" are
-  **not true at runtime**, and [03 §4](../03-review-hotspots.md#4-data-integrity--destructive-actions)'s
-  atomic-rollback concern rests entirely on `load-preview.ts` + the tool description.
+  `validate.ts`) have no live callers. The staging validate route now runs the template
+  check **plus** the `cross-sheet.ts` PK/FK gate — so duplicate keys and unresolved
+  cross-sheet FKs are caught pre-load — but the deeper pre-flight pipeline (rule-engine
+  R1–R6, per-target cross-checks) remains unwired. Until that's resolved, statements
+  like "cross-checks run before load" are only true for the PK/FK subset, and
+  [03 §4](../03-review-hotspots.md#4-data-integrity--destructive-actions)'s
+  atomic-rollback concern rests on `load-preview.ts` + `cross-sheet.ts` + the tool
+  description.
 - **The identifier trust anchor is the CMF DB itself.** Bracket quoting without `]]`
   escaping means a hostile table or property name in CMF breaks the query (see
   provenance verdict above). Low practical risk (requires CMF DB write access), but the
@@ -277,7 +314,7 @@ No metadata at all → every cell passes through as `"ok"` with `metadataMissing
 
 1. Confirm CMF property/table names are authored only by trusted CMF modelers/DBAs — no app-user or LLM path can influence them. (Hotspot row 19 / §5.)
 2. Is `CMF_SQL_USER` a read-only login?
-3. Are `parent-precheck.ts`, `validate-rows.ts`, `cross-check.ts`, `referential.ts`, and `validate.ts` intentionally unwired at `7976c78`?
+3. Are `parent-precheck.ts`, `validate-rows.ts`, `cross-check.ts`, `referential.ts`, and `validate.ts` intentionally unwired at `abe8706`, now that `cross-sheet.ts` re-implements the FK/duplicate-key checks on the live path?
 4. Is `select *` in `lookup-existing.ts` acceptable given rows reach LLM context, or is a system/sensitive-column deny-list needed?
 5. Is the never-refreshed ruleset cache (including cached `null`) acceptable, or should `clearRulesetCache` be wired to something?
 6. Confirm `encrypt: false` / `trustServerCertificate: true` on the CMF SQL connection is the intended production posture

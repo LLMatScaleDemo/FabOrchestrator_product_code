@@ -1,7 +1,8 @@
 # `lib/validation/rule-engine.ts` — the deterministic R1–R6 rule gate for master-data files
 
-> Version: commit `7976c78` on `main`. Validation: 🔵 Static — written by reading code,
-> not yet confirmed by a code owner or runtime.
+> Version: commit `abe8706` on `main` (re-verified 2026-07-22; originally written at
+> `7976c78`). Validation: 🔵 Static — written by reading code, not yet confirmed by a
+> code owner or runtime.
 > App: **Fab only** (`claudeai_athena/lib/validation/rule-engine.ts`; no Admin copy — see
 > Both-apps note) · Review priority: **High** ·
 > Catalog row: [01 — File catalog §A.4](../01-file-catalog.md) · Hotspot: [03 §1 row 18](../03-review-hotspots.md#1-the-high-priority-files-at-a-glance)
@@ -43,12 +44,19 @@ no env vars, no I/O — the CMF/file lookups are injected as the synchronous
 ⚠️ **Statically unwired at this commit:** no route, chat tool, or other module imports
 `validate.ts` or `validate-rows.ts` (grepped for `validateFile`, `validatePreflightFromSheets`,
 `validateRows`, `checkExistingNames`, `checkParents`, and every `validation/validate*`
-path form — zero callers). The staging route
-`app/api/cmf/packages/stage/[id]/validate/route.ts` explicitly says it is a
-"Template-conformance check only — … no rule-engine R1–R6", and
-`app/api/cmf/packages/[id]/validate/route.ts` queues **CMF's own remote dry-run**
-(`queueMasterDataExecution(id, 1, …)`) instead. So as far as static reading shows, R1–R6
-never execute on any live path at `7976c78`. See open question 1.
+path form — zero callers; re-verified at `abe8706`). The staging route
+`app/api/cmf/packages/stage/[id]/validate/route.ts` still carries a docstring saying
+"Template-conformance check only — no CMF round-trips, no rule-engine R1–R6, no
+cross-checks" — **that comment is now stale**: since `abe8706` the route *also* runs a
+new deterministic, **blocking** local gate, `lib/validation/cross-sheet.ts`
+(`checkCrossSheetWithMetadata` + `mergeFindings`, called at route.ts:65-77) — cross-sheet
+PK-uniqueness plus FK integrity against the file's own sheets and live CMF; a
+`pk-duplicate` error (always blocking) or a CMF-confirmed unresolved `cross-sheet-fk`
+blocks `VALIDATED` status (route.ts:80). Crucially, `cross-sheet.ts` does **not** import
+`rule-engine.ts`, `validate.ts`, or `validate-rows.ts` — it is a parallel implementation,
+so R1–R6 specifically still never execute on any live path. And
+`app/api/cmf/packages/[id]/validate/route.ts` still queues **CMF's own remote dry-run**
+(`queueMasterDataExecution(id, 1, …)`). See open question 1.
 
 ## Function-by-function
 
@@ -118,10 +126,16 @@ is module-private.
 
 ## Failure modes & gotchas
 
-- **The downgrade means genuinely invalid rows can pass the only blocking gate.** A row
-  missing a mandatory FK/numeric value, referencing a nonexistent parent, or putting
-  text in an Int column produces only warnings; `validate.ts` returns `ok: true` when
-  `errorCount === 0`. The next line of defense is CMF itself — and per
+- **The downgrade means genuinely invalid rows can pass this gate — but it is no longer
+  the only local one.** A row missing a mandatory FK/numeric value, referencing a
+  nonexistent parent, or putting text in an Int column produces only warnings here;
+  `validate.ts` returns `ok: true` when `errorCount === 0`. Since `abe8706`, though, the
+  *live* staging validate path has its own deterministic blocking gate
+  (`cross-sheet.ts`): duplicate keys are always errors, and a parent that CMF confirms is
+  absent is a blocking `cross-sheet-fk` error (downgraded to a warning only when CMF is
+  unreachable, where the check degrades to PK-only). What still falls through unchecked
+  on the live path are the R1–R5-shaped issues (missing mandatories, length, numeric/
+  boolean/regex) — for those the next line of defense remains CMF itself, and per
   [03 §4](../03-review-hotspots.md#4-cmf--the-physical-factory), the CMF batch is
   **atomic**: one bad row rolls back the entire package at load time instead of being
   caught pre-flight. The comments present this as deliberate (metadata can't be
@@ -136,7 +150,8 @@ is module-private.
 - **Two divergent system-column sets** ([03 §6 drift](../03-review-hotspots.md)) —
   this file's `SYSTEM_MANAGED` vs `lib/validation/system-columns.ts::SYSTEM_AUTOFILL`
   (used by the chat entry form and prefill engine in
-  [chat-cmf-tools.md](./chat-cmf-tools.md)). Compared precisely at `7976c78`:
+  [chat-cmf-tools.md](./chat-cmf-tools.md)). Compared precisely at `7976c78`
+  (both files unchanged at `abe8706`):
   - **Shared (11):** `Id`, `Version`, `UniversalState`, `RevisionState`,
     `IsDefaultRevision`, `CreatedBy`, `CreatedOn`, `ModifiedBy`, `ModifiedOn`,
     `LastOperationHistorySeq`, `LastServiceHistoryId`.
@@ -152,10 +167,14 @@ is module-private.
     `DataGroupName`) is hidden from the entry-form/prefill "required" UX yet flagged
     missing by the rule engine — as a **hard error** if it's a plain text column. The
     reverse holds for `LastCorrelationID` and `*Counter` columns.
-- **The gate may not run at all at this commit.** As noted above, `validateFile` /
-  `validateRows` have no static callers; the shipped validate button queues CMF's remote
-  dry-run (op `1`) and the staging check is template-only. Either the wiring is dynamic/
-  in-flight, or R1–R6 is currently dead code and the real gate is CMF.
+- **R1–R6 still never runs at this commit — but "no local deterministic gate" is no
+  longer true.** As noted above, `validateFile` / `validateRows` have no static callers,
+  and the shipped validate button queues CMF's remote dry-run (op `1`). Since `abe8706`
+  the staging check is no longer template-only: it also runs the blocking cross-sheet
+  PK/FK gate in `cross-sheet.ts`, a parallel implementation that neither imports nor
+  resurrects this file. So either R1–R6 wiring is dynamic/in-flight, or it is dead code
+  whose duplicate-key and FK concerns were re-implemented in `cross-sheet.ts` while the
+  per-cell R1–R5 rules are left to CMF.
 - **Silent regex swallow (R5):** a malformed `validationRegex` stored in CMF disables
   format checking for that column with no warning anywhere.
 - **`*Count` suffix is a heuristic:** any user column that happens to end in
@@ -169,7 +188,7 @@ is module-private.
 
 ## Open questions for the code owner
 
-1. Is `runRules` reachable in production at `7976c78` (no importer found statically) — pre-flight wiring pending, dynamic, or removed?
+1. Is `runRules` reachable in production at `abe8706` (no importer found statically) — pre-flight wiring pending, dynamic, or removed? Note the new `cross-sheet.ts` gate deliberately does not reuse it — is R1–R5 coverage still planned, or superseded?
 2. Is the warning downgrade for R3/R4/R6 and for R1 numeric/FK-typed mandatories intended, leaving CMF's rollback as the only catch? (Hotspot row 18.)
 3. Can the `metadata.ts` `Type`/`ReferencedObjectId` join collision be fixed so R6 becomes a blocking error?
 4. Should `SYSTEM_MANAGED` be replaced by `system-columns.ts::isSystemManaged`, and which of the differing entry sets is correct?

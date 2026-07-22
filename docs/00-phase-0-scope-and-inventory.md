@@ -1,6 +1,7 @@
 # 0 — Scope, Repository Inventory & File-Extension Inventory
 
-> Version: commit `7976c78` on `main`. See [README](./README.md).
+> Version: commit `abe8706` on `main` (re-verified 2026-07-22; originally written at
+> `7976c78`). See [README](./README.md).
 > Validation: 🔵 Static (derived by scanning the repository).
 
 This is the foundation for every later section. It answers three questions:
@@ -19,7 +20,7 @@ apps in one repo).
 |-------|-------|
 | Repository | `FabOrchestrator_product_code` |
 | Branch | `main` |
-| Commit hash | `7976c78af9f097f0a122d11e5fbee315e54172a5` |
+| Commit hash | `abe8706d8ed51709bd316d83783a66e6a8a27f28` |
 | Structure | Monorepo containing 2 apps + infrastructure |
 | Main language | TypeScript (Next.js / React) |
 | Deployment | Docker on AWS Elastic Beanstalk; build via AWS CodeBuild |
@@ -66,9 +67,9 @@ Counts across the whole repo, **excluding** the generated/vendored folders liste
 
 | Extension / file | Count | Meaning | Documented as |
 |------------------|------:|---------|---------------|
-| `.ts` | 196 | TypeScript — API routes, libraries, services | File & function inventory |
-| `.tsx` | 147 | TypeScript + React — UI pages/components | File inventory (grouped by module) |
-| `.json` | 16 | Config / package metadata | Config notes |
+| `.ts` | 203 | TypeScript — API routes, libraries, services | File & function inventory |
+| `.tsx` | 151 | TypeScript + React — UI pages/components | File inventory (grouped by module) |
+| `.json` | 17 | Config / package metadata | Config notes |
 | `.md` | 15 | Markdown docs (incl. stale legacy `CLAUDE.md`s) | Referenced, flagged if stale |
 | `.svg` | 6 | Vector icons/assets | Not documented individually |
 | `.sql` | 5 | Additive DB migrations (`admin_athena/prisma/*.sql`) | Deployment / DB section |
@@ -82,8 +83,17 @@ Counts across the whole repo, **excluding** the generated/vendored folders liste
 | `.conf` | 2 | Nginx streaming config (`.platform/nginx/`) | Deployment section |
 | `Dockerfile` | 2 | Container image definitions (one per app) | Deployment section |
 | `.css`, `.jpg`, `.png`, `.ico`, `.xlsx` | few | Styles / assets / one Excel template skeleton | Not documented individually |
+| `.wasm` | 1 | `claudeai_athena/public/duke_sheets_wasm_bg.wasm` (~4.3 MB) — the `@extend-ai` spreadsheet parser shipped with the app | Referenced by the XLSX viewer |
 
 **No** `.py`, `.tf`, `.sh`, or `.ps1` files exist (see scope reconciliation above).
+
+> **Changes since `7976c78`:** commit `abe8706` added 7 `.ts` files (196 → 203:
+> `lib/chat-cmf/browse.ts`, `cmf-schema-util.ts`, `fill-from-existing.ts`,
+> `lib/validation/cross-sheet.ts`, `scripts/verify-template-assets.ts`, 2 tests),
+> 4 `.tsx` files (147 → 151: `components/ui/xlsx-viewer.tsx`, `popover.tsx`,
+> `scroll-area.tsx`, `tabs.tsx`), 1 `.json` (`lib/validation/template-assets.meta.json`),
+> the `.wasm` asset above, and three new npm dependencies in `claudeai_athena/package.json`:
+> `@extend-ai/react-xlsx`, `@hugeicons/core-free-icons`, `@hugeicons/react`.
 
 ---
 

@@ -10,12 +10,19 @@
 |-------|-------|
 | Repository | `FabOrchestrator_product_code` (monorepo) |
 | Branch | `main` |
-| Commit hash | `7976c78af9f097f0a122d11e5fbee315e54172a5` (`7976c78`) |
-| Commit date | 2026-07-17 |
-| Documented on | 2026-07-20 |
+| Commit hash | `abe8706d8ed51709bd316d83783a66e6a8a27f28` (`abe8706`) |
+| Commit date | 2026-07-21 |
+| Documented on | 2026-07-20 (original pass at `7976c78`) · re-pinned 2026-07-22 |
 
 **Everything in this document is true only for the commit above.** When the code changes,
 re-pin the hash and re-verify the affected sections.
+
+> **Re-pin note (2026-07-22):** the 9 commits `7976c78 → abe8706` were diff-analyzed.
+> Seven pages had stale claims and were corrected and re-verified at `abe8706`
+> (`chat-cmf-tools`, `rule-engine`, `validation-cmf-queries`, `06-error-matrix`, `00`,
+> `01`, `02`); all five scenario traces and the remaining pages were confirmed unaffected.
+> Pages whose header still cites `7976c78` were verified at that commit and had no claims
+> touched by the diff.
 
 ## Contents
 
@@ -37,6 +44,7 @@ works), and **worked examples** (real request flows). Plain-language description
 | 7 | [Sign-off tracker](./07-signoff-tracker.md) | **The living checklist** (Yogita drives it): which docs are reviewed, who confirms what, and the open blocking questions. | ✅ Living |
 | 8 | [Customer-safe overview](./08-customer-safe-overview.md) | The same platform explained for an **external** audience, with all code, paths, secrets, and internal addresses stripped out. | ✅ Draft |
 | 9 | [Open questions by purpose](./09-open-questions-by-purpose.md) | Every open review question from the deep-dives and scenarios, split into **accuracy checks** (verify the doc's reading — fact-check) vs **improvement decisions** (should the code change — judgment), grouped per file. | ✅ Living |
+| 10 | [Scenario runtime test plan](./10-scenario-test-plan.md) | Step-by-step tests (with SQL/log evidence checks) to runtime-validate the five scenario traces and move them 🔵 → 🟢. Scenario 04 is safety-tiered (live MES). | ✅ Draft |
 
 **File deep-dives — "how a single file works"** (in [`files/`](./files/); template: [`files/_template.md`](./files/_template.md))
 | File | What it covers | Status |

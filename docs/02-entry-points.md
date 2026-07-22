@@ -1,6 +1,7 @@
 # 2 — Entry-Point Catalog
 
-> Version: commit `7976c78` on `main`. See [README](./README.md).
+> Version: commit `abe8706` on `main` (originally written at `7976c78`; re-verified
+> 2026-07-22). See [README](./README.md).
 > Validation: 🔵 Static. HTTP methods and paths were extracted mechanically from the
 > route files; one-line purposes are from static reading and should be spot-checked.
 
@@ -166,7 +167,7 @@ actually fires for a given prompt.
 |-------------|-----------|-----------|-------|
 | **Fab chat tools** | `chat/route.ts` (assembly) + `lib/mcp-client.ts` | Fab chat AI | `code_execution` (always), `web_search`/`web_fetch` (toggle), + MCP tools loaded from authorized `McpConnection`s |
 | **MCP tools** | discovered from remote MCP servers, cached in `mcp_connections.available_tools` | Fab chat AI | Executed via `executeMcpTool` (JSON-RPC over HTTP). The actual tool logic lives in **external MCP servers not in this repo** (see [scope §0.2](./00-phase-0-scope-and-inventory.md#02-scope-reconciliation)). |
-| **Modeling-Agent tools** | `lib/chat-cmf/tools.ts` | Modeling Agent AI | e.g. `resolveObjectType`, `getRequiredFields`, `generateExcel`, `validateTemplate`. `previewLoadImpact`/`loadToCmf` exist but are hidden in v1. |
+| **Modeling-Agent tools (13)** | `lib/chat-cmf/tools.ts` | Modeling Agent AI | e.g. `resolveObjectType`, `getRequiredFields`, `browseCmfRecords`, `fillFromExisting`, `generateExcel`, `validateTemplate`. `previewLoadImpact`/`loadToCmf` exist but are hidden in v1. |
 | **Admin chat tools (~30)** | `lib/admin-tools.ts` + `lib/admin-system-prompt.ts` | Admin AI | The real admin API surface: `query_user_sessions`, `query_error_audit`, `mark_error_resolved`, `invite_user`, `add_mcp_to_role`, `update_error_catalog_message`, `purge_old_*`, etc. Each self-logs to `audit_logs`. |
 
 > **Documentation note:** For each AI tool family, the catalog above lists the tools; a

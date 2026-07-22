@@ -1,6 +1,7 @@
 # 6 — Error & Recovery Matrix
 
-> Version: commit `7976c78` on `main`. See [README](./README.md).
+> Version: commit `abe8706` on `main` (re-verified 2026-07-22; originally written at
+> `7976c78`). See [README](./README.md).
 > Validation: 🔵 Static. Consolidates the failure modes seen across the scenario traces and
 > the FabOrch error subsystem.
 
@@ -73,7 +74,8 @@ stateDiagram-v2
 | Bad Fab deploy | `swap-environment-cnames` back to `faborchestratorai-prod` |
 | Bad Admin deploy | Re-deploy prior application-version to `fab-admin-prod` |
 | DB migration issue | Additive SQL is idempotent + apps degrade gracefully when tables absent |
-| CMF unreachable | App detects `ENOTFOUND`/`ECONNREFUSED` → "connect to VPN" message; loads fail safely (no commit) |
+| CMF unreachable — **loader wizard** (operator path) | `toFriendly` (`claudeai_athena/lib/cmf/cmf-errors.ts:117-127`) detects `ENOTFOUND`/`ECONNREFUSED`/`ECONNRESET`/`ETIMEDOUT`/`ETIMEOUT`/`ESOCKET`/`EPIPE`/"socket hang up"/"Failed to connect"/"Could not connect"/"SQL Browser"/`getaddrinfo`/"fetch failed" → "Can't reach the CMF server / check the Athenatec VPN" message; loads fail safely (no commit) |
+| CMF unreachable — **Modeling-Agent chat** (business-user path) | `toModelSafeError` (`cmf-errors.ts:161`, wired via `errMessage` in `lib/chat-cmf/tools.ts:800`) **never mentions VPN/host/IP**: the same detection set plus "connection is closed"/"connection timeout"/"network error" collapses to "The manufacturing system is temporarily unavailable…"; misconfig (missing env var) → "…contact your administrator"; any leaked IPv4 or `HOST\INSTANCE` token is scrubbed by the `HOST_OR_IP` regex (`cmf-errors.ts:148,175`) |
 | Model registry corrupt | Apps fall back to built-in model list/pricing |
 
 > ⚠️ **Not yet verified:** there is no documented automated DR runbook beyond CNAME swap;

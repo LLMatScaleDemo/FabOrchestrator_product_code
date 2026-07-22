@@ -18,8 +18,9 @@ user request become a response?"* and point to a real file, function, and review
 - ❌ **Do NOT modify application code** — no moving files, renaming functions, refactoring,
   deleting "unused" files, or changing auth/deployment. Documentation only.
 - ✅ Only write/edit files under [`docs/`](./docs/) (and this `CLAUDE.md`).
-- 📌 **Pin the version.** All docs describe commit `7976c78af9f097f0a122d11e5fbee315e54172a5`
-  (`7976c78`, branch `main`). If the code has moved, re-pin and re-verify affected sections.
+- 📌 **Pin the version.** Docs are pinned to commit `abe8706d8ed51709bd316d83783a66e6a8a27f28`
+  (`abe8706`, branch `main`; re-pinned 2026-07-22 from `7976c78` — see the re-pin note in
+  `docs/README.md`). If the code has moved, re-pin and re-verify affected sections.
 - 🔵 Findings are **Static** (from reading code) until a human/runtime confirms them. Never
   present a static trace as verified fact. Use the validation badges (see `docs/README.md`).
 

@@ -1,6 +1,7 @@
 # 1 — File-by-File Catalog
 
-> Version: commit `7976c78` on `main`. See [README](./README.md).
+> Version: commit `abe8706` on `main` (re-verified 2026-07-22; originally written at
+> `7976c78`). See [README](./README.md).
 > Validation: 🔵 Static (each file was read by an analysis pass). The **Review priority**
 > column tells you which rows a human code-owner must verify — see the
 > [Review Hotspots](./03-review-hotspots.md) doc for the consolidated action list.
@@ -130,7 +131,7 @@ Pipeline: **structure/template** (`template-check`, `structure-check`, pure) →
 | `use-dark-mode.ts` | Theme toggle |
 | `use-mobile.tsx` | Responsive breakpoint |
 
-## A.6 `components/` (73 files) — grouped
+## A.6 `components/` (77 files) — grouped
 
 UI is not individually catalogued (low risk); grouped by folder:
 
@@ -142,8 +143,8 @@ UI is not individually catalogued (low risk); grouped by folder:
 | `cockpit/` | 6 | Landing dashboard (`/home`) |
 | `mcp/` | 2 | MCP add dialog + connection card |
 | `prompt-kit/` | 16 | Message/markdown/code-block/tool/reasoning render primitives |
-| `viewers/` | 5 | PDF/DOCX/XLSX/PPTX/Mermaid document viewers |
-| `ui/` | 24 | shadcn/Radix wrappers (incl. `claude-style-chat-input.tsx`, ~39KB) |
+| `viewers/` | 5 | PDF/DOCX/XLSX/PPTX/Mermaid document viewers. Since `abe8706` the XLSX viewer no longer parses client-side with SheetJS — `viewers/xlsx-viewer.tsx` delegates to `@extend-ai/react-xlsx` (via `ui/xlsx-viewer.tsx`) with a wasm parser served from `public/duke_sheets_wasm_bg.wasm` |
+| `ui/` | 28 | shadcn/Radix wrappers (incl. `claude-style-chat-input.tsx`, ~39KB; new at `abe8706`: `popover.tsx`, `scroll-area.tsx`, `tabs.tsx`, `xlsx-viewer.tsx`) |
 
 ---
 

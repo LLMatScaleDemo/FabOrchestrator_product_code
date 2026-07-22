@@ -1,6 +1,7 @@
 # `lib/chat-cmf/tools.ts` — the Modeling Agent's AI tool belt (incl. the CMF commit tool)
 
-> Version: commit `7976c78` on `main`. Validation: 🔵 Static — written by reading code,
+> Version: commit `abe8706` on `main` (originally written at `7976c78`; re-verified
+> 2026-07-22). Validation: 🔵 Static — written by reading code,
 > not yet confirmed by a code owner or runtime.
 > App: **Fab** (`claudeai_athena/lib/chat-cmf/tools.ts`; no Admin copy — see Both-apps note) ·
 > Review priority: **High** ·
@@ -8,19 +9,20 @@
 
 ## Purpose
 
-Defines the eleven Vercel AI SDK (v6) tools that Claude drives during a Modeling Agent
+Defines the thirteen Vercel AI SDK (v6) tools that Claude drives during a Modeling Agent
 chat: resolve a free-text request to a CMF object type, learn its fields, check the live
-CMF DB, render an inline entry form, generate and validate a loader-conformant `.xlsx`,
-and — in the last two tools — preview and **actually commit** that file into the live
-factory MES. The whole belt is built per-request by the `buildChatTools(userId)` factory
+CMF DB (exact-name lookup and — new at `abe8706` — open-ended browsing), render an inline
+entry form, generate and validate a loader-conformant `.xlsx` from scratch **or
+pre-filled from existing CMF records**, and — in the last two tools — preview and
+**actually commit** that file into the live factory MES. The whole belt is built per-request by the `buildChatTools(userId)` factory
 so every staged-file operation is scoped to the signed-in user.
 
 **⚠️ Correction to the hotspots doc (verified at the pinned commit):** row 17 and
 [03 §4](../03-review-hotspots.md#4-data-integrity--destructive-actions) say "LLM can call
-`loadToCmf`". At `7976c78` that is **not true as deployed**: the only consumer,
-`app/api/modeling-agent/chat/route.ts` (lines 167–173), destructures `loadToCmf` **and**
-`previewLoadImpact` *out* of the belt before handing the rest to `streamText`, so the
-model is never offered either tool. What *is* true — and is the enduring risk — is that
+`loadToCmf`". At `abe8706` that is **still not true as deployed**: the only consumer,
+`app/api/modeling-agent/chat/route.ts` (lines 208–212; `tools: visibleTools` at
+line 220), destructures `loadToCmf` **and** `previewLoadImpact` *out* of the belt before
+handing the rest to `streamText`, so the model is never offered either tool. What *is* true — and is the enduring risk — is that
 the tool itself contains **no code-level gate whatsoever**: the only thing keeping the
 commit un-callable is a two-line destructuring at one call site, and the
 confirm-after-preview rule lives solely in the tool's description text. See
@@ -34,21 +36,28 @@ here) and "Failure modes" below.
 - `@/lib/validation/template-schema.json` — the master template's sheet/column map
   (`SCHEMA_BY_LOWER` index built at module load; `$order`/`$ambiguous` keys reserved).
 - `chat-cmf/` siblings: `object-types.ts` (pure fuzzy match), `prefill.ts`,
-  `lookup-existing.ts`, `load-preview.ts` — the last three run **raw SQL reads** against
-  the CMF database.
+  `lookup-existing.ts`, `browse.ts` (new), `fill-from-existing.ts` (new),
+  `load-preview.ts` — all but the first run **raw SQL reads** against the CMF database;
+  the two new modules build their queries via the new `cmf-schema-util.ts`
+  (`physicalColumns` / `resolveRefJoins`).
 - `validation/`: `metadata.ts` (`loadRuleset` — raw SQL against CMF's schema tables,
   cached in-process), `ksp-skeleton.ts` (blank/populated workbook generation +
   `readSkeletonMarker`), `composition.ts` (multi-sheet map), `template-check.ts`,
-  `xlsx.ts`, `system-columns.ts`, `removal-policy.ts`.
+  `cross-sheet.ts` (new — `checkCrossSheetWithMetadata` + `mergeFindings`, used by
+  `validateTemplate`), `xlsx.ts`, `system-columns.ts`, `removal-policy.ts`.
 - `repo-cmf/validation.ts` — `createStagedUpload` / `getStagedUpload`: the app-owned
   staging store (**S3 `putFile` + Prisma `StagedUpload` row**, always keyed by `userId`).
 - `cmf/cmf-client.ts` — [`loadMasterData`](./cmf-client.md) (**`@deprecated`**), the
   CMF REST commit path over the VPN (MES token, TLS posture — see
   [Scenario 04 §5](../scenarios/04-cmf-load.md)).
+- `cmf/cmf-errors.ts` (new) — `toModelSafeError`: every model-visible error string now
+  passes through it (via the `errMessage` helper, tools.ts:796–801), deliberately
+  stripping host/IP/VPN/driver detail before the model can relay it.
 
 **Consumed by** (verified by grep at the pinned commit): **exactly one file** —
 `app/api/modeling-agent/chat/route.ts`, which calls `buildChatTools(user.id)` and passes
-**nine of the eleven tools** to the model (`previewLoadImpact` and `loadToCmf` excluded).
+**eleven of the thirteen tools** to the model (`previewLoadImpact` and `loadToCmf`
+excluded).
 That route is fronted by `requireAuth` **plus** a role gate (`role.permissions` contains
 `modeling_agent`, or `isAdmin`) — the same check the UI probes via
 `GET /api/modeling-agent/access`. Nothing else imports this module; the exported
@@ -57,7 +66,10 @@ That route is fronted by `requireAuth` **plus** a role gate (`role.permissions` 
 ## Function-by-function
 
 Everything below lives inside `buildChatTools(userId)`; module-level helpers are `slug`
-(filename sanitizer), `errMessage` (Error → string), and the `SCHEMA_BY_LOWER` index.
+(filename sanitizer), `errMessage` (Error → string — since `abe8706` a thin wrapper over
+`toModelSafeError` from `cmf/cmf-errors.ts`, so raw driver messages like
+"Failed to connect to 10.10.x.x\ONLINE…" never reach the model), and the
+`SCHEMA_BY_LOWER` index.
 Almost every `execute` wraps its body in `try/catch` and returns `{ error: string }`
 instead of throwing — **the model, not the app, decides what to do with failures.**
 
@@ -69,7 +81,12 @@ live factory MES.
 
 Fuzzy-maps free text ("production orders") to ranked template keys via
 `resolveObjectType` (pure), tagging each candidate with `removed:` from the client
-removal policy. No I/O.
+removal policy. Since `abe8706` it returns a **decision object**
+`{ confident, ambiguous, objectType, candidates }` (tools.ts:78–83): an exact
+template-key match (incl. simple singular/plural) or a dominant top score (≥ 0.6 and
+≥ 0.2 ahead of second place) yields `confident: true`, and the description instructs the
+model to proceed with `objectType` and **not** ask the user to confirm; only
+`ambiguous: true` should prompt a pick-from-`candidates` question. No I/O.
 
 ### `getRequiredFields({ objectType })` — [read]
 
@@ -88,6 +105,34 @@ client-removed columns so the model never quotes them.
 
 Current CMF row values by case-sensitive `Name` (raw SQL read) for update/clone/inspect
 flows; returns `rows` + `notFound`.
+
+### `browseCmfRecords({ objectType, search?, filterColumn?, filterValue?, columns?, limit? })` — [read] · **new at `abe8706`**
+
+Read-only **discovery** over live CMF records, for when the user does *not* know exact
+names ("what flows exist?", "which products use flow F1"): lists/searches any object
+type (fuzzy type words like "flows" resolved via `resolveObjectType` first) and returns
+Name + Description + the object's link fields plus the **total** count (`rows`, `total`,
+`returned`, `truncated`) so the model can say "showing 50 of 3,120". `search` is a
+case-insensitive substring match on Name/Description; `filterColumn`+`filterValue` is an
+exact-match reverse lookup; default limit 50, max 200. Delegates to
+`lib/chat-cmf/browse.ts` (raw SQL reads via `cmf-schema-util.ts`). What it still
+**cannot** do: expand a flow (or any parent) into its internal contents — sub-object
+types have no standalone data table, so their metadata comes back `metadataMissing` and
+the tool returns an "ask about its parent instead" error. Never touches
+`loadMasterData` / PerformMasterDataPackage.
+
+### `fillFromExisting({ objectType, names?/filterColumn+filterValue?/search?, set?, packageName, scope?, limit? })` — [read] + [write-app] · **new at `abe8706`**
+
+Pre-fill / clone / bulk-edit path: reads existing CMF records (selector = exact `names`,
+a field or related-object filter like Area='Assembly', or a keyword; default limit 100,
+max 1000), optionally applies `set` (column → new value on **every** retrieved row — the
+bulk-edit mechanism), maps the live data into the template layout, and stages a
+ready-to-edit workbook via `createStagedUpload` (`lib/chat-cmf/fill-from-existing.ts`).
+Reads CMF + writes only the app's own S3/`StagedUpload` — never CMF. Single-sheet
+objects only for now. Like `generateExcel` it returns
+`parentCheckPerformed: false as const` — FK parents are deliberately not verified, and
+the model must disclaim. Neither this tool nor `browseCmfRecords` can reach the
+`loadMasterData` / commit path.
 
 ### `prefillFormFromInput({ objectType, rows })` — [read]
 
@@ -123,9 +168,15 @@ verified against CMF; the system prompt forces a disclaimer instead.
 ### `validateTemplate({ stagingId })` — [read]
 
 The KSP template-check on a staged file (sheet names, column order, parent-before-child)
-with per-sheet errors. Fast path: if `readSkeletonMarker` finds the skeleton marker in
+with per-sheet errors. Since `abe8706` the parsed path **also** runs the cross-sheet
+integrity check — `checkCrossSheetWithMetadata` + `mergeFindings` from
+`lib/validation/cross-sheet.ts` (PK uniqueness + FK/key consistency across sheets),
+merged into the structural findings (tools.ts:698–707); it degrades to PK-only checks
+when CMF metadata is unreachable, and a throw there is logged and swallowed rather than
+failing validation. Fast path: if `readSkeletonMarker` finds the skeleton marker in
 the bytes it returns `ok:true` **without parsing** ("CMF-verified by construction" —
-the marker skips the heavy ExcelJS parse that hangs on KSP content). The description
+the marker skips the heavy ExcelJS parse that hangs on KSP content), which also skips
+the cross-sheet check. The description
 tells the model this is a "HARD GATE" before showing Download — but like all
 description-level rules, nothing in code sequences it.
 
@@ -185,7 +236,7 @@ mean the commit failed; it may still land in CMF after the ~60 s window.**
 ## Failure modes & gotchas
 
 - **The guard hierarchy, precisely:** (1) the confirm-after-preview rule exists *only*
-  in the tool description; (2) the thing actually preventing an LLM call at `7976c78`
+  in the tool description; (2) the thing actually preventing an LLM call at `abe8706`
   is the destructuring exclusion in the chat route — a deliberate but fragile
   **exposure** gate, not a gate in this file; (3) inside `execute` there is no gate at
   all beyond staged-file ownership. Re-adding one identifier to `visibleTools` (or any
