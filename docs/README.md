@@ -36,6 +36,7 @@ works), and **worked examples** (real request flows). Plain-language description
 | 6 | [Error & recovery matrix](./06-error-and-recovery-matrix.md) | What can go wrong and what the system does about it — the 10-error catalog, graceful degradation, session states, rollback. | ✅ Draft |
 | 7 | [Sign-off tracker](./07-signoff-tracker.md) | **The living checklist** (Yogita drives it): which docs are reviewed, who confirms what, and the open blocking questions. | ✅ Living |
 | 8 | [Customer-safe overview](./08-customer-safe-overview.md) | The same platform explained for an **external** audience, with all code, paths, secrets, and internal addresses stripped out. | ✅ Draft |
+| 9 | [Open questions by purpose](./09-open-questions-by-purpose.md) | Every open review question from the deep-dives and scenarios, split into **accuracy checks** (verify the doc's reading — fact-check) vs **improvement decisions** (should the code change — judgment), grouped per file. | ✅ Living |
 
 **File deep-dives — "how a single file works"** (in [`files/`](./files/); template: [`files/_template.md`](./files/_template.md))
 | File | What it covers | Status |

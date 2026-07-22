@@ -141,19 +141,17 @@ every post-TTL `getErrorEntry` call kicks off a new (failing) refresh attempt.
 
 ## Open questions for the code owner
 
-1. Hotspot row 7 as written targets a cycle that no longer exists. Can the stale
-   circular-import comments in this file and `faborch-errors.ts` be updated, and can
-   you confirm the *actual* `loader → logger → faborch-errors → loader` cycle is safe
-   under the production bundler (it traces as init-safe statically)?
-2. Where do the `error_catalog` table's DDL and seed rows live? They are not in this
-   repo, and the fallback masks a missing table completely.
-3. Is "DB outage ⇒ one failed query + one error log per error render (post-TTL)"
-   acceptable, or should failures back off (e.g. also bump `cacheLoadedAt` on failure)?
+1. Confirm the actual `loader → logger → faborch-errors → loader` cycle is init-safe,
+   and update the stale circular-import comments here and in `faborch-errors.ts`
+   (hotspot row 7).
+2. Where do the `error_catalog` table's DDL and seed rows live (not in this repo)?
+3. Should catalog-load failures back off (e.g. bump `cacheLoadedAt` on failure) instead
+   of retrying every error render post-TTL?
 4. `reloadErrorCatalog` has no callers — intended future admin hook, or dead code?
 5. Should `http_status` be range-checked like `priority` is?
-6. The 5-copy drift hazard ([03 §6](../03-review-hotspots.md)): is the plan still to
-   reconcile to one source (hotspots "good first tasks" #4)? In particular, Admin's
-   own error rendering ignores the table it edits (see below) — intended?
+6. Is the plan still to reconcile the 5 drifting copies to one source, and is Admin's
+   own error rendering ignoring the table it edits intended
+   ([03 §6](../03-review-hotspots.md))?
 
 ## Both-apps note
 

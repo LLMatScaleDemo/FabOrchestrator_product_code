@@ -172,19 +172,11 @@ filter**, so an admin *can* be force-logged-out through this path. Full end-to-e
 
 ## Open questions for the code owner
 
-1. **Is the absence of any last-admin protection intended?** Should suspend, demote
-   (`toggleUserAdmin`), delete, force-reset, and force-logout refuse to act on the last
-   `isAdmin && ACTIVE` user (and/or on the acting admin themselves)? (Hotspot row 21 / §4;
-   consolidated question [§8.7](../03-review-hotspots.md#8-open-questions-for-code-owners-consolidated).)
-2. **Is "commit the mutation, then best-effort email" the intended ordering for
-   `forcePasswordReset`?** A user whose sessions were killed but whose email failed is left
-   unable to log in with no delivered reset link.
-3. Should `forceLogoutUser` (or suspend) apply an `is_admin`/self filter so an admin cannot
-   log themselves out of the console? (Scenario 05 open item.)
-4. Is it intended that an explicit `status` filter in `listUsers` lets `DELETED` users be
-   listed, while the default hides them?
-5. Should chat-origin actions record something more useful than the literal `'chat-admin'`
-   in `audit_logs.ip_address`?
+1. Should suspend, demote (`toggleUserAdmin`), delete, force-reset, and force-logout refuse the last `isAdmin && ACTIVE` user and the acting admin themselves? (Hotspot row 21 / §4;
+   [§8.7](../03-review-hotspots.md#8-open-questions-for-code-owners-consolidated); scenario 05.)
+2. Is "commit the mutation, then best-effort email" intended for `forcePasswordReset`, given a failed email leaves the user locked out with no reset link?
+3. Is it intended that an explicit `status` filter in `listUsers` exposes `DELETED` users while the default hides them?
+4. Should chat-origin actions record something more useful than the literal `'chat-admin'` in `audit_logs.ip_address`?
 
 ## Both-apps note
 

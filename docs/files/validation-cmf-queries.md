@@ -275,22 +275,13 @@ No metadata at all → every cell passes through as `"ok"` with `metadataMissing
 
 ## Open questions for the code owner
 
-1. **Can any app user influence CMF metadata?** The injection safety of the whole group
-   reduces to: property names and table names in the CMF DB are authored only by trusted
-   CMF modelers/DBAs, never via any path an app end user (or the LLM) can reach.
-   (Hotspot row 19 / §5's core question — answer is *no user influence* per the code,
-   but the CMF-side authoring boundary is outside this repo.)
-2. **Is `CMF_SQL_USER` a read-only login?** Nothing in code enforces read-only.
-3. **Are `parent-precheck.ts`, `validate-rows.ts`, `cross-check.ts`, `referential.ts`
-   (and `validate.ts`) intentionally unwired at `7976c78`?** Dead code, pending feature,
-   or a lost regression?
-4. Is `select *` in `lookup-existing.ts` acceptable given the rows flow into LLM
-   context, or should there be a deny-list of system/sensitive columns?
-5. Is the never-refreshed ruleset cache (including cached `null` for unknown types)
-   acceptable operationally, or should `clearRulesetCache` be wired to something?
-6. Confirm `encrypt: false` / `trustServerCertificate: true` on the CMF SQL connection
-   is the intended production posture (same question as `cmf-client`'s
-   `CMF_TLS_INSECURE`, [03 §6](../03-review-hotspots.md#6-network-posture-secrets-latent-bugs)).
+1. Confirm CMF property/table names are authored only by trusted CMF modelers/DBAs — no app-user or LLM path can influence them. (Hotspot row 19 / §5.)
+2. Is `CMF_SQL_USER` a read-only login?
+3. Are `parent-precheck.ts`, `validate-rows.ts`, `cross-check.ts`, `referential.ts`, and `validate.ts` intentionally unwired at `7976c78`?
+4. Is `select *` in `lookup-existing.ts` acceptable given rows reach LLM context, or is a system/sensitive-column deny-list needed?
+5. Is the never-refreshed ruleset cache (including cached `null`) acceptable, or should `clearRulesetCache` be wired to something?
+6. Confirm `encrypt: false` / `trustServerCertificate: true` on the CMF SQL connection is the intended production posture
+   ([03 §6](../03-review-hotspots.md#6-network-posture-secrets-latent-bugs)).
 
 ## Both-apps note
 

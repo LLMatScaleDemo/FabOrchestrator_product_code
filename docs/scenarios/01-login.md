@@ -247,7 +247,7 @@ sequenceDiagram
 
 ## 9. Open validation items (for the sign-off tracker)
 
-- [ ] 🟢 Runtime-validate both flows: log in, inspect `sessions`, `user_session_logs`, `audit_logs` rows.
-- [ ] ✅ Code-owner confirm: is the Fab "No account found" message intentional, or should it be generic (enumeration)?
-- [ ] ✅ Confirm Fab has no admin/role gate at login by design (permissions enforced later, per-route).
-- [ ] Confirm `LoginSchema` shape in `admin_athena/lib/validation.ts` (min length, email format).
+- [ ] 🟢 Verify a login on each app writes the expected `sessions`, `user_session_logs`, and `audit_logs` rows.
+- [ ] ✅ Is the Fab "No account found" message intentional despite enabling user enumeration?
+- [ ] ✅ Is the missing admin/role gate at Fab login by design (permissions enforced per-route)?
+- [ ] Confirm `LoginSchema` in `admin_athena/lib/validation.ts` (min length, email format).

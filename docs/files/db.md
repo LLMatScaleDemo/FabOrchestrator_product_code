@@ -62,10 +62,8 @@ own — a bad `DATABASE_URL` surfaces later, as connection errors on first query
 ## Open questions for the code owner
 
 1. Is `ssl: false` to RDS acceptable in production, or a POC leftover?
-   (= [blocking question #2](../07-signoff-tracker.md#75-blocking-questions-must-be-answered-to-progress)
-   in the sign-off tracker.)
-2. Are the `pg` pool defaults (size, timeouts) adequate for production load, and should
-   the two apps' pool settings be allowed to diverge?
+   ([Blocking question #2](../07-signoff-tracker.md#75-blocking-questions-must-be-answered-to-progress).)
+2. Are the `pg` pool defaults adequate for production, and may the two apps' pool settings diverge?
 
 ## Both-apps note
 

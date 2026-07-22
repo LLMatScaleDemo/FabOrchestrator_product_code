@@ -141,21 +141,18 @@ margin check used for both the cache and freshly fetched values.
 
 ## Open questions for the code owner
 
-1. How many app instances run in production, and is N independent per-process caches
-   against Secrets Manager rate limits/cost acceptable (hotspot row 16)?
-2. Is the no-cache-on-stale behavior intended? During a minting-Lambda outage it degrades
-   to one `GetSecretValue` per request rather than backing off.
-3. Confirm the Lambda's actual numbers: ~45-min rotation, ~50-min JWT validity, and that
-   the published `expiresAt` matches the JWT's real `exp` (the code trusts the former
-   and never decodes the latter).
-4. Should `MARGIN_MS` be validated (guard against `NaN`) given a bad
-   `TOKEN_SAFETY_MARGIN_SEC` currently disables the module with a misleading error?
-5. Does `cmf-client` handle an MES 401 mid-operation (token expired during a long
-   poll/load), or is the 60-second margin the only protection?
-6. Can the stale "Playwright child-process token fetch" comment in `cmf-client.ts` be
-   corrected, and is any old Playwright-based fetch path fully removed from the codebase?
-7. Where does the `cmf-auth-token` Lambda's source live? It is the other half of this
-   contract (payload shape, rotation cadence) and is not in this repo.
+1. How many app instances run in production, and are N independent per-process caches
+   acceptable for Secrets Manager rate limits/cost (hotspot row 16)?
+2. Is no-cache-on-stale intended, given a minting-Lambda outage degrades to one
+   `GetSecretValue` per request with no backoff?
+3. Confirm the Lambda's ~45-min rotation, ~50-min JWT validity, and that the published
+   `expiresAt` matches the JWT's real `exp`.
+4. Should `MARGIN_MS` guard against `NaN` from a bad `TOKEN_SAFETY_MARGIN_SEC`?
+5. Does `cmf-client` handle an MES 401 mid-operation, or is the 60-second margin the
+   only protection?
+6. Can the stale Playwright-token-fetch comment in `cmf-client.ts` be corrected, and is
+   that old fetch path fully removed?
+7. Where does the `cmf-auth-token` Lambda's source live? (Not in this repo.)
 
 ## Both-apps note
 

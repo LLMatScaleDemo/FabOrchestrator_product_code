@@ -135,10 +135,10 @@ sequenceDiagram
 
 ## 7. Open validation items
 
-- 🔵 **Runtime + VPN required** to confirm `op=0` really commits (asserted from comments claiming live-DB verification on 2026-05-20; not re-verified here).
-- ⚠️ **Confirmation gate is prompt-only (path b).** Nothing in `execute()` enforces a prior preview or confirmation nonce — an early or double model call commits (twice). Recommend a hard code-level gate.
-- ⚠️ **No concurrency guard on path (b)** — two AI loads (or AI vs REST) can hit `performMDP` simultaneously. Confirm CMF serializes server-side or add a shared guard.
-- ⚠️ **`loadToCmf` rides `@deprecated` `loadMasterData`** which auto-loads ALL types. Confirm intended vs migrating to `prepareMasterData`+`executeMasterData` with a selected list.
-- ⚠️ **`CMF_TLS_INSECURE` default insecure** — verify production sets `=0` with corp CA.
-- 🔵 **Poll-timeout vs real commit (path b)** — a "timed out" report may still have committed.
-- 🔵 **Run closure depends on GET polling** — confirm the UI always polls to completion.
+- 🔵 Verify against live CMF (runtime + VPN) that `op=0` really commits.
+- ⚠️ Should `execute()` gain a code-level confirmation gate on path (b), since an early or double model call commits without preview?
+- ⚠️ Verify CMF serializes concurrent `performMDP` calls (AI vs AI, AI vs REST), or add a shared guard.
+- ⚠️ Is `loadToCmf` riding `@deprecated` `loadMasterData` (auto-loads ALL types) intended, versus `prepareMasterData`+`executeMasterData` with a selected list?
+- ⚠️ Verify production sets `CMF_TLS_INSECURE=0` with the corp CA.
+- 🔵 Verify whether a path-(b) poll timeout can report failure for a load that actually committed.
+- 🔵 Verify the UI always GET-polls to completion, since run closure depends on it.

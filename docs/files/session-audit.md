@@ -207,25 +207,19 @@ so what actually runs it is an open question. Fab has no caller at all.
 
 ## Open questions for the code owner
 
-1. **Is "admin query deletes live sessions" the intended design?** (Hotspot row 4.)
-   `reconcileStaleActiveSessions` closes stale audit rows *and* deletes matching live
-   `sessions` rows as a side effect of a read (`querySessionLogs`). Confirm (a)
-   `sessions.token` really is stored plaintext everywhere, so the
-   `sha256(token::bytea)` match works; (b) the `is_admin = false` filter cannot be
-   bypassed — i.e. there is no other path into the DELETE that could mass-log-out admins.
-2. Is the near-universal fire-and-forget pattern acceptable — specifically the fully
-   silent `.catch(() => {})` on `bumpActivityIfActive` and `.catch(() => 0)` on
-   `closeAllUserSessions`, versus the logged catches on login/logout?
+1. Confirm `reconcileStaleActiveSessions` deleting live `sessions` rows during
+   `querySessionLogs` is intended, `sessions.token` is plaintext everywhere, and the
+   `is_admin = false` filter cannot be bypassed (hotspot row 4).
+2. Are the fully silent `.catch(() => {})` on `bumpActivityIfActive` and
+   `.catch(() => 0)` on `closeAllUserSessions` acceptable?
 3. Should the lazy-create `catch {}` distinguish the duplicate-key race from real DB
-   failures instead of reporting `'active'` for both?
-4. Admin's `bumpActivityIfActive` delegates to the evicting `checkAndRecordActivity`
-   rather than `recordActivityWithoutEviction` — intended, or an oversight bounded only
-   by `maxDuration`?
-5. What actually runs `purgeOldSessionLogs`? Admin's retention worker exists but its
-   `instrumentation.ts` starter is a no-op, and Fab never calls it — does
-   `user_session_logs` grow unbounded? ([03 §6](../03-review-hotspots.md#un-scheduled-retention).)
+   failures?
+4. Is Admin's `bumpActivityIfActive` delegating to the evicting
+   `checkAndRecordActivity` (not `recordActivityWithoutEviction`) intended?
+5. What runs `purgeOldSessionLogs` — or does `user_session_logs` grow unbounded
+   ([03 §6](../03-review-hotspots.md#un-scheduled-retention))?
 6. Can the dead exports (`recordAdminForce`; Fab's query/reconcile/purge half) be
-   removed, or are they kept deliberately to keep the two copies diffable?
+   removed?
 
 ## Both-apps note
 

@@ -384,26 +384,14 @@ retention note in [03 §6](../03-review-hotspots.md).
 
 ## Open questions for the code owner
 
-1. **Where is the DDL for `error_audit_logs`, `prompt_audit_logs`, the two
-   `*_daily_counter` tables, `error_catalog`, and the `error_audit_status`/
-   `prompt_audit_status` enums?** It is not in this repo. Is there an out-of-band script,
-   and does it include the `UNIQUE(counter_date)` the ID generators require? (Blocks a fresh
-   environment from having working REQ-03/04 audit.)
-2. Should these audit tables be promoted to Prisma models (or at least checked-in `*.sql`)
-   so a fresh env is reproducible from the repo — matching the "source of truth" claim?
-3. Is the **hand-maintained** Fab mirror acceptable long-term, or should Fab regenerate its
-   client from the Admin schema in CI so drift (like the missing `McpRegistry`) becomes a
-   build failure rather than a runtime `as`-cast?
-4. Confirm the **plaintext** `sessions.token` / `invitations.token` /
-   `password_reset_tokens.token` are intentional and that no plan hashes them without also
-   updating the session-audit reconciler ([session-audit.md](./session-audit.md)).
-5. Is the **Restrict** on `cmf_packages.created_by_user_id` / `cmf_runs.user_id`
-   (blocking hard-deletion of a user with CMF history) intended, given Admin only
-   soft-deletes anyway?
-6. Should soft-deleted `conversations` (and `users.status='DELETED'`) ever be purged, and
-   should message/artifact reads honour the parent `deletedAt`? (Retention / data-remanence.)
-7. The `model_registry` seed ids don't match the role templates' `allowedModels` — which is
-   authoritative for the RBAC model gate?
+1. Where does the DDL for `error_audit_logs`, `prompt_audit_logs`, `error_catalog`, the `*_daily_counter` tables, and the audit-status enums live, and does it include the required `UNIQUE(counter_date)`?
+2. Should those audit tables be checked in (Prisma models or `*.sql`) so a fresh environment is reproducible from the repo?
+3. Should Fab regenerate its Prisma client from the Admin schema in CI so drift (e.g. the missing `McpRegistry`) fails the build?
+4. Confirm plaintext `sessions.token` / `invitations.token` / `password_reset_tokens.token` are intentional and won't be hashed without updating the
+   [session-audit](./session-audit.md) reconciler.
+5. Is `Restrict` on `cmf_packages.created_by_user_id` / `cmf_runs.user_id` intended, given Admin only soft-deletes users?
+6. Should soft-deleted `conversations` and `users.status='DELETED'` ever be purged, and should message/artifact reads honour parent `deletedAt`?
+7. Which is authoritative for the RBAC model gate — the `model_registry` seed ids or the role templates' `allowedModels`?
 
 ## Both-apps note
 

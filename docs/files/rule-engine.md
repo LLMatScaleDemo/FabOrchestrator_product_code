@@ -169,22 +169,12 @@ is module-private.
 
 ## Open questions for the code owner
 
-1. **Is `runRules` actually reachable in production at `7976c78`?** Static grep finds no
-   route/tool importing `validate.ts` or `validate-rows.ts`, the stage validate route
-   disclaims R1–R6, and `/api/cmf/packages/[id]/validate` delegates to CMF's own dry-run.
-   Is the pre-flight wiring pending, dynamic, or removed?
-2. **Is the warning downgrade intended** for R3/R4/R6 and for R1 misses on
-   numeric/FK-typed mandatories — i.e. is it acceptable that such rows pass pre-flight
-   and are only caught by CMF's atomic load/rollback? (Hotspot row 18's core question.)
-3. Can the `metadata.ts` reference-target join be fixed (the `Type` /
-   `ReferencedObjectId` collision the comments admit), so R6 could be promoted to a
-   blocking error?
-4. Should `SYSTEM_MANAGED` be deleted in favor of the shared
-   `system-columns.ts::isSystemManaged` (single source), and which of the differing
-   entries above is the correct set?
-5. Is the `*Count`-suffix skip safe — are there user-fillable columns ending in "Count"?
-6. Should an invalid stored `validationRegex` surface a finding instead of being
-   silently ignored?
+1. Is `runRules` reachable in production at `7976c78` (no importer found statically) — pre-flight wiring pending, dynamic, or removed?
+2. Is the warning downgrade for R3/R4/R6 and for R1 numeric/FK-typed mandatories intended, leaving CMF's rollback as the only catch? (Hotspot row 18.)
+3. Can the `metadata.ts` `Type`/`ReferencedObjectId` join collision be fixed so R6 becomes a blocking error?
+4. Should `SYSTEM_MANAGED` be replaced by `system-columns.ts::isSystemManaged`, and which of the differing entry sets is correct?
+5. Is the `*Count`-suffix skip safe — do any user-fillable columns end in "Count"?
+6. Should an invalid stored `validationRegex` surface a finding instead of being silently ignored?
 
 ## Both-apps note
 

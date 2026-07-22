@@ -109,6 +109,6 @@ sequenceDiagram
 
 ## 6. Open validation items
 
-- [ ] Confirm the admin-chat force-logout tool routes through `forceLogoutUser` (so it audits) and requires confirmation.
-- [ ] Confirm an admin cannot force-logout themselves in a way that locks the console (self-target behavior).
-- [ ] Runtime: verify the target actually receives 401 on the next request.
+- [ ] Verify the admin-chat force-logout tool calls `forceLogoutUser` (so it audits) and requires confirmation.
+- [ ] Verify a self-targeted force-logout cannot lock the admin out of the console.
+- [ ] Verify the target user receives 401 on their next request.

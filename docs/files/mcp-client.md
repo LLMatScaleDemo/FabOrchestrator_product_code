@@ -184,24 +184,19 @@ referenced nowhere.
 
 ## Open questions for the code owner
 
-1. Is "decrypt failure ⇒ proceed unauthenticated" intentional, or should it fail the
-   tool call (and be recorded as a crypto error)? (Hotspot row 11's credential concern.)
-2. Should the exception/timeout branch of `executeWithRetry` also call `recordError`, so
-   `error_audit_logs` sees timeouts and network failures — and should call site 3 pass
-   `userId`?
-3. Is the personal-connection SSRF surface (arbitrary user-supplied `serverUrl` fetched
-   from the backend) accepted, or should URLs be restricted to the Admin registry /
-   an allowlist?
-4. Is the `'unauthorized'` substring in `isSessionExpiredError` deliberate (i.e., do the
-   real MCP servers report expiry that way)? Needs runtime confirmation
-   ([scenario 03 §6](../scenarios/03-mcp-tool-call.md)).
-5. Session-refresh race on shared role-level connections — is last-write-wins on
-   `sessionId` safe with the real servers?
-6. `loadActiveMcpTools` and `McpToolCall` appear dead — safe to remove, or used by
-   planned code?
-7. The `/api/mcp/connections/*` routes duplicate the JSON-RPC/SSE logic inline instead
-   of importing this file — intentional separation or drift hazard (e.g., the routes'
-   parser vs `parseSSEResponse` evolving apart)?
+1. Is "decrypt failure ⇒ proceed unauthenticated" intended, or should the tool call
+   fail and be recorded as a crypto error? (Hotspot row 11.)
+2. Should `executeWithRetry`'s exception/timeout branch also call `recordError`, and
+   should call site 3 pass `userId`?
+3. Is the personal-connection SSRF surface (user-supplied `serverUrl`) accepted, or
+   should URLs be restricted to the Admin registry / an allowlist?
+4. Do the real MCP servers signal expiry via the `'unauthorized'` substring that
+   `isSessionExpiredError` matches? ([scenario 03 §6](../scenarios/03-mcp-tool-call.md))
+5. Is last-write-wins on `sessionId` safe for the session-refresh race on shared
+   role-level connections?
+6. Are the apparently dead `loadActiveMcpTools` and `McpToolCall` safe to remove?
+7. Is the `/api/mcp/connections/*` routes' inline duplication of this JSON-RPC/SSE
+   logic (vs importing `parseSSEResponse` etc.) intentional, or a drift hazard?
 
 ## Both-apps note
 

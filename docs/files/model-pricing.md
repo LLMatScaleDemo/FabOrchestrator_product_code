@@ -125,22 +125,17 @@ so any future caller adopting it would get the silent-$0 behavior with no log.
 
 ## Open questions for the code owner
 
-1. Are Admin's Opus rates ($15/$75 for `claude-opus-4-7`/`-4-6`/`-4-5-20251101`) stale
-   leftovers, or intentionally different? Which app's numbers are the ones finance should
-   trust for those ids?
+1. Are Admin's $15/$75 Opus rates (`claude-opus-4-7`/`-4-6`/`-4-5-20251101`) stale, and
+   which app's numbers should finance trust?
 2. Should Admin's map get the four Fab-only models (`claude-fable-5`, `claude-mythos-5`,
-   `claude-opus-4-8`, `claude-sonnet-5`)? Today an Admin chat on any of them logs the
-   unknown-model error and bills $0.
-3. Is the hotspot-doc claim that the "log once" is missing simply out of date (the guard
-   exists in both chat routes at `7976c78`), or was it absent in the reviewed version —
-   i.e. should [03 §1 row 9 / §3](../03-review-hotspots.md) be corrected?
-4. `costForTurnAsync` has no callers — dead code to remove, or the intended future API
-   that the Fab route's inline registry pre-load should migrate to? If kept, should it
-   gain the unknown-model log so new callers can't silently bill $0?
-5. Which of the three sources (this map, `ALLOWED_MODELS`, `model_registry`) is meant to
-   be authoritative long-term, and can the other two be derived from it?
-6. Should `hasPricing`/`costForTurn` return or log something structured (e.g. a
-   `priced: false` flag) instead of relying on every call site to remember the check?
+   `claude-opus-4-8`, `claude-sonnet-5`), which today bill $0?
+3. Is the "missing log-once" claim in [03 §1 row 9 / §3](../03-review-hotspots.md) out
+   of date (the guard exists in both chat routes at `7976c78`)?
+4. Is `costForTurnAsync` dead code or the intended future API — and if kept, should it
+   gain the unknown-model log?
+5. Which of this map, `ALLOWED_MODELS`, and `model_registry` is authoritative long-term?
+6. Should `hasPricing`/`costForTurn` return a structured `priced: false` signal instead
+   of relying on every call site to check?
 
 ## Both-apps note
 

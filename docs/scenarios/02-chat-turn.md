@@ -159,10 +159,10 @@ sequenceDiagram
 
 ## 6. Open validation items (need runtime)
 
-- [ ] **Which tools actually fire** (`code_execution` always; `web_*` only if toggled; MCP only if authorized + loaded) — check the `[Chat] Available tools` log + step `toolCalls`.
-- [ ] **`prepareStep` override** — it's set twice (cleaner, then `forwardAnthropicContainerIdFromLastStep`); confirm mid-loop tool cleaning still happens (possible #11855/#8112 regression).
-- [ ] **Prompt caching hit/write** — confirm `cachedInputTokens > 0` on repeat turns and stays disabled when files attached.
-- [ ] **Usage/cost accuracy** — SDK v6 field names populate; registry rates vs `MODEL_PRICING` fallback; per-step model attribution.
-- [ ] **Audit lifecycle under timeout/disconnect** — PENDING row must finalize to SUCCESS/FAILED/TIMEOUT in all paths; a hard `maxDuration` cut may leave it PENDING.
-- [ ] **`stepCountIs(20)` ceiling** — long tool loops don't silently truncate.
-- [ ] **Topic classification** (`classifyTopic`) assigns the intended manufacturing bucket.
+- [ ] Verify the `[Chat] Available tools` log and step `toolCalls` match expectations (`code_execution` always; `web_*` and MCP only when enabled).
+- [ ] Verify mid-loop tool cleaning survives the second `prepareStep` override, `forwardAnthropicContainerIdFromLastStep` (refs #11855/#8112).
+- [ ] Verify `cachedInputTokens > 0` on repeat turns and caching stays off when files are attached.
+- [ ] Verify SDK v6 usage fields populate and cost uses registry rates (not `MODEL_PRICING` fallback) with per-step model attribution.
+- [ ] Verify the PENDING audit row finalizes to SUCCESS/FAILED/TIMEOUT in every path, including a hard `maxDuration` cut.
+- [ ] Verify long tool loops hitting `stepCountIs(20)` do not silently truncate.
+- [ ] Verify `classifyTopic` assigns the intended manufacturing bucket.

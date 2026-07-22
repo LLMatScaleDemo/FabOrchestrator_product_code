@@ -260,26 +260,22 @@ hazard: three model lists now exist (this GET, `ALLOWED_MODELS`, the registry).
 
 ## Open questions for the code owner
 
-1. Is the `prepareStep` overwrite intentional (container-id forwarding chosen over
-   mid-loop tool cleaning), or a regression? If both are needed, they must be composed
-   into one function. (Scenario 02 §6, confirmed statically here.)
-2. Is `maxTokens: 65536` actually honored by AI SDK v6? The repo pins `ai@^6.0.97`, whose
-   streamText parameter is `maxOutputTokens`; `streamConfig` is a `Record<string, any>`
-   cast to `any`, so an obsolete key would be **silently ignored** (falling back to the
-   SDK/model default). Needs a runtime check of the outgoing request.
-3. Should the outer `catch` close the PENDING prompt-audit row (hoist
-   `promptAuditHandle` above the `try`)? Related: is a PENDING-row sweeper needed for
-   `maxDuration` cuts?
+1. Is the `prepareStep` overwrite (container-id forwarding replacing mid-loop tool
+   cleaning) intentional, or a regression needing the two composed? (Scenario 02 §6.)
+2. Does AI SDK v6 honor `maxTokens: 65536`, or is the obsolete key silently ignored in
+   favor of `maxOutputTokens`? (Needs a runtime check.)
+3. Should the outer `catch` close the PENDING prompt-audit row, and is a PENDING-row
+   sweeper needed for `maxDuration` cuts?
 4. Are file-only (no text) turns intentionally excluded from prompt audit (REQ-04)?
-5. Is `GET /api/chat` still needed? It has no frontend caller found at this commit and
-   is a third, registry-unaware model list.
-6. Is the 429 plain-JSON response acceptable, or should it use the REQ-01 envelope?
-7. Is `lambdaMcpCrash` the intended classification for Anthropic rate-limit/billing
-   errors in `onError`?
-8. Presigned S3 URLs in the system prompt are visible to Anthropic and to any MCP server
-   the model calls (hotspot row 12) — confirm TTL and exposure are acceptable.
-9. `container.skills` includes a custom skill id (`skill_01JcCJ…`) hardcoded in the
-   route — what is it, and should it be configurable?
+5. Is `GET /api/chat` still needed? (No frontend caller found; third registry-unaware
+   model list.)
+6. Should the 429 response use the REQ-01 envelope instead of plain JSON?
+7. Is `lambdaMcpCrash` the intended `onError` classification for Anthropic
+   rate-limit/billing errors?
+8. Confirm presigned-S3-URL exposure in the system prompt (visible to Anthropic and MCP
+   servers) and its TTL are acceptable (hotspot row 12).
+9. What is the hardcoded skill id `skill_01JcCJ…` in `container.skills`, and should it
+   be configurable?
 
 ## Both-apps note
 

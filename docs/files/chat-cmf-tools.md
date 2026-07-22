@@ -233,22 +233,18 @@ mean the commit failed; it may still land in CMF after the ~60 s window.**
 
 ## Open questions for the code owner
 
-1. Is hiding `loadToCmf` + `previewLoadImpact` via destructuring the intended end-state
-   (loading lives only in the Master Data Load wizard), or a temporary v1 restriction?
-   If permanent, should the two tools be removed from the belt entirely so no future
-   consumer can expose them by accident? (Supersedes/refines hotspot row 17 and
+1. Is hiding `loadToCmf` + `previewLoadImpact` via destructuring permanent — and if so,
+   should both tools be removed from the belt entirely? (Hotspot row 17,
    [03 §8 Q3](../03-review-hotspots.md#8-open-questions-for-code-owners-consolidated).)
-2. If exposure is ever planned: will a **code-level** gate be added — e.g. require
-   `StagedUpload.status === "VALIDATED"`+preview recorded, or a confirmation nonce the
-   UI (not the model) supplies? Nothing in `execute` enforces sequencing today.
-3. Is it intended that this path rides `@deprecated loadMasterData` and therefore loads
-   **all** detected object types with no `selectedTypes` narrowing, no `Run` row, no
-   concurrency guard, and no audit record — the exact guardrails the REST path has?
+2. If exposure is ever planned, will a code-level gate be added (e.g.
+   `StagedUpload.status === "VALIDATED"` or a UI-supplied confirmation nonce)?
+3. Is riding `@deprecated loadMasterData` — all object types, no `selectedTypes`, no
+   `Run` row, no concurrency guard, no audit record — intended for this path?
    ([Scenario 04 §7](../scenarios/04-cmf-load.md).)
-4. Can `readSkeletonMarker` match on a user-uploaded file, letting it skip
-   `validateTemplate`'s real parse?
-5. Confirm the poll-timeout-but-committed case is acceptable for this path (the model
-   reports failure; CMF may have committed).
+4. Can `readSkeletonMarker` match a user-uploaded file and skip `validateTemplate`'s
+   real parse?
+5. Confirm poll-timeout-but-committed (model reports failure; CMF may have committed) is
+   acceptable for this path.
 
 ## Both-apps note
 

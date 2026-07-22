@@ -124,16 +124,14 @@ back to `x-real-ip`, else `null`.
 
 ## Open questions for the code owner
 
-1. Can the `as`-cast reads of `status`/`forcePasswordChange` be replaced with typed
-   fields (regenerate Fab's Prisma client from the shared schema) so drift becomes a
-   compile error? (Hotspot row 3's core question.)
-2. Is "audit failure ⇒ authenticate anyway" the intended trade-off in Fab's
-   `validateSession`?
-3. Is the ≥32-char/30-day/no-rotation token policy the intended session policy
+1. Can the `as`-cast `status`/`forcePasswordChange` reads become typed fields by
+   regenerating Fab's Prisma client? (Hotspot row 3.)
+2. Is "audit failure ⇒ authenticate anyway" intended in Fab's `validateSession`?
+3. Is the ≥32-char/30-day/no-rotation token policy intended
    ([03 §2](../03-review-hotspots.md#2-security--authorization))?
-4. Which Fab routes still use `withAuth`, and is it acceptable that those routes skip the
-   suspend/force-password checks?
-5. Confirm every `/api/admin/*` route wraps `requireAdmin` (the chat tools assume it).
+4. Which Fab routes still use `withAuth`, and may they skip the suspend/force-password
+   checks?
+5. Confirm every `/api/admin/*` route wraps `requireAdmin`.
 
 ## Both-apps note
 

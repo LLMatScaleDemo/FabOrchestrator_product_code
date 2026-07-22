@@ -104,8 +104,8 @@ sequenceDiagram
 
 ## 6. Open validation items (need runtime logs)
 
-- [ ] Which tool the LLM selects and the exact `arguments` — needs chat logs.
-- [ ] Real server behavior: does it return `Mcp-Session-Id`? does its expiry message match the 6 substrings? SSE vs JSON?
-- [ ] Session-refresh race under concurrent chats sharing one role-level connection.
-- [ ] Silent-drop UX: decrypt failure (proceeds unauthenticated) and unauthorized `activeMcpIds` (dropped, no feedback).
-- [ ] `error_catalog` DB values for the MCP error types.
+- [ ] Capture from chat logs which tool the LLM selects and its exact `arguments`.
+- [ ] Verify the real server returns `Mcp-Session-Id`, its expiry message matches the 6 substrings, and whether it answers SSE or JSON.
+- [ ] Verify session refresh has no race when concurrent chats share one role-level connection.
+- [ ] Verify the silent drops: decrypt failure proceeds unauthenticated; unauthorized `activeMcpIds` vanish with no user feedback.
+- [ ] Confirm the `error_catalog` rows for the MCP error types.

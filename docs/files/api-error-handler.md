@@ -154,20 +154,16 @@ client contract.
 
 ## Open questions for the code owner
 
-1. Is the substring-based `classifyError` acceptable as-is (hotspot row 8), given that any
-   "database"-mentioning message becomes `SQL_CALL_FAILURE` and any "session"-mentioning
-   message becomes a 401 `SESSION_TIMEOUT`? Should classification prefer typed causes
-   (error classes / codes) over message text?
-2. Are `withErrorHandling` and `buildErrorBody` intended future API, or dead code? Should
-   the header comment ("wrap your route handlers…") and `buildErrorBody`'s "used by
-   streaming routes" claim be corrected?
-3. Is it intended that most routes do *not* funnel through `handleApiError` — i.e., that
-   REQ-01/REQ-03 coverage is partial at this commit?
-4. Is the double-swallow of `recordError` failures (empty `.catch`) acceptable, or should
-   the outer catch at least log ([03 §6](../03-review-hotspots.md#silent-failure-hazards-swallowed-errors)
-   asks to "verify each swallow actually logs" — this one does not)?
-5. Confirm the client-facing `errorId` (UUID) ↔ human `ERR-…` id correlation via
-   `error_uuid` is the intended support workflow.
+1. Is substring-based `classifyError` acceptable, or should classification prefer typed
+   causes over message text? (Hotspot row 8.)
+2. Are `withErrorHandling`/`buildErrorBody` future API or dead code, and should their
+   stale header comments be corrected?
+3. Is partial REQ-01/REQ-03 coverage (most routes bypass `handleApiError`) intended at
+   this commit?
+4. Should the double-swallow of `recordError` failures (empty `.catch`) at least log
+   ([03 §6](../03-review-hotspots.md#silent-failure-hazards-swallowed-errors))?
+5. Confirm the `errorId` (UUID) ↔ `ERR-…` id correlation via `error_uuid` is the
+   intended support workflow.
 
 ## Both-apps note
 

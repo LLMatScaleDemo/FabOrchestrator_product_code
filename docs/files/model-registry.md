@@ -124,20 +124,17 @@ The registry's `isDefault` model id (or `null`); and a force-refresh hook
 
 ## Open questions for the code owner
 
-1. Is stale-serve-on-failure (last good snapshot, not hardcoded values) the intended
-   degraded mode, and is `logger.warn` in CloudWatch enough visibility for a registry
-   outage that affects billing? ([03 §1 row 10](../03-review-hotspots.md#1-the-high-priority-files-at-a-glance))
-2. Is the union with `ALLOWED_MODELS` in the chat gate intended — i.e. is it acceptable
-   that deactivating a model in NexusOps does not block it while it stays hardcoded?
-   ([03 §3](../03-review-hotspots.md#3-money--cost-accuracy))
-3. Is a ~60 s (per-instance) propagation delay for rate changes acceptable for cost
-   attribution, or should rate-sensitive paths use `reloadModelRegistry` / a shorter TTL?
-4. `getDefaultModelId` and `reloadModelRegistry` are exported but unused — dead API, or
-   reserved for a planned admin/test hook?
-5. Should `normalizeThinkingType` fall back to the hardcoded per-model thinking mode
-   (rather than `'none'`) when the DB value is unrecognized?
-6. Confirm `create_model_registry.sql` has actually been applied to the shared RDS (the
-   module is written to survive its absence, so nothing fails loudly if it was never run).
+1. Is stale-serve-on-failure the intended degraded mode, and is `logger.warn` enough
+   visibility for a billing-affecting registry outage? ([03 §1 row 10](../03-review-hotspots.md#1-the-high-priority-files-at-a-glance))
+2. Is it intended that deactivating a model in NexusOps does not block it while it stays
+   in `ALLOWED_MODELS`? ([03 §3](../03-review-hotspots.md#3-money--cost-accuracy))
+3. Is a ~60 s per-instance propagation delay for rate changes acceptable, or should
+   rate-sensitive paths use `reloadModelRegistry` / a shorter TTL?
+4. Are the unused exports `getDefaultModelId` and `reloadModelRegistry` dead API or
+   reserved for a planned hook?
+5. Should `normalizeThinkingType` fall back to the hardcoded per-model mode (not
+   `'none'`) on an unrecognized DB value?
+6. Confirm `create_model_registry.sql` was actually applied to the shared RDS.
 
 ## Both-apps note
 

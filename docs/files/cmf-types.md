@@ -181,20 +181,17 @@ runtime by `cmf-client.ts` (every request body) and `app/api/cmf/packages/route.
 
 ## Open questions for the code owner
 
-1. **Runtime-confirm the inversion** (hotspot [§8 Q8](../03-review-hotspots.md#8-open-questions-for-code-owners-consolidated),
-   [scenario 04 §7](../scenarios/04-cmf-load.md)): does `op=0` really commit and `op=1`
-   really dry-run on the current deployment? The claim rests entirely on the 2026-05-20
-   comment; requires VPN + a disposable package to verify.
-2. Is the inversion **deployment-specific** (the comment scopes it to
-   "EntegrisKSPUpgrade, MES 10.2.7")? What is the plan if a CMF upgrade restores nominal
-   semantics — every hard-coded literal flips meaning silently.
-3. Would you accept replacing the bare literals with named constants exported from this
-   file (e.g. `EXECUTION_OP.LOAD` / `EXECUTION_OP.VALIDATE`), so the three call sites
-   stop encoding the landmine as `0`/`1`? (Observation only — no change made.)
-4. Where does `CMF_API_Complete_Reference.md` live? It's cited as the verification
-   record but is absent from the repo.
-5. Is `loadToCmf` passing a hard-coded `0` through the `@deprecated` `loadMasterData` —
-   with no code-level confirmation gate — intended? (Overlaps hotspot rows 15/17; see
+1. Runtime-confirm the inversion: does `op=0` really commit and `op=1` really dry-run on
+   the current deployment? (Hotspot [§8 Q8](../03-review-hotspots.md#8-open-questions-for-code-owners-consolidated),
+   [scenario 04 §7](../scenarios/04-cmf-load.md).)
+2. Is the inversion scoped to "EntegrisKSPUpgrade, MES 10.2.7", and what is the plan if
+   a CMF upgrade restores nominal semantics?
+3. Would you accept named constants (e.g. `EXECUTION_OP.LOAD` / `EXECUTION_OP.VALIDATE`)
+   replacing the bare `0`/`1` literals at the three call sites?
+4. Where does `CMF_API_Complete_Reference.md` live? (Cited as the verification record;
+   absent from the repo.)
+5. Is `loadToCmf` passing a hard-coded `0` through the `@deprecated` `loadMasterData`,
+   with no confirmation gate, intended? (Hotspot rows 15/17;
    [./chat-cmf-tools.md](./chat-cmf-tools.md).)
 
 ## Both-apps note

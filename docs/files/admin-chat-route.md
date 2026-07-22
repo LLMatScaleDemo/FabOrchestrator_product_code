@@ -196,22 +196,15 @@ as client-visible text — the HTTP response is already 200 at this point.
 
 ## Open questions for the code owner
 
-1. Is `requireAdmin` on this route the *sole* intended gate for the admin tools, and is
-   there a guarantee no other route can construct/run those tools without it? (hotspot §2)
-2. Is the lack of any model allow-list intentional? Should an unknown/mistyped `model` be
-   rejected rather than silently priced at $0?
-3. Should admin turns write a `usage_records` row (as Fab does), or is `prompt_audit_logs`
-   the single intended source for admin spend?
-4. Is the divergence between Admin's and Fab's `MODEL_PRICING` maps (three conflicting Opus
-   ids) intended, and are admin costs meant to use those Admin-side rates? (hotspot §3)
-5. Should the outer `catch` finalize the PENDING prompt-audit row (hoist `promptAuditHandle`
-   above the `try`)? Is a sweeper needed for `maxDuration` cuts?
+1. Is `requireAdmin` on this route the sole gate for the admin tools, with no other route able to run them? (hotspot §2)
+2. Should an unknown/mistyped `model` be rejected (there is no allow-list) instead of silently priced at $0?
+3. Should admin turns write `usage_records` (as Fab does), or is `prompt_audit_logs` the single source for admin spend?
+4. Is the Admin-vs-Fab `MODEL_PRICING` divergence (three conflicting Opus ids) intended for admin costs? (hotspot §3)
+5. Should the outer `catch` finalize the PENDING prompt-audit row (hoist `promptAuditHandle`), and is a sweeper needed for `maxDuration` cuts?
 6. Are text-less admin turns intentionally excluded from prompt audit (REQ-04)?
-7. Is discarding all prior tool results from history acceptable for multi-step admin
-   workflows, or should balanced tool pairs be preserved (as Fab attempts)?
-8. Is `lambdaMcpCrash` the right classification for Anthropic rate-limit/overload errors on a
-   route that has no Lambda or MCP?
-9. Is the default model `claude-sonnet-4-6` the intended admin default (vs Fab's Opus default)?
+7. Is discarding all prior tool results from history acceptable, or should balanced tool pairs be preserved as Fab attempts?
+8. Is `lambdaMcpCrash` the right classification for Anthropic rate-limit/overload errors on a route with no Lambda or MCP?
+9. Is default model `claude-sonnet-4-6` the intended admin default (vs Fab's Opus default)?
 
 ## Both-apps note
 

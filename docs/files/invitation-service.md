@@ -163,20 +163,12 @@ old token is overwritten and stops working.
 
 ## Open questions for the code owner
 
-1. **Reactivation semantics (row 22 core):** is reattaching a `DELETED` user's history
-   (conversations, usage, id) to a re-invited email intended, and is overwriting only the role
-   (not clearing other prior associations, e.g. any lingering session rows) the desired
-   behavior?
-2. Is minting a **live 30-day session on accept** — logging the user in with no separate sign-in
-   and no email-verification beyond the link — the intended UX and security posture?
-3. Should `SUSPENDED` users be invitable at all, given accept currently throws a raw unique-key
-   error for them rather than a meaningful message?
-4. Are invite tokens meant to remain **plaintext** in `invitations.token` (same trade-off as
-   [`sessions.token`](./storage.md))?
-5. Should the concurrent-accept race be closed (e.g. lock/`SELECT ... FOR UPDATE` or a
-   status-conditional update) to prevent a double session mint on reactivation?
-6. Is silent email failure (invite acceptable but never delivered) acceptable, and should the
-   chat/REST caller surface it?
+1. Is reattaching a `DELETED` user's history to a re-invited email, overwriting only the role, the intended reactivation behavior? (Row 22.)
+2. Is minting a live 30-day session on accept — no separate sign-in or verification beyond the link — the intended posture?
+3. Should `SUSPENDED` users be invitable, given accept throws a raw unique-key error for them?
+4. Are invite tokens meant to stay plaintext in `invitations.token` (same trade-off as [`sessions.token`](./storage.md))?
+5. Should the concurrent-accept race be closed (e.g. `SELECT ... FOR UPDATE`) to prevent a double session mint?
+6. Is silent email failure (invite minted, never delivered) acceptable, or should the chat/REST caller surface it?
 
 ## Both-apps note
 

@@ -83,21 +83,35 @@
 
 ## 7.5 Blocking questions (must be answered to progress)
 
+**Top 5 — the only ones that need a management-level answer now.** Everything else in
+this tracker is routine code-owner confirmation (see §7.6 note) or deferred below.
+
+| # | Question | Owner | Why it can't wait | Status |
+|---|----------|-------|-------------------|:------:|
+| 1 | Where do the **Python MCP servers** and **Lambda** live (separate repos)? We need access to document them. | Jothi | Blocks an entire scope item of the assignment | ☐ open |
+| 2 | **Cross-user access in `/api/chat`**: both chat routes read/write messages on a client-supplied `conversationId` with no ownership check ([storage](./files/storage.md)). Real gap or compensated elsewhere? | Chat owner | Potential cross-user data exposure — needs confirmation before anything else | ☐ open |
+| 3 | **Prod TLS posture**: is `ssl:false` to RDS acceptable, and is `CMF_TLS_INSECURE=0` actually set? (The insecure default disables cert checks for **all** outbound `fetch` in the process, not just CMF — [cmf-client](./files/cmf-client.md).) | Ops | Security config that only Ops can verify; static reading can't resolve it | ☐ open |
+| 4 | **`loadToCmf` gate**: the only thing keeping the LLM from committing to the live MES is a one-line exclusion from the tool belt ([chat-cmf-tools](./files/chat-cmf-tools.md)) — is that the intended design, or should a code-level confirm gate exist? | CMF owner | Highest-risk write path in the product | ☐ open |
+| 5 | **Missing DDL**: 9 audit/catalog DB objects (`prompt_audit_logs`, `error_audit_logs`, counters, enums, `error_catalog`) have no create statements anywhere in the repo ([schema](./files/schema.md)). Where does the DDL live, and who owns it? A fresh environment silently runs without audit. | Ops / DB owner | Compliance-relevant (REQ-03/04) and invisible when it fails | ☐ open |
+
+### Deferred — answer during normal review, not blocking
+
 | # | Question | Owner | Status |
 |---|----------|-------|:------:|
-| 1 | Where do the **Python MCP servers** and **Lambda** live (separate repos)? | Jothi | ☐ open |
-| 2 | Is `ssl:false` to RDS acceptable in prod? | Ops | ☐ open |
-| 3 | Is `CMF_TLS_INSECURE=0` set in prod? | Ops | ☐ open |
-| 4 | Is the LLM-reachable `loadToCmf` acceptable without a code-level confirm gate? | CMF owner | ☐ open |
-| 5 | What runs the 90-day retention purges? | Ops | ☐ open |
-| 6 | Which scenarios does Raj consider highest business priority? | Raj | ☐ open |
-| 7 | Confirm documenting the actual (flat route→lib) structure, not the assignment's layered template? | Jothi | ☐ open |
+| D1 | What runs the 90-day retention purges? (Nothing is scheduled; only trigger today is a manual admin chat tool.) | Ops | ☐ open |
+| D2 | Which scenarios does Raj consider highest business priority? (Only gates *additional* scenarios; 5 are already done.) | Raj | ☐ open |
+| D3 | Confirm documenting the actual (flat route→lib) structure, not the assignment's layered template. | Jothi | ☐ open |
 
 ## 7.6 Doc-vs-code discrepancies found by the file deep-dives
 
 The `docs/files/` pages re-verified earlier claims against the code (commit `7976c78`).
 Where a deep-dive contradicts docs 01/03 or the root `CLAUDE.md`, the deep-dive is the
 more careful reading — but a code owner should confirm before the older doc is corrected.
+
+> **These are not management questions.** Each row belongs to one code owner and gets
+> confirmed as part of that owner's normal module sign-off (§7.2b) — no separate answers
+> needed. The two rows serious enough to escalate (14: cross-user chat access, and the
+> missing-DDL findings in 1/16/21) are already promoted into the §7.5 Top 5.
 
 | # | Older claim (where) | What the deep-dive found | Page |
 |---|---------------------|--------------------------|------|

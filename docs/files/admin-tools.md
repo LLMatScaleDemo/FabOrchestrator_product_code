@@ -260,24 +260,14 @@ without a deploy — powerful, and the only in-body code protection is the `conf
 
 ## Open questions for the code owner
 
-1. **Last-admin protection:** row 20 asserts it is "enforced in code" — it is **not** in
-   this file, and per [03 §21] not in `deleteUser` either. Is that acceptable, or should a
-   real guard be added (and where)?
-2. **`bulk_assign_role`:** intended to have *no* `confirm` and *no* `audit_logs` write for
-   a potentially many-user role change? Should it route through `changeUserRole`/the service
-   like `change_user_role` does?
-3. **`add_mcp_to_role` / `remove_role_mcp`:** should these direct-Prisma MCP mutations write
-   an `audit_logs` row (they currently don't), given every other admin mutation does?
-4. **`delete_role`:** is it intended that a `confirm:true` first call skips the
-   system-role/user-count preview and relies solely on `role-service`?
-5. **Retention:** what actually runs `purge_old_errors`/`purge_old_prompts` (and
-   `purgeOldSessionLogs`) on a schedule, or are they manual-only?
+1. Last-admin protection is absent here and in `deleteUser` (contra row 20's claim) — should a real guard be added, and where? [03 §21]
+2. Should `bulk_assign_role` require `confirm`, write `audit_logs`, and route through `changeUserRole` like `change_user_role` does?
+3. Should `add_mcp_to_role` / `remove_role_mcp` write `audit_logs` rows like every other admin mutation?
+4. Is it intended that a first-call `confirm:true` to `delete_role` skips the system-role/user-count preview?
+5. What schedules `purge_old_errors` / `purge_old_prompts` / `purgeOldSessionLogs`, or are they manual-only?
    ([03 §6](../03-review-hotspots.md#un-scheduled-retention).)
-6. **AuthZ:** confirm `/api/admin/chat` is the *only* consumer and always wraps
-   `requireAdmin`, since no tool re-checks admin status.
-7. **`update_error_catalog_message`:** confirm it is acceptable that admin chat can rewrite
-   live user-facing error text (10 canonical types) with only the `confirm` flag as the
-   in-code guard.
+6. Confirm `/api/admin/chat` is the only consumer and always wraps `requireAdmin` — no tool re-checks admin status.
+7. Is the `confirm` flag alone a sufficient guard for `update_error_catalog_message` rewriting live user-facing error text?
 
 ## Both-apps note
 

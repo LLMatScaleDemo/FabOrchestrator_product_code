@@ -175,19 +175,13 @@ token is server-generated hex, so nothing user-supplied reaches the `href`.
 
 ## Open questions for the code owner
 
-1. **Escaping.** Should `inviterName`, `roleName`, and `userName` be HTML-escaped before
-   interpolation (row 23 / [§6](../03-review-hotspots.md#6-network-posture-secrets-latent-bugs))?
-   Even if admins are trusted, `&`/`<`/`"` in a legitimate name or role corrupts the email.
-2. **Log leak.** Is it acceptable that, when SMTP is unset in production, invite/reset URLs
-   **with their tokens** are written to logs via the `[DEV]` lines? Should these be gated on
-   `NODE_ENV !== 'production'`, or removed? ([§6](../03-review-hotspots.md#6-network-posture-secrets-latent-bugs))
-3. **Silent delivery failure.** Should a `sendMail` failure be surfaced (to the admin UI,
-   or by failing the invite/reset), rather than swallowed with the token already minted?
-4. **TLS on 587.** Does the production relay enforce STARTTLS, given `secure:false` and no
-   `requireTLS` on the default port?
-5. **URL provenance.** Confirm `APP_URL` and the token generator can never be
-   attacker-influenced (they aren't at this commit), keeping the `href` interpolations a
-   non-issue.
+1. Should `inviterName`, `roleName`, and `userName` be HTML-escaped before interpolation?
+   (row 23 / [§6](../03-review-hotspots.md#6-network-posture-secrets-latent-bugs))
+2. Should the `[DEV]` log lines that print invite/reset URLs with tokens be gated on `NODE_ENV !== 'production'`, or removed?
+   ([§6](../03-review-hotspots.md#6-network-posture-secrets-latent-bugs))
+3. Should a `sendMail` failure be surfaced (admin UI or failed invite/reset) rather than swallowed with the token already minted?
+4. Does the production relay enforce STARTTLS, given `secure:false` and no `requireTLS` on port 587?
+5. Confirm `APP_URL` and the token generator can never be attacker-influenced, keeping the `href` interpolations a non-issue.
 
 ## Both-apps note
 

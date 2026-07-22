@@ -116,20 +116,16 @@ debugging but worth knowing when auditing what gets persisted.
 
 ## Open questions for the code owner
 
-1. Do the apps' `DATABASE_URL` credentials use a **least-privilege / read-only role**
-   where appropriate ([03 §5](../03-review-hotspots.md#5-raw-sql--injection-surface))?
-   Since sql-guard enforces nothing, the DB role is currently the *only* line of defense
-   on the raw-SQL surfaces.
-2. Is there a planned raw-SQL path (e.g. a future admin "run a query" tool) that this
-   guard was written for, or is it purely anticipatory? If a path lands, will it call
-   `assertReadOnlySql` — and is the team aware the check is bypassable?
-3. The hotspots doc says it is "currently unused **in Fab**", which reads as if Admin
-   uses it — the grep says Admin doesn't either. Confirm this is dead code in both apps
-   at `7976c78`, and update [03 §5](../03-review-hotspots.md#5-raw-sql--injection-surface)
-   accordingly.
-4. Should the guard be replaced/backed by a real mechanism if it's ever enforced — e.g. a
-   read-only DB session (`default_transaction_read_only`), a dedicated read-only role, or
-   an actual SQL parser?
+1. Do the apps' `DATABASE_URL` credentials use a least-privilege / read-only role — the
+   only defense on the raw-SQL surfaces
+   ([03 §5](../03-review-hotspots.md#5-raw-sql--injection-surface))?
+2. Is a raw-SQL path planned that will call `assertReadOnlySql`, and is the team aware
+   the check is bypassable?
+3. Confirm this is dead code in *both* apps at `7976c78`, and update
+   [03 §5](../03-review-hotspots.md#5-raw-sql--injection-surface) ("unused in Fab"
+   implies Admin uses it).
+4. If ever enforced, should the guard be backed by a real mechanism
+   (`default_transaction_read_only`, a read-only role, or a SQL parser)?
 
 ## Both-apps note
 

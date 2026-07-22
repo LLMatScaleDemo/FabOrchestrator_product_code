@@ -167,23 +167,19 @@ output), `PromptSuccessParams`, `PromptFailureParams`, `PromptAuditFilters`,
 
 ## Open questions for the code owner
 
-1. Is the 90-day hard-coded `purgeOldPrompts` window intended to coexist with the
-   configurable `auditRetentionDays` redaction in the compliance route — and what
-   actually runs the purge, given nothing schedules it? ([03 §6](../03-review-hotspots.md#un-scheduled-retention))
-2. Is storing full prompt/response text + tool outputs (PII) for 90+ days acceptable to
-   the customer, given the compliance route only *redacts* on demand? (Hotspot row 5's
-   core question.)
-3. Should the recorders' empty `catch` blocks at least log, so a dead audit table is
-   noticed? ([03 §7 task 3](../03-review-hotspots.md#7-where-to-start-contributing))
-4. Costs are written as float64 into NUMERIC and summed via `Number()` in
-   `admin-tools.ts` — is that precision acceptable for billing reporting?
-   ([03 §3](../03-review-hotspots.md#3-money--cost-accuracy))
-5. The Admin copy's `queryPromptAudit` does not select the `model` column (the Fab copy —
-   which nothing calls — does). Is model attribution meant to be surfaced in admin
-   queries? (See Both-apps note.)
-6. Confirm `prompt_audit_daily_counter` has the unique/PK on `counter_date` in every
-   environment (the `ON CONFLICT` upsert — and therefore *all* prompt auditing — depends
-   on it, and the table is raw-SQL-only, not in `schema.prisma`).
+1. What runs `purgeOldPrompts`, and is its hard-coded 90 days meant to coexist with the
+   configurable `auditRetentionDays` redaction?
+   ([03 §6](../03-review-hotspots.md#un-scheduled-retention))
+2. Is storing full prompt/response text + tool outputs (PII) for 90+ days acceptable?
+   (Hotspot row 5.)
+3. Should the recorders' empty `catch` blocks at least log?
+   ([03 §7 task 3](../03-review-hotspots.md#7-where-to-start-contributing))
+4. Is float64-into-NUMERIC cost storage, summed via `Number()` in `admin-tools.ts`,
+   precise enough for billing? ([03 §3](../03-review-hotspots.md#3-money--cost-accuracy))
+5. Should Admin's `queryPromptAudit` select the `model` column (the unused Fab copy
+   does)?
+6. Confirm `prompt_audit_daily_counter.counter_date` has the unique/PK the `ON CONFLICT`
+   upsert requires in every environment.
 
 ## Both-apps note
 

@@ -207,17 +207,16 @@ and [scenario 04 path (b)](../scenarios/04-cmf-load.md).
 
 1. Is `CMF_TLS_INSECURE=0` actually set in production with the corp CA installed?
    ([03 §8 Q4](../03-review-hotspots.md#8-open-questions-for-code-owners-consolidated))
-2. Is process-wide TLS weakening acceptable, or should the Agent be scoped to CMF calls
-   only (e.g. passing `dispatcher` per-fetch instead of `setGlobalDispatcher`)? Confirm
-   at runtime that the global dispatcher really governs the Anthropic SDK's fetch.
+2. Is process-wide TLS weakening via `setGlobalDispatcher` acceptable (it also governs
+   the Anthropic SDK's fetch), or should the Agent be scoped per-fetch to CMF calls?
 3. Is `loadToCmf` riding the `@deprecated` `loadMasterData` (all object types, op `0`)
-   intended, or should it migrate to `prepareMasterData` + a selected-types execution?
-4. Can the stale Playwright header comment be corrected, and is any dead Playwright
-   token-fetch path confirmed gone (none found in app code at this commit)?
-5. Are the inverted `ExecutionOperation` semantics documented with the CMF vendor for
-   this deployment, so no one "fixes" them? (Hotspot row 14 / [types page](./cmf-types.md).)
-6. Can `LastExecutionLog` ever be non-JSON (which would throw out of
-   `pollForCompletion`), and is `result` defaulting to `1` the right conservative choice?
+   intended, or should it migrate to `prepareMasterData` + selected types?
+4. Can the stale Playwright header comment be corrected, and is the old Playwright
+   token-fetch path confirmed gone?
+5. Are the inverted `ExecutionOperation` semantics documented with the CMF vendor, so no
+   one "fixes" them? (Hotspot row 14 / [types page](./cmf-types.md).)
+6. Can `LastExecutionLog` ever be non-JSON (throwing out of `pollForCompletion`), and is
+   `result` defaulting to `1` the right conservative choice?
 
 ## Both-apps note
 

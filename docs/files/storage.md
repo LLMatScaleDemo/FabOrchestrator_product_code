@@ -216,28 +216,16 @@ memory files, but any authenticated user can already delete all global ones.
 
 ## Open questions for the code owner
 
-1. Is the missing conversation-ownership check in `/api/chat` /
-   `/api/modeling-agent/chat` a real cross-user write/read hole, or is it mitigated
-   somewhere we didn't find (e.g. unguessable cuids being treated as capability tokens)?
-2. Should the 14 silent `catch { return null/false }` blocks log (per
-   [03 §6](../03-review-hotspots.md#silent-failure-hazards-swallowed-errors))? Today a DB
-   outage in any update/delete is invisible outside CloudWatch — and invisible even
-   *there* for these paths.
-3. Is it acceptable that the chat route ignores `addMessage`'s `null` — i.e. that a
-   streamed turn can render for the user but never persist, with only a console line?
-4. `sessions.token` plaintext: intentional and load-bearing for the session-audit
-   reconciler — confirm no plans to hash it without updating both this file and the
-   reconciler ([session-audit](./session-audit.md)).
-5. Global memory files: is "any authenticated user can edit/rename/bulk-delete all
-   global files" the intended model once the (currently disabled) chat memory tool is
-   re-enabled?
-6. `updateUser`'s throw-vs-null mismatch: fix the signature or add the catch?
-7. Confirm the dead exports (`createUser`, `deleteUser`, `cleanupExpiredSessions`,
-   `deleteUserSessions`, `getUserById`, `deleteMessage`) are intentionally kept — and
-   whether *anything* is expected to run `cleanupExpiredSessions` (relates to the
-   un-scheduled-retention question in 03 §6).
-8. Soft-deleted conversations are never purged and their messages remain readable by
-   id — intended retention behavior?
+1. Is the missing conversation-ownership check in `/api/chat` / `/api/modeling-agent/chat` a real cross-user read/write hole?
+2. Should the 14 bare `catch { return null/false }` blocks log
+   ([03 §6](../03-review-hotspots.md#silent-failure-hazards-swallowed-errors))?
+3. Is it acceptable that the chat route ignores `addMessage`'s `null`, so a rendered turn can silently fail to persist?
+4. Confirm plaintext `sessions.token` stays — hashing it breaks the
+   [session-audit](./session-audit.md) reconciler.
+5. Is "any authenticated user can edit/rename/bulk-delete all global memory files" intended once the disabled chat memory tool returns?
+6. `updateUser` throws despite its `Promise<User | null>` signature — fix the signature or add the catch?
+7. Are the six dead exports (`createUser`, `deleteUser`, `cleanupExpiredSessions`, `deleteUserSessions`, `getUserById`, `deleteMessage`) intentionally kept, and does anything ever run `cleanupExpiredSessions` (03 §6)?
+8. Is never purging soft-deleted conversations, whose messages stay readable by id, the intended retention?
 
 ## Both-apps note
 

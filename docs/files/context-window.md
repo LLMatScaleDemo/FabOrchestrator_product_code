@@ -188,22 +188,16 @@ DB/network/crypto side effects.
 
 ## Open questions for the code owner
 
-1. Is chars ÷ 4 plus a 4,000-token buffer accurate enough in practice, given the
-   JSON-heavy tool results this app produces? Any observed 400s from context overflow?
-   (Hotspot row 13.)
-2. The synthesized placeholder in `ensureToolResultPairing` uses `result:` where the
-   AI SDK v6 (and the rest of this file) uses `output:` — does the SDK accept this
-   shape, and does the placeholder text actually reach the model? (Statically it looks
-   like the payload is dropped.)
-3. Can tool-results appear inside `user`-role messages at this point in the pipeline
-   (the repair pass checks for them)? If yes, Phase 2's group boundary can strand
-   orphaned tool-results at the head of the kept tail — confirm or rule out.
-4. Is "send it over budget and let the API 400" the intended behavior when the current
-   exchange alone exceeds the budget, or should there be a phase 3 / user-facing error?
-5. Should the user be told (in the UI or stream metadata) when earlier history was
-   omitted from a turn?
-6. `keepFirstUserMessage` and four of the seven exports are unused by the app — kept
-   deliberately (tests/future use), or removable surface?
+1. Is chars ÷ 4 plus the 4,000-token buffer accurate enough — any observed context-overflow
+   400s? (Hotspot row 13.)
+2. Does the SDK accept `ensureToolResultPairing`'s `result:` key (AI SDK v6 uses
+   `output:`), or is the placeholder text dropped?
+3. Can tool-results appear in `user`-role messages here — if so, can Phase 2 strand
+   orphaned tool-results at the head of the kept tail?
+4. Is "send over budget and let the API 400" intended when the current exchange alone
+   exceeds the budget, or should there be a phase 3 / user-facing error?
+5. Should the user be told when earlier history was omitted from a turn?
+6. Are `keepFirstUserMessage` and the other unused exports deliberate or removable?
 
 ## Both-apps note
 

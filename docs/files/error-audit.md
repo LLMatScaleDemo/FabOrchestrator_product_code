@@ -164,23 +164,18 @@ required), i.e. retention runs only when an admin explicitly asks for it. Note
 
 ## Open questions for the code owner
 
-1. **Where is the DDL** for `error_audit_logs`, `error_audit_daily_counter`, and the
-   `error_audit_status` enum? It is not in `schema.prisma` nor in any
-   `admin_athena/prisma/*.sql` file — was it applied by hand to RDS, and does
-   `error_audit_daily_counter.counter_date` definitely carry the unique/PK constraint the
-   `ON CONFLICT` upsert requires? (Hotspot row 6's core question.)
-2. Is "persistence failure ⇒ silent `null`, no log line" acceptable, given the in-code
-   comment promises the caller logs it and no caller does? (Also [03 §6 silent-failure
-   hazards](../03-review-hotspots.md#silent-failure-hazards-swallowed-errors).)
-3. What is supposed to run the 90-day `purgeOldErrors` sweep? Nothing schedules it in
-   Fab **or** Admin (the retention worker only purges session logs, and is dead anyway) —
-   is admin-chat-on-demand the intended retention mechanism?
-4. Is the ERR-id day meant to be UTC (comment) or DB-local (`CURRENT_DATE`)? What is the
-   RDS timezone?
+1. Where is the DDL for `error_audit_logs`, `error_audit_daily_counter`, and
+   `error_audit_status`, and does `counter_date` carry the unique/PK the `ON CONFLICT`
+   upsert requires? (Hotspot row 6.)
+2. Is "persistence failure ⇒ silent `null`, no log line" acceptable when no caller logs
+   it? ([03 §6](../03-review-hotspots.md#silent-failure-hazards-swallowed-errors).)
+3. What runs the 90-day `purgeOldErrors` sweep — is admin-chat-on-demand the intended
+   retention mechanism?
+4. Is the ERR-id day meant to be UTC (comment) or DB-local (`CURRENT_DATE`), and what is
+   the RDS timezone?
 5. `countErrorAudit` has no callers — planned feature or removable?
-6. The header says switching to typed `prisma.errorAuditLog.*` is "a one-line change once
-   the client is regenerated" — but the models aren't in `schema.prisma`, so it would
-   first need the schema added. Is that migration planned?
+6. Is adding these models to `schema.prisma` (prerequisite for the promised typed
+   `prisma.errorAuditLog.*` switch) planned?
 
 ## Both-apps note
 

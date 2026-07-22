@@ -91,10 +91,10 @@ its `length >= 32` rule.
 
 ## Open questions for the code owner
 
-1. Confirm the scrypt `reject`-without-`return` finding and approve the one-line fix
-  (add `return` / wrap in `else`) — [03 §7 task 1](../03-review-hotspots.md#7-where-to-start-contributing).
-2. Is GCM auth-tag handling confirmed correct end-to-end (tag always 16 bytes, no
-   truncated-tag acceptance)? (Hotspot row 2's "GCM tag handling" question.)
+1. Confirm the scrypt `reject`-without-`return` bug and approve the one-line fix
+   ([03 §7 task 1](../03-review-hotspots.md#7-where-to-start-contributing)).
+2. Confirm GCM auth-tag handling is correct end-to-end (16-byte tag, no truncated-tag
+   acceptance) (hotspot row 2).
 3. Is the absence of key rotation acceptable, or should ciphertexts be versioned?
 4. Should `verifyPassword` treat malformed stored hashes as `false` instead of throwing?
 

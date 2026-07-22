@@ -130,19 +130,17 @@ module-singleton `S3Client`; `PRESIGN_TTL_SECONDS` is
 
 ## Open questions for the code owner
 
-1. Is the presigned-URL flow (URLs handed to any user-configured MCP server, persisted
-   in `prompt_audit_logs.tool_calls` and assistant message parts) the accepted design
-   for private uploads, per [03 §1 row 12](../03-review-hotspots.md#1-the-high-priority-files-at-a-glance)?
-2. What is the intended TTL in production — is `S3_PRESIGN_TTL_SECONDS` set anywhere,
-   and is the 24 h default deliberate?
-3. On Elastic Beanstalk, do URLs actually live 24 h, or do they die with the instance
-   role's temporary credentials? (Needs runtime verification.)
-4. Does `faborch-user-uploads` have Block Public Access + a lifecycle/retention rule?
-   (Bucket config is not in this repo's `cloudformation/` at the pinned commit — confirm.)
-5. Should `ContentType` be allowlisted (or forced to `application/octet-stream` for
-   risky types) instead of trusting the client, and should a max upload size be enforced?
-6. Should the chat route's `presignKey` fan-out be `allSettled` so a credential hiccup
-   degrades to "no file URLs" instead of failing the turn?
+1. Is the presigned-URL flow (URLs handed to MCP servers, persisted in
+   `prompt_audit_logs.tool_calls`) the accepted design for private uploads?
+   ([03 §1 row 12](../03-review-hotspots.md#1-the-high-priority-files-at-a-glance))
+2. What TTL is intended in production — is `S3_PRESIGN_TTL_SECONDS` set anywhere, and do
+   URLs actually survive 24 h given the instance role's temporary credentials?
+3. Does `faborch-user-uploads` have Block Public Access and a lifecycle/retention rule?
+   (Not in `cloudformation/` at the pinned commit.)
+4. Should `ContentType` be allowlisted instead of client-trusted, and a max upload size
+   enforced?
+5. Should the chat route's `presignKey` fan-out use `allSettled` so a credential hiccup
+   doesn't fail the turn?
 
 ## Both-apps note
 
