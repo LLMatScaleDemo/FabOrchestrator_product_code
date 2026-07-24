@@ -211,22 +211,50 @@ export function checkCrossSheet(
  * PK still enforced) and any unresolved FK becomes a warning, never a false
  * blocking error.
  */
+/** Default cap on how long the CMF-metadata cross-sheet work may take before
+ *  we fall back to the offline (PK-only) check, so an upload never hangs on a
+ *  slow/unreachable CMF (the single connect timeout can be ~20s). */
+const CROSS_SHEET_TIMEOUT_MS = Number(process.env.CROSS_SHEET_TIMEOUT_MS ?? "8000");
+
 export async function checkCrossSheetWithMetadata(
   sheets: ParsedSheet[],
+  timeoutMs: number = CROSS_SHEET_TIMEOUT_MS,
 ): Promise<ValidationError[]> {
+  // Only sheets that actually contain data can have PK/FK problems. A full
+  // master-data workbook has ~250 sheets but a real upload fills only a handful;
+  // loading CMF metadata for every empty sheet is what made validation crawl.
+  const dataSheets = sheets.filter((s) => s.rows.length > 0);
+  if (dataSheets.length === 0) return [];
+
+  // If CMF is slow/unreachable, don't block the upload — fall back to the
+  // offline PK-uniqueness check (no metadata) once the timeout elapses.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const offlineFallback = new Promise<ValidationError[]>((resolve) => {
+    timer = setTimeout(() => resolve(checkCrossSheet(dataSheets, () => null, { cmfReachable: false })), timeoutMs);
+  });
+  const result = await Promise.race([runWithMetadata(dataSheets), offlineFallback]);
+  if (timer) clearTimeout(timer);
+  return result;
+}
+
+async function runWithMetadata(dataSheets: ParsedSheet[]): Promise<ValidationError[]> {
   const rulesets = new Map<string, EntityRuleset | null>();
   let cmfReachable = true;
 
-  for (const s of sheets) {
-    const key = s.objectType.toLowerCase();
-    if (rulesets.has(key)) continue;
-    try {
-      rulesets.set(key, await loadRuleset(s.objectType));
-    } catch {
-      rulesets.set(key, null);
-      cmfReachable = false;
-    }
-  }
+  // Load each distinct type's ruleset once, in parallel, so latency doesn't
+  // stack up across the (few) data sheets.
+  const distinctTypes = [...new Set(dataSheets.map((s) => s.objectType.toLowerCase()))];
+  const typeByLower = new Map(dataSheets.map((s) => [s.objectType.toLowerCase(), s.objectType]));
+  await Promise.all(
+    distinctTypes.map(async (key) => {
+      try {
+        rulesets.set(key, await loadRuleset(typeByLower.get(key)!));
+      } catch {
+        rulesets.set(key, null);
+        cmfReachable = false;
+      }
+    }),
+  );
 
   const rulesetFor = (t: string) => rulesets.get(t.toLowerCase()) ?? null;
 
@@ -235,7 +263,7 @@ export async function checkCrossSheetWithMetadata(
   const cmfParents = new Map<string, Set<string>>();
   if (cmfReachable) {
     const wantedByTarget = new Map<string, Set<string>>();
-    for (const s of sheets) {
+    for (const s of dataSheets) {
       const rs = rulesetFor(s.objectType);
       if (!rs) continue;
       for (const p of rs.properties) {
@@ -279,7 +307,7 @@ export async function checkCrossSheetWithMetadata(
   const parentInCmf: ParentInCmf = (target, valueLower) =>
     cmfParents.get(target.toLowerCase())?.has(valueLower) ?? false;
 
-  return checkCrossSheet(sheets, rulesetFor, { parentInCmf, cmfReachable });
+  return checkCrossSheet(dataSheets, rulesetFor, { parentInCmf, cmfReachable });
 }
 
 /**
