@@ -16,6 +16,7 @@ import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/prom
 import { ToolTimeline } from "@/components/prompt-kit/tool-timeline";
 import { extractToolParts } from "@/components/prompt-kit/tool";
 import { Button } from "@/components/ui/button";
+import { MCPDataSourceUploadDialog, type CreatedDataSource } from "@/components/mcp/mcp-datasource-upload-dialog";
 import { Users, FileText, LineChart, Shield } from "lucide-react";
 
 // Inter, scoped to the Admin Assistant hero to match the approved design.
@@ -63,16 +64,55 @@ export default function AdminChatPage() {
   const isLoading = status === "streaming" || status === "submitted";
   const isWelcome = messages.length === 0;
 
+  // Secure MCP data-source intake: an attached file is treated as a credentials
+  // document and routed to the dedicated dialog → /api/admin/mcp/secrets. It is
+  // NEVER appended to the chat/prompt, so its contents never reach the model.
+  const [credsFile, setCredsFile] = useState<File | null>(null);
+  const [credsDefaultName, setCredsDefaultName] = useState("");
+  const [credsOpen, setCredsOpen] = useState(false);
+
   const handleSendMessage = useCallback(
-    (data: { message: string; files: unknown[]; model: string }) => {
-      if (!data.message.trim() && (!data.files || data.files.length === 0)) return;
+    (data: { message: string; files: Array<{ file: File }>; model: string }) => {
+      if (!data.message.trim()) return;
       sendMessage({ text: data.message });
+    },
+    [sendMessage]
+  );
+
+  // Triggered ONLY by the composer's dedicated "Secure Upload" menu item — routes
+  // a credentials file to the secure dialog (never into the chat/model).
+  const handleSecureUpload = useCallback((file: File) => {
+    setCredsFile(file);
+    setCredsDefaultName(file.name.replace(/\.[^.]+$/, ""));
+    setCredsOpen(true);
+  }, []);
+
+  const handleCredsCreated = useCallback(
+    (ds: CreatedDataSource) => {
+      // Post a NON-SECRET, plain-language prompt so the assistant kicks off the
+      // flow itself — connect + auto-discover first (no manual schema). The id is
+      // included only so the assistant can act on it; per the system prompt it
+      // won't echo IDs/technical details back to the admin. No credentials here.
+      // Friendly, meaningful text for the admin. The id rides in a hidden marker
+      // that the assistant reads but the UI strips out (see MessageBubble).
+      sendMessage({
+        text:
+          `✅ I've securely saved the connection details for "${ds.name}". Let's set it up as a new data source. [[dsid:${ds.id}]]`,
+      });
     },
     [sendMessage]
   );
 
   return (
     <div className="relative flex h-full flex-col">
+      <MCPDataSourceUploadDialog
+        open={credsOpen}
+        file={credsFile}
+        defaultName={credsDefaultName}
+        token={token}
+        onClose={() => setCredsOpen(false)}
+        onCreated={handleCredsCreated}
+      />
       <AnimatePresence mode="wait">
         {isWelcome ? (
           <motion.div
@@ -111,6 +151,7 @@ export default function AdminChatPage() {
                 <ClaudeChatInput
                   ref={chatInputRef}
                   onSendMessage={handleSendMessage}
+                  onSecureUpload={handleSecureUpload}
                   models={ADMIN_MODELS}
                   defaultModel="claude-sonnet-4-6"
                   placeholder="Ask about users, roles, usage, audit logs…"
@@ -207,7 +248,23 @@ export default function AdminChatPage() {
                           if (idx === lastIdx && lastIsStreamingAssistant) {
                             return null;
                           }
-                          return <MessageBubble key={message.id} message={message} />;
+                          // The last assistant message, while the request is
+                          // still in flight (e.g. a long generate/deploy tool is
+                          // running AFTER some text like "Let me prepare the
+                          // tools now…"), keeps an ACTIVE animated indicator so
+                          // it never looks stuck during the 30–90s tool call.
+                          const isInFlight =
+                            idx === lastIdx && isLoading && message.role === "assistant";
+                          return (
+                            <MessageBubble
+                              key={message.id}
+                              message={message}
+                              isStreaming={isInFlight}
+                              isLast={idx === messages.length - 1}
+                              isLoading={isLoading}
+                              onConsent={(text) => sendMessage({ text })}
+                            />
+                          );
                         })}
 
                         {/* Single, continuously-mounted loader. Receives
@@ -246,6 +303,7 @@ export default function AdminChatPage() {
                 <ClaudeChatInput
                   ref={chatInputRef}
                   onSendMessage={handleSendMessage}
+                  onSecureUpload={handleSecureUpload}
                   models={ADMIN_MODELS}
                   defaultModel="claude-sonnet-4-6"
                   placeholder="Ask anything…"
@@ -274,8 +332,48 @@ export default function AdminChatPage() {
 // three-stage progression (Received → Retrieval → Generating Response).
 // This bubble only renders messages that already have something to show.
 
+// The Step-0 consent gate ends with a "[ Cancel ]   [ Proceed with Connection ]"
+// line. We strip that literal text from the rendered markdown and render real
+// buttons instead (only on the latest message). Clicking a button just sends the
+// same reply the admin would otherwise type, so the conversational gate is
+// unchanged — the buttons are a convenience, not a new flow.
+const CONSENT_BUTTONS_RE =
+  /\n?[ \t]*>?[ \t]*\[\s*Cancel\s*\][\s>]*\[\s*Proceed with Connection\s*\][ \t]*/i;
+
+function ConsentButtons({
+  onProceed,
+  onCancel,
+}: {
+  onProceed: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-2">
+      <Button variant="outline" size="sm" onClick={onCancel}>
+        Cancel
+      </Button>
+      <Button size="sm" onClick={onProceed}>
+        Proceed with Connection
+      </Button>
+    </div>
+  );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MessageBubble({ message }: { message: any }) {
+function MessageBubble({
+  message,
+  isStreaming = false,
+  isLast = false,
+  isLoading = false,
+  onConsent,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  message: any;
+  isStreaming?: boolean;
+  isLast?: boolean;
+  isLoading?: boolean;
+  onConsent?: (text: string) => void;
+}) {
   const isUser = message.role === "user";
   const parts = message.parts || [];
 
@@ -287,7 +385,10 @@ function MessageBubble({ message }: { message: any }) {
   const reasoningParts = parts.filter((p: any) => p.type === "reasoning");
 
   if (isUser) {
-    const text = textParts.map((p: { text: string }) => p.text).join("") || "";
+    // Strip the hidden data-source id marker so the admin never sees it.
+    const text = (textParts.map((p: { text: string }) => p.text).join("") || "")
+      .replace(/\s*\[\[dsid:[^\]]+\]\]\s*/g, " ")
+      .trim();
     return (
       <Message className="justify-end">
         <div className="max-w-[80%] rounded-2xl rounded-tr-md bg-primary px-4 py-2.5 text-sm text-primary-foreground">
@@ -311,19 +412,42 @@ function MessageBubble({ message }: { message: any }) {
           </Reasoning>
         )}
 
-        {/* Past-message tool-call history (isStreaming=false → no
-            loader, no shimmer; just the static record). */}
-        {toolParts.length > 0 && (
+        {/* Tool-call area. For a COMPLETED message isStreaming=false → static
+            record. For the in-flight last assistant message isStreaming=true →
+            the animated loader (pulsing dot + "Retrieval/Generating…" shimmer)
+            stays visible for the WHOLE turn, incl. long generate/deploy tool
+            runs after some text, so it never looks stuck. Rendered even with no
+            tool parts yet while streaming, so the indicator is always present. */}
+        {(toolParts.length > 0 || isStreaming) && (
           <ToolTimeline
             tools={extractToolParts(toolParts)}
-            isStreaming={false}
+            isStreaming={isStreaming}
             defaultOpen={false}
           />
         )}
 
-        {textParts.map((p: { text: string }, i: number) => (
-          <Markdown key={i}>{p.text}</Markdown>
-        ))}
+        {textParts.map((p: { text: string }, i: number) => {
+          // Strip the literal "[ Cancel ] [ Proceed with Connection ]" line (and
+          // any leftover trailing blockquote marker) — it's rendered as real
+          // buttons below instead.
+          const cleaned = p.text
+            .replace(CONSENT_BUTTONS_RE, "")
+            .replace(/\n\s*>?\s*$/, "")
+            .trimEnd();
+          return <Markdown key={i}>{cleaned}</Markdown>;
+        })}
+
+        {/* Consent gate buttons — only on the latest message and when idle, so
+            historical gates don't show live buttons and we can't double-send. */}
+        {onConsent &&
+          isLast &&
+          !isLoading &&
+          textParts.some((p: { text: string }) => CONSENT_BUTTONS_RE.test(p.text)) && (
+            <ConsentButtons
+              onProceed={() => onConsent("Proceed with Connection")}
+              onCancel={() => onConsent("Cancel")}
+            />
+          )}
       </MessageContent>
     </Message>
   );

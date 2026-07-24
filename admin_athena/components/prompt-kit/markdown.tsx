@@ -29,6 +29,22 @@ function extractLanguage(className?: string): string {
   return match ? match[1] : "plaintext"
 }
 
+// GFM task-list checkbox (`- [ ] text`). react-markdown/remark-gfm emits a
+// disabled <input type="checkbox">; we render a brand-styled, TICKABLE checkbox
+// so consent/acknowledgement lines read as real checkboxes (not literal "[ ]").
+// Local state only — it's a visual acknowledgement and never alters the chat flow.
+function TaskCheckbox({ defaultChecked }: { defaultChecked?: boolean }) {
+  const [checked, setChecked] = React.useState(!!defaultChecked)
+  return (
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={(e) => setChecked(e.target.checked)}
+      className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded-[4px] border border-input accent-primary"
+    />
+  )
+}
+
 const DEFAULT_COMPONENTS: Partial<Components> = {
   table: function TableComponent({ children, node, ...props }) {
     return (
@@ -47,10 +63,14 @@ const DEFAULT_COMPONENTS: Partial<Components> = {
     return <TableRow {...props}>{children}</TableRow>
   },
   th: function TableHeadCellComponent({ children, node, ...props }) {
-    return <TableHead {...props}>{children}</TableHead>
+    // Wrap long header text so 2-col tables (e.g. the validation table) don't
+    // overflow into a horizontal scrollbar.
+    return <TableHead {...props} className="whitespace-normal break-words align-top">{children}</TableHead>
   },
   td: function TableCellComponent({ children, node, ...props }) {
-    return <TableCell {...props}>{children}</TableCell>
+    // Wrap long cell text (validation checks, tool descriptions) instead of
+    // forcing a horizontal scrollbar.
+    return <TableCell {...props} className="whitespace-normal break-words align-top">{children}</TableCell>
   },
   code: function CodeComponent({ className, children, node, ...props }) {
     const startLine = node?.position?.start?.line
@@ -83,6 +103,13 @@ const DEFAULT_COMPONENTS: Partial<Components> = {
   pre: function PreComponent({ children }) {
     return <>{children}</>
   },
+  input: function InputComponent({ type, checked, node, ...props }) {
+    if (type === "checkbox") {
+      return <TaskCheckbox defaultChecked={!!checked} />
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return <input type={type} {...(props as any)} />
+  },
 }
 
 // Stable plugin arrays — prevents ReactMarkdown from re-initializing parsers
@@ -101,6 +128,8 @@ const Markdown = React.forwardRef<HTMLDivElement, MarkdownProps>(
         ref={ref}
         className={cn(
           "prose prose-sm max-w-none break-words dark:prose-invert prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-pre:my-4 prose-headings:mb-3 prose-headings:mt-5 prose-blockquote:my-3",
+          // GFM task-list (consent checkboxes): no bullet, checkbox inline with its label.
+          "[&_ul.contains-task-list]:list-none [&_ul.contains-task-list]:pl-0 [&_li.task-list-item]:flex [&_li.task-list-item]:items-start [&_li.task-list-item]:gap-2 [&_li.task-list-item]:my-1.5 [&_li.task-list-item]:pl-0",
           className
         )}
         {...props}

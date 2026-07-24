@@ -511,3 +511,53 @@ model Run {
   @@index([startedAt])
   @@map("cmf_runs")
 }
+
+// ============================================================================
+// ON-THE-FLY MCP — control-plane lifecycle for admin-created MCP data sources.
+// See mcp-onthefly/ (runtime Lambda) + cloudformation/mcp-onthefly.yaml (substrate).
+// Consumption reuses the existing mcp_registry + mcp_connections; this table only
+// tracks the build pipeline (intake → connect → generate → deploy → register).
+// The target credential VALUE lives ONLY in AWS Secrets Manager; this table holds
+// the ARN + non-secret metadata. DDL is applied via create_mcp_data_sources.sql.
+// ============================================================================
+
+enum McpDataSourceStatus {
+  DRAFT       // created; params captured
+  CONNECTED   // reachable + schema discovered
+  GENERATED   // manifest generated + static-checked + approved
+  DEPLOYING   // lambda deploy in progress
+  ACTIVE      // deployed, validated, registered in mcp_registry
+  FAILED      // a step failed (see lastError)
+  RETIRED     // deprovisioned (lambda + secret + registry row removed)
+
+  @@map("mcp_data_source_status")
+}
+
+model McpDataSource {
+  id                    String              @id @default(uuid())
+  name                  String
+  engine                String              @default("postgres") // v1: postgres only
+  status                McpDataSourceStatus @default(DRAFT)
+  // --- non-secret target metadata (secret VALUE only in Secrets Manager) ---
+  host                  String?
+  port                  Int?
+  database              String?
+  schemasJson           Json                @default("[]") @map("schemas_json") // admin-selected schemas/tables
+  secretArn             String?             @map("secret_arn")                   // Secrets Manager ARN (never the secret)
+  discoveredSchema      Json?               @map("discovered_schema")            // redacted information_schema snapshot
+  manifest              Json?                                                    // generated tools (name+inputs+SELECT)
+  staticCheck           Json?               @map("static_check")                 // manifest validation result
+  runtimeVersion        String?             @map("runtime_version")
+  lambdaArn             String?             @map("lambda_arn")
+  endpointUrl           String?             @map("endpoint_url")
+  endpointAuthEncrypted String?             @map("endpoint_auth_encrypted")      // AES-256-GCM( per-server bearer )
+  registryId            String?             @map("registry_id")                  // → mcp_registry.id (bridge to consumption)
+  lastError             String?             @map("last_error")
+  createdById           String              @map("created_by_id")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdById])
+  @@map("mcp_data_sources")
+}

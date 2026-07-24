@@ -157,6 +157,47 @@ aws elasticbeanstalk update-environment --environment-name faborchestratorai-cmf
 
 ---
 
+## 5a. On-the-Fly (OTF) MCP consumption
+
+FO is the **consumer** side of the On-the-Fly MCP feature: an admin creates/deploys a
+per-source runtime Lambda (see `admin_athena/DEPLOYMENT.md §3b`), assigns it to an FO
+user, and FO runs its read-only tools in chat. **Consumption reuses the existing MCP
+machinery** (`mcp_registry` + `mcp_connections` + the `/api/mcp/connections/[id]/test`
+discovery + chat injection) — the only OTF-specific piece is the transport.
+
+- **`lambda-invoke://` transport** (`lib/mcp-lambda.ts`): OTF runtimes are addressed as
+  `lambda-invoke://<functionName>` (NOT HTTP). This account **blocks public AuthType-NONE
+  Lambda Function URLs** via an org SCP, so FO calls the runtime through the **IAM Lambda
+  API** (`lambda:InvokeFunction`) instead, wrapping the JSON-RPC in a Function-URL-style
+  event with the per-source Bearer. `lib/mcp-client.ts` short-circuits `lambda-invoke://`
+  servers to this path; the `/test` route uses it for discovery. This code shipped
+  2026-07-24 — a build older than that literally cannot run any assigned OTF tool.
+- **IAM — already covered, nothing to add.** FO's EB instance role is
+  `aws-elasticbeanstalk-ec2-role`, and the substrate's `mcp-otf-admin-deploy` managed
+  policy (which grants `lambda:InvokeFunction` on `mcp-otf-*`) is attached to that same
+  role. So FO can already invoke the runtimes. (FO does **not** need the `ec2:Describe*`
+  the admin side needs — that's only for *creating* VPC Lambdas.)
+- **`KEY_ENCRYPTION_SECRET` must equal the admin key.** The per-source Bearer is stored
+  encrypted by admin and decrypted by FO; both apps share one DB, so the key must match.
+  Prod is converged on the **FO key** (`5a83ed…`) — keep FO on it and set admin to the
+  same. (ledger UPDATE 9.)
+- **SSE keepalive (CloudFront 60s).** `app/api/chat/route.ts` wraps the stream with
+  `withKeepAlive()` (emits `: keepalive` every 20s). Chat replies and OTF tool calls that
+  cold-start a runtime Lambda over the VPN can exceed CloudFront's 60s origin timeout;
+  the keepalive keeps bytes flowing so the stream isn't cut. Ships with the deploy — **no
+  CloudFront change** (the timeout can't be raised past 60 on this account anyway).
+- **Master Data Loader perf (bundled, not deploy-config):** the pre-flight metadata load
+  was changed from an N+1 (per-object-type CMF round-trips) to **bulk** loading
+  (`lib/validation/metadata.ts loadRulesets`). Behaviour-identical; ~25× faster on large
+  files. Nothing to configure — it ships with the FO code.
+
+> **Internet egress:** OTF codegen runs on the *admin* side; FO's Anthropic/chat calls go
+> out via the CMF VPC **NAT** (`0.0.0.0/0 → NAT`, see §3). If chat ever shows a persistent
+> `Connect Timeout … api.anthropic.com:443`, check the NAT gateway health + the private
+> subnet's default route — a one-off timeout that self-clears is just a transient blip.
+
+---
+
 ## 6. Infrastructure as code (Terraform)
 
 Everything network/environment is in **`terraform/`** (see `terraform/README.md`).
@@ -292,6 +333,9 @@ aws elasticbeanstalk retrieve-environment-info --environment-name faborchestrato
 | Loader: `S3_BUCKET is not configured` | `S3_BUCKET` missing, or instance role lacks S3 access. |
 | Loader: token / AccessDenied | instance role missing `secretsmanager:GetSecretValue` on `cmf/mes-token`. |
 | RDS unreachable from CMF-VPC env | VPC peering route / RDS SG ingress / DNS-over-peering. |
+| Chat: `Connect Timeout … api.anthropic.com:443` | Outbound internet path down. CMF VPC egresses via **NAT** (`0.0.0.0/0 → NAT`, §3). A one-off that self-clears = transient; if persistent, check NAT gateway health + the private subnet default route (§5a). Not an API-key error. |
+| OTF assigned tool won't run / "not found" | FO build predates the `lambda-invoke://` transport (07-22) — redeploy current code (§5a); or `KEY_ENCRYPTION_SECRET` differs from admin (bearer can't decrypt). |
+| OTF tool: first call cut ~60s | Cold-start over the VPN exceeded CloudFront 60s — the SSE keepalive (§5a) must be in the running build; redeploy current code. |
 
 ### Known issues
 - **Instance root disk fills up** from repeated on-instance Docker builds (seen

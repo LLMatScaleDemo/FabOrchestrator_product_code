@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
-import { Plus, ChevronDown, ChevronRight, ArrowUp, ArrowRight, X, FileText, Loader2, Check, Archive, Globe, Paperclip, LayoutGrid, Square } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, ArrowUp, ArrowRight, X, FileText, Loader2, Check, Archive, Globe, Paperclip, LayoutGrid, Square, ShieldCheck } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatFileSize } from "@/lib/file-utils";
 
@@ -306,6 +306,7 @@ interface ClaudeChatInputProps {
     onMcpToggle?: (connectionId: string, isActive: boolean) => void;
     McpConnectionsSubmenu?: React.ComponentType<McpConnectionsSubmenuProps>;
     onManageConnectors?: () => void;
+    onSecureUpload?: (file: File) => void;
     isLoading?: boolean;
     onStop?: () => void;
     isThinkingEnabled?: boolean;
@@ -313,7 +314,7 @@ interface ClaudeChatInputProps {
 }
 
 export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInputProps>(
-    ({ onSendMessage, models: modelsProp, defaultModel, placeholder = "How can I help you today?", webSearchEnabled, onWebSearchChange, activeMcpIds, onMcpToggle, McpConnectionsSubmenu, onManageConnectors, isLoading, onStop, isThinkingEnabled: isThinkingEnabledProp, onThinkingChange }, ref) => {
+    ({ onSendMessage, models: modelsProp, defaultModel, placeholder = "How can I help you today?", webSearchEnabled, onWebSearchChange, activeMcpIds, onMcpToggle, McpConnectionsSubmenu, onManageConnectors, onSecureUpload, isLoading, onStop, isThinkingEnabled: isThinkingEnabledProp, onThinkingChange }, ref) => {
     const [message, setMessage] = useState("");
     const [files, setFiles] = useState<AttachedFile[]>([]);
     const [pastedContent, setPastedContent] = useState<{ id: string; content: string; timestamp: Date }[]>([]);
@@ -401,6 +402,7 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const secureFileInputRef = useRef<HTMLInputElement>(null);
     const plusMenuRef = useRef<HTMLDivElement>(null);
 
     // Expose imperative handle for parent to set message
@@ -623,12 +625,30 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
                                                 fileInputRef.current?.click();
                                                 setIsPlusMenuOpen(false);
                                             }}
-                                            className="flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors hover:bg-bg-hover dark:hover:bg-bg-hover"
+                                            className="flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors hover:bg-accent/10 dark:hover:bg-accent/15"
                                             type="button"
                                         >
                                             <Paperclip className="w-[18px] h-[18px] text-text-300 dark:text-text-500" />
-                                            <span className="text-[14px] text-text-200 dark:text-foreground">Add files or photos</span>
+                                            <span className="text-[14px] text-text-200 dark:text-foreground">Add files or photos<span className="block text-[11px] text-text-400">Attach images or documents</span></span>
                                         </button>
+
+                                        {/* Divider — visually separates the normal upload from the secure (credentials) upload */}
+                                        {onSecureUpload && <div className="mx-3 my-1 border-t border-border/70 dark:border-sidebar-border/70" />}
+
+                                        {/* Secure Upload — for database connection credentials only */}
+                                        {onSecureUpload && (
+                                            <button
+                                                onClick={() => {
+                                                    secureFileInputRef.current?.click();
+                                                    setIsPlusMenuOpen(false);
+                                                }}
+                                                className="flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors hover:bg-accent/10 dark:hover:bg-accent/15"
+                                                type="button"
+                                            >
+                                                <ShieldCheck className="w-[18px] h-[18px] text-blue-600" />
+                                                <span className="text-[14px] text-left text-text-200 dark:text-foreground">Secure Upload<span className="block text-[11px] text-text-400">Add a data source&apos;s login details</span></span>
+                                            </button>
+                                        )}
 
                                         {/* Separator */}
                                         <div className="my-1 border-t border-border dark:border-sidebar-border" />
@@ -637,7 +657,7 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
                                         {onWebSearchChange && (
                                             <button
                                                 onClick={() => onWebSearchChange(!webSearchEnabled)}
-                                                className="flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors hover:bg-bg-hover dark:hover:bg-bg-hover"
+                                                className="flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors hover:bg-accent/10 dark:hover:bg-accent/15"
                                                 type="button"
                                             >
                                                 <Globe className={`w-[18px] h-[18px] ${webSearchEnabled ? 'text-accent' : 'text-text-300 dark:text-text-500'}`} />
@@ -659,7 +679,7 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
                                             >
                                                 <button
                                                     onClick={() => setIsMcpSubmenuOpen(!isMcpSubmenuOpen)}
-                                                    className={`flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors w-[calc(100%-8px)] ${isMcpSubmenuOpen ? 'bg-bg-hover dark:bg-bg-hover' : 'hover:bg-bg-hover dark:hover:bg-bg-hover'}`}
+                                                    className={`flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors w-[calc(100%-8px)] ${isMcpSubmenuOpen ? 'bg-bg-hover dark:bg-bg-hover' : 'hover:bg-accent/10 dark:hover:bg-accent/15'}`}
                                                     type="button"
                                                 >
                                                     <LayoutGrid className={`w-[18px] h-[18px] ${(activeMcpIds && activeMcpIds.length > 0) ? 'text-accent' : 'text-text-300 dark:text-text-500'}`} />
@@ -786,6 +806,19 @@ export const ClaudeChatInput = forwardRef<ClaudeChatInputHandle, ClaudeChatInput
                 className="hidden"
                 onChange={(e) => {
                     if (e.target.files) handleFiles(e.target.files);
+                    e.target.value = '';
+                }}
+            />
+
+            {/* Hidden Secure-Upload Input — routes the file to onSecureUpload, NOT the chat */}
+            <input
+                ref={secureFileInputRef}
+                type="file"
+                accept=".json,.txt,.env,.md,.yaml,.yml,.cfg,.conf,.csv,.docx,.xlsx,text/plain,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                className="hidden"
+                onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f && onSecureUpload) onSecureUpload(f);
                     e.target.value = '';
                 }}
             />

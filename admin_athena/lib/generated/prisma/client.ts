@@ -146,3 +146,8 @@ export type ValidationReport = Prisma.ValidationReportModel
  * 
  */
 export type Run = Prisma.RunModel
+/**
+ * Model McpDataSource
+ * 
+ */
+export type McpDataSource = Prisma.McpDataSourceModel

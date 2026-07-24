@@ -71,7 +71,8 @@ export const ModelName = {
   StagedUpload: 'StagedUpload',
   PackageFile: 'PackageFile',
   ValidationReport: 'ValidationReport',
-  Run: 'Run'
+  Run: 'Run',
+  McpDataSource: 'McpDataSource'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -427,6 +428,33 @@ export const RunScalarFieldEnum = {
 } as const
 
 export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
+
+
+export const McpDataSourceScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  engine: 'engine',
+  status: 'status',
+  host: 'host',
+  port: 'port',
+  database: 'database',
+  schemasJson: 'schemasJson',
+  secretArn: 'secretArn',
+  discoveredSchema: 'discoveredSchema',
+  manifest: 'manifest',
+  staticCheck: 'staticCheck',
+  runtimeVersion: 'runtimeVersion',
+  lambdaArn: 'lambdaArn',
+  endpointUrl: 'endpointUrl',
+  endpointAuthEncrypted: 'endpointAuthEncrypted',
+  registryId: 'registryId',
+  lastError: 'lastError',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type McpDataSourceScalarFieldEnum = (typeof McpDataSourceScalarFieldEnum)[keyof typeof McpDataSourceScalarFieldEnum]
 
 
 export const SortOrder = {

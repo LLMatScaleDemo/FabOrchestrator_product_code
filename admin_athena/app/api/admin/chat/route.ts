@@ -25,6 +25,41 @@ import { bumpActivityIfActive } from '@/lib/session-audit';
 
 export const maxDuration = 120;
 
+/**
+ * Wrap an SSE Response so a keepalive comment is emitted during idle gaps. A long
+ * tool call (e.g. the ~80s on-the-fly codegen) produces NO bytes while it runs;
+ * CloudFront's origin read timeout (60s, and NOT raisable past 60 without an AWS
+ * quota increase) would cut the stream. A `: keepalive` comment every 20s is
+ * ignored by the SSE/AI-SDK parser but keeps CloudFront + the ALB from timing out.
+ */
+function withKeepAlive(res: Response, intervalMs = 20000): Response {
+  if (!res.body) return res;
+  const encoder = new TextEncoder();
+  const source = res.body;
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = source.getReader();
+      const timer = setInterval(() => {
+        try { controller.enqueue(encoder.encode(': keepalive\n\n')); } catch { /* closed */ }
+      }, intervalMs);
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) controller.enqueue(value);
+        }
+      } catch (e) {
+        clearInterval(timer);
+        controller.error(e);
+        return;
+      }
+      clearInterval(timer);
+      controller.close();
+    },
+  });
+  return new Response(stream, { headers: res.headers, status: res.status, statusText: res.statusText });
+}
+
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
@@ -251,13 +286,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return createUIMessageStreamResponse({
+    return withKeepAlive(createUIMessageStreamResponse({
       stream,
       headers: {
         'X-Accel-Buffering': 'no',
         'Cache-Control': 'no-cache, no-transform',
       },
-    });
+    }));
   } catch (error) {
     return handleApiError(error, req, { route: '/api/admin/chat' });
   }

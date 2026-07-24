@@ -9,6 +9,16 @@ import { listUsers, updateUserStatus, changeUserRole, forcePasswordReset, delete
 import { listRoles, createRole, updateRole, deleteRole } from './services/role-service';
 import { createInvitation, listInvitations, revokeInvitation, resendInvitation } from './services/invitation-service';
 import { getSystemUsageSummary } from './services/usage-service';
+import { getRequirements } from './mcp-onthefly/requirements';
+import {
+  listDataSources,
+  connectDataSource,
+  setDataSourceSchema,
+  generateDataSourceManifest,
+  deployDataSource,
+  assignDataSource,
+  unassignDataSource,
+} from './mcp-onthefly/service';
 import prisma from './db';
 
 async function resolveUserId(userId?: string, userEmail?: string): Promise<string | null> {
@@ -46,6 +56,188 @@ export function getAdminTools(adminUserId: string) {
             lastLogin: u.lastLogin,
           })),
         };
+      },
+    },
+
+    list_mcp_datasource_requirements: {
+      description:
+        'List the connection parameters an admin must provide to create an on-the-fly MCP data source (Step 1 of the flow). Data sources are ALWAYS on-premises Microsoft SQL Server — NEVER mention, offer, or compare PostgreSQL or any other database type/engine. Use this when the user asks what is needed to add/create an MCP server or data source. Explain that credentials must be uploaded via the secure upload control (which posts to /api/admin/mcp/secrets) and NEVER pasted into chat, since chat content is sent to the model and stored.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        return getRequirements('sqlserver');
+      },
+    },
+
+    list_mcp_datasources: {
+      description:
+        'List all on-the-fly MCP data sources and their lifecycle status (DRAFT, CONNECTED, GENERATED, DEPLOYING, ACTIVE, FAILED, RETIRED). Use to check progress of a data source the admin created by uploading credentials.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        const sources = await listDataSources();
+        return { total: sources.length, sources };
+      },
+    },
+
+    connect_mcp_datasource: {
+      description:
+        'ALWAYS the first step after a data source is created: connect to it and AUTOMATICALLY discover the available tables/columns (read-only). This works for all supported targets, including on-prem databases (discovery runs securely from inside the network). Do NOT ask the user for the tables/columns — call this to find them automatically. Requires the data source id. Advances status to CONNECTED.',
+      inputSchema: z.object({
+        dataSourceId: z.string().describe('The MCP data source id'),
+      }),
+      execute: async ({ dataSourceId }: { dataSourceId: string }) => {
+        const r = await connectDataSource(dataSourceId, adminUserId);
+        if (!r.ok) return { error: r.error };
+        return { reachable: true, latencyMs: r.latencyMs, tableCount: r.tableCount, tables: r.tables };
+      },
+    },
+
+    set_mcp_datasource_schema: {
+      description:
+        'FALLBACK ONLY — do NOT use this by default. Use connect_mcp_datasource first; it auto-discovers the tables/columns. Only call this if connect_mcp_datasource genuinely fails to reach the data source, in which case the admin can supply the tables/columns manually. Advances status to CONNECTED.',
+      inputSchema: z.object({
+        dataSourceId: z.string(),
+        tables: z.array(z.object({
+          schema: z.string().describe('Schema name, e.g. cammes'),
+          table: z.string().describe('Table name'),
+          columns: z.array(z.object({
+            column: z.string(),
+            type: z.string().describe('SQL type, e.g. int, nvarchar, datetime'),
+            nullable: z.boolean().optional(),
+          })).min(1),
+        })).min(1),
+      }),
+      execute: async ({ dataSourceId, tables }: { dataSourceId: string; tables: Array<{ schema: string; table: string; columns: Array<{ column: string; type: string; nullable?: boolean }> }> }) => {
+        const r = await setDataSourceSchema(dataSourceId, tables, adminUserId);
+        if (!r.ok) return { error: r.error };
+        return { ok: true, tableCount: r.tableCount, note: 'Schema set. Next: generate_mcp_datasource_manifest.' };
+      },
+    },
+
+    generate_mcp_datasource_manifest: {
+      description:
+        'Step 3 — generate the read-only SELECT tool manifest for a CONNECTED data source. The LLM produces tool specs (data), which are static-checked for read-only safety. Returns the tools for the admin to REVIEW before deploying. Advances status to GENERATED.',
+      inputSchema: z.object({
+        dataSourceId: z.string().describe('The MCP data source id'),
+      }),
+      execute: async ({ dataSourceId }: { dataSourceId: string }) => {
+        const r = await generateDataSourceManifest(dataSourceId, adminUserId);
+        if (!r.ok) return { error: r.error, details: r.details };
+        // Distinct tables the tools read from — used for the safety summary.
+        const tables = new Set<string>();
+        for (const t of r.manifest?.tools || []) {
+          for (const m of t.sql.matchAll(/\b(?:from|join)\s+\[?[A-Za-z0-9_]+\]?\.\[?([A-Za-z0-9_]+)\]?/gi)) tables.add(m[1]);
+        }
+        // Did the tools cover EVERY table discovery exposed? (small DB, all areas
+        // tooled) vs a focused SUBSET (large DB). Drives the wording of the review
+        // disclaimer so we don't say "not every table" when it IS every table.
+        const discoveredTableCount = r.discoveredTableCount ?? tables.size;
+        const coversAllData = tables.size >= discoveredTableCount;
+        return {
+          ok: true,
+          toolCount: r.staticCheck.toolCount,
+          tableCount: tables.size,
+          discoveredTableCount,
+          coversAllData,
+          // Pre-deploy VALIDATION summary — every item here is enforced by the
+          // static safety gate + the fixed read-only runtime, so these are true
+          // guarantees, not marketing. Surface them to the admin before deploy.
+          validation: {
+            passed: true,
+            checks: [
+              'Read-only look-ups only — the tools can view information but can never change, add, or delete anything',
+              'No update, delete, or structural commands are possible — every request is a plain look-up',
+              'Every field was checked against your real data, so there are no invalid or made-up fields',
+              'All search inputs are handled safely (nothing a user types can be misused)',
+              'Login details stay stored securely and are never shared with the AI or shown in chat',
+            ],
+          },
+          tools: (r.manifest?.tools || []).map((t) => ({ name: t.name, description: t.description })),
+          note: 'Show the tools as a Markdown TABLE (Tool | What your users can look up) and ask whether to make it live. For the disclaimer line: if coversAllData is TRUE, reassure that ALL of the data is covered (do NOT say "not every table"); if coversAllData is FALSE, say this is a focused subset. Do NOT show the validation/safety details yet — the validation.checks are shown as a table at the DEPLOY step, right before deploying.',
+        };
+      },
+    },
+
+    deploy_mcp_datasource: {
+      description:
+        'Step 4+5 — deploy a GENERATED data source as a per-source Lambda, validate it, and register it so it can be assigned. Only call after the admin has reviewed the generated tools. Advances status to ACTIVE. (Creates a real AWS Lambda — requires the AWS substrate to be provisioned.)',
+      inputSchema: z.object({
+        dataSourceId: z.string().describe('The MCP data source id'),
+      }),
+      execute: async ({ dataSourceId }: { dataSourceId: string }) => {
+        const r = await deployDataSource(dataSourceId, adminUserId);
+        if (!r.ok) return { error: r.error, details: r.details };
+        return {
+          status: r.status,
+          toolCount: r.toolCount,
+          note: 'The data source is now securely deployed and running. Give a CRISP but information-rich confirmation: it is now securely DEPLOYED and running (live), its <toolCount> read-only look-up tools are active and ready for people to use in chat, it stays read-only (view only, never changes data), and its login details remain stored securely. It is fine to say it is "deployed and running securely", but do NOT expose deep infrastructure jargon (no AWS/Lambda/VPC/URLs/IDs/status words). Then ask who should have access.',
+        };
+      },
+    },
+
+    assign_mcp_datasource: {
+      description:
+        'Step 6 — assign an ACTIVE on-the-fly MCP data source to a role or a user, so FabOrchestrator users can use its tools in chat. Provide the data source id plus a role name OR a user email.',
+      inputSchema: z.object({
+        dataSourceId: z.string().describe('The MCP data source id'),
+        roleName: z.string().optional().describe('Role to assign to'),
+        userEmail: z.string().optional().describe('User email to assign to'),
+      }),
+      execute: async ({ dataSourceId, roleName, userEmail }: { dataSourceId: string; roleName?: string; userEmail?: string }) => {
+        let roleId: string | undefined;
+        let userId: string | undefined;
+        if (roleName) {
+          const role = await prisma.role.findFirst({ where: { name: { equals: roleName, mode: 'insensitive' } } });
+          if (!role) return { error: `Role "${roleName}" not found` };
+          roleId = role.id;
+        } else if (userEmail) {
+          const resolved = await resolveUserId(undefined, userEmail);
+          if (!resolved) return { error: `User "${userEmail}" not found` };
+          userId = resolved;
+        } else {
+          return { error: 'Provide a roleName or a userEmail' };
+        }
+        const r = await assignDataSource(dataSourceId, { roleId, userId }, adminUserId);
+        if (!r.ok) return { error: r.error };
+        return { success: true, connectionId: r.connectionId, target: r.target };
+      },
+    },
+
+    unassign_mcp_datasource: {
+      description:
+        'Remove a user or role\'s access to an on-the-fly MCP data source (the opposite of assign). Use when the admin says things like "remove <data source> from <person>", "disconnect X from Y", "revoke <team>\'s access", or "take it away from <email>". Identify the data source by its NAME (or id) plus a user email OR a role name. After removal, that person/team no longer sees the data source\'s tools in their chat.',
+      inputSchema: z.object({
+        dataSourceId: z.string().optional().describe('The MCP data source id, if known'),
+        dataSourceName: z.string().optional().describe('The data source name (used to look up the id when the id is not given)'),
+        roleName: z.string().optional().describe('Role to remove access from'),
+        userEmail: z.string().optional().describe('User email to remove access from'),
+      }),
+      execute: async ({ dataSourceId, dataSourceName, roleName, userEmail }: { dataSourceId?: string; dataSourceName?: string; roleName?: string; userEmail?: string }) => {
+        // Resolve the data source id from its name if the id wasn't supplied.
+        let id = dataSourceId;
+        if (!id && dataSourceName) {
+          const sources = await listDataSources();
+          const key = dataSourceName.trim().toLowerCase();
+          const match = sources.find((s) => s.name.toLowerCase() === key) || sources.find((s) => s.name.toLowerCase().includes(key));
+          if (!match) return { error: `No data source named "${dataSourceName}" found` };
+          id = match.id;
+        }
+        if (!id) return { error: 'Provide the data source name or id' };
+        let roleId: string | undefined;
+        let userId: string | undefined;
+        if (roleName) {
+          const role = await prisma.role.findFirst({ where: { name: { equals: roleName, mode: 'insensitive' } } });
+          if (!role) return { error: `Role "${roleName}" not found` };
+          roleId = role.id;
+        } else if (userEmail) {
+          const resolved = await resolveUserId(undefined, userEmail);
+          if (!resolved) return { error: `User "${userEmail}" not found` };
+          userId = resolved;
+        } else {
+          return { error: 'Provide a roleName or a userEmail' };
+        }
+        const r = await unassignDataSource(id, { roleId, userId }, adminUserId);
+        if (!r.ok) return { error: r.error };
+        return { success: true, removed: r.removed, target: r.target };
       },
     },
 

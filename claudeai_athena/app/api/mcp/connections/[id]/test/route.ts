@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-middleware';
 import prisma from '@/lib/db';
 import { decrypt } from '@/lib/encryption';
+import { isLambdaInvokeUrl, functionNameFromUrl, invokeLambdaRpc } from '@/lib/mcp-lambda';
 
 // POST /api/mcp/connections/[id]/test - Test connection to MCP server
 export async function POST(
@@ -29,6 +30,38 @@ export async function POST(
         { error: 'Not authorized to test this MCP connection' },
         { status: 403 }
       );
+    }
+
+    // On-the-fly servers (lambda-invoke://) — initialize + discover via the IAM
+    // Lambda API instead of HTTP (this account blocks public Function URLs).
+    if (isLambdaInvokeUrl(connection.serverUrl)) {
+      let bearer: string | undefined;
+      if (connection.authType === 'api_key' && connection.authCredentialsEncrypted) {
+        try { bearer = JSON.parse(decrypt(connection.authCredentialsEncrypted)).apiKey; } catch { /* ignore */ }
+      }
+      const fn = functionNameFromUrl(connection.serverUrl);
+      try {
+        const init = await invokeLambdaRpc(fn, bearer, {
+          jsonrpc: '2.0', id: 1, method: 'initialize',
+          params: { protocolVersion: '2024-11-05', capabilities: { tools: {} }, clientInfo: { name: 'llmatscale-ai', version: '1.0.0' } },
+        }) as { error?: { message?: string }; result?: { serverInfo?: unknown } };
+        if (init.error) {
+          await prisma.mcpConnection.update({ where: { id }, data: { status: 'error', lastError: init.error.message || 'MCP error', isActive: false } });
+          return NextResponse.json({ success: false, status: 'error', error: init.error.message });
+        }
+        const list = await invokeLambdaRpc(fn, bearer, { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }) as { result?: { tools?: Array<{ name: string; description?: string; inputSchema?: Record<string, unknown> }> } };
+        const discovered = (list.result?.tools || []).map((t) => ({ name: t.name, description: t.description || '', inputSchema: t.inputSchema || {} }));
+        await prisma.mcpConnection.update({
+          where: { id },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data: { status: 'connected', lastError: null, isActive: true, lastConnectedAt: new Date(), availableTools: discovered as any },
+        });
+        return NextResponse.json({ success: true, status: 'connected', serverInfo: init.result?.serverInfo || null, tools: discovered, toolCount: discovered.length });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Lambda invoke failed';
+        await prisma.mcpConnection.update({ where: { id }, data: { status: 'error', lastError: msg, isActive: false } });
+        return NextResponse.json({ success: false, status: 'error', error: msg });
+      }
     }
 
     // Prepare headers for authentication

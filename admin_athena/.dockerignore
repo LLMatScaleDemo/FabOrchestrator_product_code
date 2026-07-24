@@ -5,3 +5,8 @@ node_modules
 .planning
 .env.local
 *.md
+# OTF runtime build artifacts (Lambda zips are built/published separately; the
+# app talks to them via S3/IAM, never imports this dir — keep it out of the image)
+mcp-onthefly/**/dist
+mcp-onthefly/*.zip
+mcp-onthefly/**/*.zip

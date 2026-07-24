@@ -1,5 +1,5 @@
 import { parseWorkbook } from "@/lib/validation/xlsx";
-import { loadRuleset } from "@/lib/validation/metadata";
+import { loadRulesets, type EntityRuleset } from "@/lib/validation/metadata";
 import { buildParentIndex } from "@/lib/validation/referential";
 import { runRules } from "@/lib/validation/rule-engine";
 import { runCrossChecks, type CrossCheckOptions } from "@/lib/validation/cross-check";
@@ -37,12 +37,18 @@ export async function validatePreflightFromSheets(
   const errorsByType: Record<string, ValidationError[]> = {};
   const refs: { targetType: string; values: Set<string> }[] = [];
   const fileKeysByType = new Map<string, Set<string>>();
-  const prepared: { sheet: ParsedSheet; ruleset: NonNullable<Awaited<ReturnType<typeof loadRuleset>>> }[] = [];
+  const prepared: { sheet: ParsedSheet; ruleset: EntityRuleset }[] = [];
+
+  // Preload every considered type's ruleset in ONE bulk call (was: one
+  // loadRuleset per sheet, each up to ~4 sequential CMF round-trips).
+  const considered = sheets.filter((s) => !restrict || restrict.has(s.objectType));
+  const rulesetMap = await loadRulesets([...new Set(considered.map((s) => s.objectType))]);
+  const rulesetOf = (t: string) => rulesetMap.get(t.toLowerCase()) ?? null;
 
   for (const sheet of sheets) {
     if (restrict && !restrict.has(sheet.objectType)) continue;
 
-    const ruleset = await loadRuleset(sheet.objectType);
+    const ruleset = rulesetOf(sheet.objectType);
     if (!ruleset) {
       // Many master-data files include child sub-tables (PlanSteps,
       // ChecklistItems, MaintenancePlanActivities, …) that are loaded as

@@ -1,5 +1,5 @@
 import { cmfQuery } from "@/lib/cmf/cmf-sql";
-import { loadRuleset } from "@/lib/validation/metadata";
+import { loadRulesets } from "@/lib/validation/metadata";
 import type { ParentExists } from "@/lib/validation/rule-engine";
 
 /**
@@ -37,6 +37,10 @@ export async function buildParentIndex(
 ): Promise<ParentExists> {
   const known = new Map<string, Set<string>>(); // targetType(lower) -> existing values(lower)
 
+  // Preload all referenced-target rulesets in one bulk call (was: one loadRuleset
+  // per target, each up to ~4 sequential CMF round-trips).
+  const rulesetMap = await loadRulesets([...new Set(references.map((r) => r.targetType))]);
+
   for (const ref of references) {
     const key = ref.targetType.toLowerCase();
     const set = known.get(key) ?? new Set<string>();
@@ -48,7 +52,7 @@ export async function buildParentIndex(
     // 2) the rest: check CMF
     const missing = [...ref.values].filter((v) => !set.has(v.toLowerCase()));
     if (missing.length > 0) {
-      const rs = await loadRuleset(ref.targetType);
+      const rs = rulesetMap.get(key) ?? null;
       if (rs?.table) {
         const found = await lookupExistingNames(rs.table.schema, rs.table.name, missing);
         for (const v of found) set.add(v);

@@ -1,0 +1,30 @@
+{
+  "server": "example-postgres",
+  "description": "Example manifest. In Phase 1 the admin pipeline generates this per data source (from the target's information_schema + admin-selected tables). The runtime Lambda reads it as manifest.json. Every tool is a read-only SELECT with named (:param) placeholders only.",
+  "tools": [
+    {
+      "name": "list_open_workorders",
+      "description": "List open work orders for a production line.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "line": { "type": "string", "description": "Production line code, e.g. L4" }
+        },
+        "required": ["line"]
+      },
+      "sql": "SELECT id, status, created_at FROM workorders WHERE line = :line AND status = 'OPEN' ORDER BY created_at DESC LIMIT 100"
+    },
+    {
+      "name": "workorder_by_id",
+      "description": "Fetch a single work order by id.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Work order id" }
+        },
+        "required": ["id"]
+      },
+      "sql": "SELECT id, line, status, qty, created_at FROM workorders WHERE id = :id"
+    }
+  ]
+}

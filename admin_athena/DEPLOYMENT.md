@@ -60,10 +60,11 @@ These were carried over from the App Runner service; secrets live only on the en
 | `NODE_OPTIONS=--max-old-space-size=4096` | Node heap (t3.medium) |
 | `DATABASE_URL` | RDS `claude_ai_athena` (same DB as Fab) |
 | `ANTHROPIC_API_KEY` | admin-chat tools |
-| `KEY_ENCRYPTION_SECRET` | AES-256-GCM key |
+| `KEY_ENCRYPTION_SECRET` | AES-256-GCM key — **must equal the FO key** (shared DB; see §3b) |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | seed/admin account |
 | `APP_URL`, `ATHENA_URL`, `NEXT_PUBLIC_ATHENA_URL` | app + link back to Fab |
 | `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL` | invite emails |
+| `MCP_OTF_*` (9 vars) | **On-the-Fly MCP** — see **§3b** for the full list + IAM requirements |
 
 ```bash
 aws elasticbeanstalk update-environment --environment-name fab-admin-prod --region us-west-2 \
@@ -103,12 +104,71 @@ aws cloudfront get-distribution-config --id E3DEL8WM533ECX
 aws cloudfront create-invalidation --distribution-id E3DEL8WM533ECX --paths "/*"
 ```
 
-> **SSE caveat:** CloudFront's default origin read timeout is 60s. The admin
-> dashboard is fine, but a >60s streaming response could be cut. Raise the
-> origin `OriginReadTimeout` (up to 180s, or request a quota increase) if needed.
+> **SSE caveat (OTF codegen ~80s):** CloudFront's origin read timeout is **60s**,
+> and you **cannot raise it past 60 on this account** without an AWS *Service
+> Quotas* increase for "Origin response timeout" (61–180 is rejected). The OTF
+> "prepare the tools" step is a single ~80s Opus call that emits no bytes while it
+> runs, so it would otherwise be cut at 60s. **This is solved IN CODE** by an SSE
+> **keepalive** (`withKeepAlive()` in `app/api/admin/chat/route.ts`, emits
+> `: keepalive` every 20s) that ships with the normal deploy — **no CloudFront
+> change is required.** Do not attempt to raise the timeout.
 >
 > **Custom domain (optional):** add an `Aliases` (CNAME) + an ACM cert in
 > **us-east-1** to the distribution, then point DNS at the CloudFront domain.
+
+---
+
+## 3b. On-the-Fly (OTF) MCP data sources — env vars + IAM (must be present)
+
+The admin app hosts the **On-the-Fly MCP** pipeline: creds intake → discover → codegen
+→ **deploy a per-source Lambda MCP server** → register/assign. The admin app runs in the
+**shared VPC** but **deploys per-source runtimes INTO the CMF VPC** (SQL Server / on-prem
+targets) and invokes the discovery/runtime Lambdas via the AWS Lambda API — so it needs
+no CMF network of its own, only the config values + IAM below. The AWS substrate
+(artifact bucket, `mcp-otf-runtime-exec` role, runtime SG, discovery Lambda, runtime base
+zips, `mcp_data_sources` table) is already provisioned — see `OTF_MCP_DEPLOYMENT_PLAN.md`
+and the repo-root `ledger.md`.
+
+**`MCP_OTF_*` env vars on `fab-admin-prod`** (set the same way as §3):
+| Var | Value |
+|-----|-------|
+| `MCP_OTF_RUNTIME_ROLE_ARN` | `arn:aws:iam::628203515088:role/mcp-otf-runtime-exec` **(mandatory — no code default; deploy throws without it)** |
+| `MCP_OTF_ARTIFACT_BUCKET` | `mcp-otf-artifacts-628203515088` |
+| `MCP_OTF_DISCOVERY_FUNCTION` | `mcp-otf-discovery` |
+| `MCP_OTF_RUNTIME_VERSION` | `v1` |
+| `MCP_OTF_CMF_SUBNET_IDS` | `subnet-0cfc26eb17af33330,subnet-03de8d1716947ddfb` (CMF VPC — SQL Server targets) |
+| `MCP_OTF_CMF_SECURITY_GROUP_ID` | `sg-0dc3bdccf1d97f2c3` |
+| `MCP_OTF_SUBNET_IDS` | `subnet-06faf688f0ea464ac,subnet-0e0f6ddda096487f3,subnet-07a09ab450b741c55` (shared VPC — future Postgres targets) |
+| `MCP_OTF_SECURITY_GROUP_ID` | `sg-01a539eefc2678e13` |
+| `MCP_OTF_CODEGEN_MODEL` | `claude-opus-4-8` (optional; code default) |
+
+Codegen tuning vars (`MCP_OTF_MAX_TOOLS=12`, `MCP_OTF_CODEGEN_MAX_TABLES=100`,
+`MCP_OTF_CODEGEN_MAX_TOKENS=20000`, `MCP_OTF_CODEGEN_MAX_COLS=250`) have safe code
+defaults — set only to override.
+
+> **`KEY_ENCRYPTION_SECRET` must equal the FO key.** Admin and FO share one DB and both
+> read/write AES-256-GCM ciphertext (incl. the per-source OTF bearer tokens). Prod was
+> converged onto the **FO key** (`5a83ed…`); `fab-admin-prod` must use that same value or
+> it can't decrypt the migrated rows. See `ledger.md` UPDATE 9 (blast radius + the
+> `reencrypt-encryption-key.mjs` convergence migration — run it BEFORE changing keys).
+
+**IAM — the `mcp-otf-admin-deploy` managed policy on `aws-elasticbeanstalk-ec2-role`
+MUST include the EC2 describe actions.** Because OTF runtimes are **VPC-connected**
+Lambdas (CMF VPC), AWS requires the *caller* (the EB instance role) to hold
+`ec2:DescribeSubnets`, `ec2:DescribeSecurityGroups`, and `ec2:DescribeVpcs` in addition
+to `lambda:CreateFunction` + `iam:PassRole` on the runtime role. The original policy
+(v1) lacked these three → the deploy step failed with a generic "infrastructure
+permissions issue" in prod (it worked in local dev only because that used the broader
+`OTF_MCP` IAM *user*). **Fixed in policy version v2** (2026-07-24). Verify:
+```bash
+aws iam get-policy-version --policy-arn arn:aws:iam::628203515088:policy/mcp-otf-admin-deploy \
+  --version-id $(aws iam get-policy --policy-arn arn:aws:iam::628203515088:policy/mcp-otf-admin-deploy \
+  --query 'Policy.DefaultVersionId' --output text) --query 'PolicyVersion.Document' --output json | grep -i describe
+```
+> ⚠️ **IaC drift:** the v2 change was applied via `create-policy-version` on the live
+> policy; `cloudformation/mcp-onthefly.yaml`'s inline `mcp-otf-admin-deploy` still lacks
+> the `ec2:Describe*` statement. Add it there before any substrate rebuild, or the deploy
+> permission regresses.
 
 ## 4. Deploy new code
 
@@ -171,6 +231,10 @@ out-of-band via the CLI so secrets stay out of state.
 | Health Red, old version running | Docker build failed → check `eb-engine.log` via `request/retrieve-environment-info`. |
 | Login / data errors | `DATABASE_URL` must point to `claude_ai_athena`; RDS SG must allow the admin instances. |
 | Invite emails wrong URL | fix `APP_URL`. |
+| OTF deploy: "infrastructure permissions issue" at the *Deploying now…* step | The instance role's `mcp-otf-admin-deploy` policy is missing `ec2:DescribeSubnets/SecurityGroups/Vpcs` (needed to create a VPC Lambda). Ensure policy **v2** is default (§3b). |
+| OTF deploy throws about missing substrate/role | An `MCP_OTF_*` var is unset (esp. `MCP_OTF_RUNTIME_ROLE_ARN`, which has no code default). Set them all (§3b). |
+| OTF assigned tool "can't decrypt" / auth fails in FO | `KEY_ENCRYPTION_SECRET` differs between admin and FO. Both must use the FO key (§3b / ledger UPDATE 9). |
+| Admin chat "prepare tools" cut ~60s in prod | The SSE keepalive isn't in the running build — redeploy current code (§3a). Do **not** raise CloudFront timeout. |
 
 ---
 

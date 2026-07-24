@@ -404,7 +404,8 @@ export const ModelName = {
   StagedUpload: 'StagedUpload',
   PackageFile: 'PackageFile',
   ValidationReport: 'ValidationReport',
-  Run: 'Run'
+  Run: 'Run',
+  McpDataSource: 'McpDataSource'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -420,7 +421,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "session" | "conversation" | "message" | "artifact" | "mcpConnection" | "memoryFile" | "passwordResetToken" | "invitation" | "mcpRegistry" | "auditLog" | "userSessionLog" | "usageRecord" | "platformSettings" | "modelRegistry" | "package" | "stagedUpload" | "packageFile" | "validationReport" | "run"
+    modelProps: "role" | "user" | "session" | "conversation" | "message" | "artifact" | "mcpConnection" | "memoryFile" | "passwordResetToken" | "invitation" | "mcpRegistry" | "auditLog" | "userSessionLog" | "usageRecord" | "platformSettings" | "modelRegistry" | "package" | "stagedUpload" | "packageFile" | "validationReport" | "run" | "mcpDataSource"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1978,6 +1979,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    McpDataSource: {
+      payload: Prisma.$McpDataSourcePayload<ExtArgs>
+      fields: Prisma.McpDataSourceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.McpDataSourceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.McpDataSourceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload>
+        }
+        findFirst: {
+          args: Prisma.McpDataSourceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.McpDataSourceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload>
+        }
+        findMany: {
+          args: Prisma.McpDataSourceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload>[]
+        }
+        create: {
+          args: Prisma.McpDataSourceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload>
+        }
+        createMany: {
+          args: Prisma.McpDataSourceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.McpDataSourceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload>[]
+        }
+        delete: {
+          args: Prisma.McpDataSourceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload>
+        }
+        update: {
+          args: Prisma.McpDataSourceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload>
+        }
+        deleteMany: {
+          args: Prisma.McpDataSourceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.McpDataSourceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.McpDataSourceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload>[]
+        }
+        upsert: {
+          args: Prisma.McpDataSourceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$McpDataSourcePayload>
+        }
+        aggregate: {
+          args: Prisma.McpDataSourceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMcpDataSource>
+        }
+        groupBy: {
+          args: Prisma.McpDataSourceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.McpDataSourceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.McpDataSourceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.McpDataSourceCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2356,6 +2431,33 @@ export const RunScalarFieldEnum = {
 export type RunScalarFieldEnum = (typeof RunScalarFieldEnum)[keyof typeof RunScalarFieldEnum]
 
 
+export const McpDataSourceScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  engine: 'engine',
+  status: 'status',
+  host: 'host',
+  port: 'port',
+  database: 'database',
+  schemasJson: 'schemasJson',
+  secretArn: 'secretArn',
+  discoveredSchema: 'discoveredSchema',
+  manifest: 'manifest',
+  staticCheck: 'staticCheck',
+  runtimeVersion: 'runtimeVersion',
+  lambdaArn: 'lambdaArn',
+  endpointUrl: 'endpointUrl',
+  endpointAuthEncrypted: 'endpointAuthEncrypted',
+  registryId: 'registryId',
+  lastError: 'lastError',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type McpDataSourceScalarFieldEnum = (typeof McpDataSourceScalarFieldEnum)[keyof typeof McpDataSourceScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2542,6 +2644,20 @@ export type EnumRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
 export type ListEnumRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RunStatus[]'>
     
 
+
+/**
+ * Reference to a field of type 'McpDataSourceStatus'
+ */
+export type EnumMcpDataSourceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'McpDataSourceStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'McpDataSourceStatus[]'
+ */
+export type ListEnumMcpDataSourceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'McpDataSourceStatus[]'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -2658,6 +2774,7 @@ export type GlobalOmitConfig = {
   packageFile?: Prisma.PackageFileOmit
   validationReport?: Prisma.ValidationReportOmit
   run?: Prisma.RunOmit
+  mcpDataSource?: Prisma.McpDataSourceOmit
 }
 
 /* Types for Logging */

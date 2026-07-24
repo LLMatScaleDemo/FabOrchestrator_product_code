@@ -1,5 +1,5 @@
 import { cmfQuery } from "@/lib/cmf/cmf-sql";
-import { loadRuleset, type EntityRuleset } from "@/lib/validation/metadata";
+import { loadRulesets, type EntityRuleset } from "@/lib/validation/metadata";
 import type { ParsedSheet, ValidationError, ValidationResult } from "@/lib/validation/types";
 
 /**
@@ -211,50 +211,28 @@ export function checkCrossSheet(
  * PK still enforced) and any unresolved FK becomes a warning, never a false
  * blocking error.
  */
-/** Default cap on how long the CMF-metadata cross-sheet work may take before
- *  we fall back to the offline (PK-only) check, so an upload never hangs on a
- *  slow/unreachable CMF (the single connect timeout can be ~20s). */
-const CROSS_SHEET_TIMEOUT_MS = Number(process.env.CROSS_SHEET_TIMEOUT_MS ?? "8000");
-
 export async function checkCrossSheetWithMetadata(
   sheets: ParsedSheet[],
-  timeoutMs: number = CROSS_SHEET_TIMEOUT_MS,
 ): Promise<ValidationError[]> {
-  // Only sheets that actually contain data can have PK/FK problems. A full
-  // master-data workbook has ~250 sheets but a real upload fills only a handful;
-  // loading CMF metadata for every empty sheet is what made validation crawl.
-  const dataSheets = sheets.filter((s) => s.rows.length > 0);
-  if (dataSheets.length === 0) return [];
+  // Skip header-only sheets before ANY CMF work: an empty tab can't produce a
+  // PK/FK finding, and a referenced parent whose own sheet is empty is still
+  // resolved on demand against live CMF below. This avoids paying a metadata
+  // round-trip per empty tab on template-shaped files (200+ mostly-empty tabs).
+  const populated = sheets.filter((s) => s.rows.length > 0);
 
-  // If CMF is slow/unreachable, don't block the upload — fall back to the
-  // offline PK-uniqueness check (no metadata) once the timeout elapses.
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const offlineFallback = new Promise<ValidationError[]>((resolve) => {
-    timer = setTimeout(() => resolve(checkCrossSheet(dataSheets, () => null, { cmfReachable: false })), timeoutMs);
-  });
-  const result = await Promise.race([runWithMetadata(dataSheets), offlineFallback]);
-  if (timer) clearTimeout(timer);
-  return result;
-}
-
-async function runWithMetadata(dataSheets: ParsedSheet[]): Promise<ValidationError[]> {
   const rulesets = new Map<string, EntityRuleset | null>();
   let cmfReachable = true;
 
-  // Load each distinct type's ruleset once, in parallel, so latency doesn't
-  // stack up across the (few) data sheets.
-  const distinctTypes = [...new Set(dataSheets.map((s) => s.objectType.toLowerCase()))];
-  const typeByLower = new Map(dataSheets.map((s) => [s.objectType.toLowerCase(), s.objectType]));
-  await Promise.all(
-    distinctTypes.map(async (key) => {
-      try {
-        rulesets.set(key, await loadRuleset(typeByLower.get(key)!));
-      } catch {
-        rulesets.set(key, null);
-        cmfReachable = false;
-      }
-    }),
-  );
+  // Bulk-load the distinct populated types in one shot (was: one loadRuleset per
+  // type, each up to ~4 sequential CMF round-trips).
+  const distinctTypes = [...new Set(populated.map((s) => s.objectType))];
+  try {
+    const loaded = await loadRulesets(distinctTypes);
+    for (const t of distinctTypes) rulesets.set(t.toLowerCase(), loaded.get(t.toLowerCase()) ?? null);
+  } catch {
+    for (const t of distinctTypes) rulesets.set(t.toLowerCase(), null);
+    cmfReachable = false;
+  }
 
   const rulesetFor = (t: string) => rulesets.get(t.toLowerCase()) ?? null;
 
@@ -263,7 +241,7 @@ async function runWithMetadata(dataSheets: ParsedSheet[]): Promise<ValidationErr
   const cmfParents = new Map<string, Set<string>>();
   if (cmfReachable) {
     const wantedByTarget = new Map<string, Set<string>>();
-    for (const s of dataSheets) {
+    for (const s of populated) {
       const rs = rulesetFor(s.objectType);
       if (!rs) continue;
       for (const p of rs.properties) {
@@ -277,10 +255,22 @@ async function runWithMetadata(dataSheets: ParsedSheet[]): Promise<ValidationErr
       }
     }
 
+    // Preload any referenced-target rulesets not already loaded (parent types
+    // whose own sheet isn't in this file) — one bulk call, not one per target.
+    const missingTargets = [...wantedByTarget.keys()].filter((t) => !rulesets.has(t.toLowerCase()));
+    if (missingTargets.length) {
+      try {
+        const loaded = await loadRulesets(missingTargets);
+        for (const t of missingTargets) rulesets.set(t.toLowerCase(), loaded.get(t.toLowerCase()) ?? null);
+      } catch {
+        cmfReachable = false;
+      }
+    }
+
     for (const [target, values] of wantedByTarget) {
       if (values.size === 0) continue;
       try {
-        const parentRs = rulesetFor(target) ?? (await loadRuleset(target));
+        const parentRs = rulesetFor(target);
         if (!parentRs?.table) continue;
         const found = new Set<string>();
         const list = [...values];
@@ -307,7 +297,9 @@ async function runWithMetadata(dataSheets: ParsedSheet[]): Promise<ValidationErr
   const parentInCmf: ParentInCmf = (target, valueLower) =>
     cmfParents.get(target.toLowerCase())?.has(valueLower) ?? false;
 
-  return checkCrossSheet(dataSheets, rulesetFor, { parentInCmf, cmfReachable });
+  // Empty tabs were filtered out above; they contribute no rows to the in-file
+  // parent index or PK/FK checks, so running on `populated` is equivalent.
+  return checkCrossSheet(populated, rulesetFor, { parentInCmf, cmfReachable });
 }
 
 /**

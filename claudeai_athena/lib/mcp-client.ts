@@ -12,6 +12,19 @@ import {
   isFabOrchError,
 } from './errors/faborch-errors';
 import { logger } from './logger';
+import { isLambdaInvokeUrl, functionNameFromUrl, invokeLambdaRpc } from './mcp-lambda';
+
+/** Decrypt the Bearer token stored on a connection (api_key auth), if any. */
+function bearerFromConnection(conn: { authType?: string; authCredentialsEncrypted?: string | null }): string | undefined {
+  if (conn.authType === 'api_key' && conn.authCredentialsEncrypted) {
+    try {
+      return JSON.parse(decrypt(conn.authCredentialsEncrypted)).apiKey as string;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
 
 export interface McpTool {
   name: string;
@@ -216,6 +229,36 @@ export async function executeMcpTool(
 
   if (connection.status !== 'connected') {
     throw new Error('MCP connection is not active');
+  }
+
+  // On-the-fly servers (lambda-invoke://) are called via the IAM Lambda API, not
+  // HTTP — no session/SSE. Short-circuit to that path.
+  if (isLambdaInvokeUrl(connection.serverUrl)) {
+    try {
+      const bearer = bearerFromConnection(connection);
+      const rpc = await invokeLambdaRpc(functionNameFromUrl(connection.serverUrl), bearer, {
+        jsonrpc: '2.0', id: Date.now(), method: 'tools/call', params: { name: toolName, arguments: toolArguments },
+      }) as { error?: { message?: string; code?: number }; result?: McpToolResult };
+
+      if (rpc.error) {
+        const code = rpc.error.code;
+        const errMsg = rpc.error.message || 'MCP tool execution failed';
+        const fabErr = code === -32601
+          ? FabOrchError.unlistedStoredProc(toolName, { route: connection.serverUrl })
+          : code === -32602
+          ? FabOrchError.invalidParameter(toolName, undefined, new Error(errMsg))
+          : FabOrchError.lambdaMcpCrash(new Error(errMsg), { toolName, route: connection.serverUrl, extra: { jsonRpcCode: code } });
+        logger.fabOrchError(fabErr);
+        import('./errors/error-audit').then(m => m.recordError(fabErr, { userId, route: connection.serverUrl, method: 'LAMBDA' })).catch(() => {});
+        return { content: [{ type: 'text', text: `${fabErr.userMessage} (errorId=${fabErr.errorId})` }], isError: true };
+      }
+      return rpc.result || { content: [{ type: 'text', text: 'No result returned' }] };
+    } catch (error) {
+      const fabErr = FabOrchError.lambdaMcpCrash(error, { toolName, route: connection.serverUrl });
+      logger.fabOrchError(fabErr);
+      import('./errors/error-audit').then(m => m.recordError(fabErr, { userId, route: connection.serverUrl, method: 'LAMBDA' })).catch(() => {});
+      return { content: [{ type: 'text', text: `${fabErr.userMessage} (errorId=${fabErr.errorId})` }], isError: true };
+    }
   }
 
   // Try to execute tool, with automatic session refresh on expiry

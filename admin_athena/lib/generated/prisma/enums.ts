@@ -37,3 +37,16 @@ export const RunStatus = {
 } as const
 
 export type RunStatus = (typeof RunStatus)[keyof typeof RunStatus]
+
+
+export const McpDataSourceStatus = {
+  DRAFT: 'DRAFT',
+  CONNECTED: 'CONNECTED',
+  GENERATED: 'GENERATED',
+  DEPLOYING: 'DEPLOYING',
+  ACTIVE: 'ACTIVE',
+  FAILED: 'FAILED',
+  RETIRED: 'RETIRED'
+} as const
+
+export type McpDataSourceStatus = (typeof McpDataSourceStatus)[keyof typeof McpDataSourceStatus]
