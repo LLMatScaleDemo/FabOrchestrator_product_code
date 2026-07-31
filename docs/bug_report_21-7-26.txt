@@ -9,6 +9,8 @@ Tasks:
 4) Phase 2 requires all the uploading and downloading should be within the chat interface.
 
 Bug report:
+1) the index sheet is incorrect because it is generating the full index when we only need the necessary object specific sheets.
+2) Its putting the data into the wrong columns and its not even aware of it. It said that it put entegris in the enterprise column but it was putting it into the data loader column.
 1) Its not letting us download the file even when we ask it to make one. No link to download shows up which is an issue. Make a detailed bug report in the format that they want regarding this. Payload = {Skip to main content
 FabOrchestrator.ai
 2) When we added entegris as an enterprise value in the excel sheet, it put it into the wrong column which was the data group column.
@@ -362,3 +364,10 @@ Reply...
 LLM at Scale.AI. All Rights Reserved. Confidential and Proprietary Information. Version 1.0
 
 }
+
+The model is putting things into wrong columns when of the index 
+and  
+The index sheet 
+
+1) the index sheet is incorrect because it is generating the full index when we only need the necessary object specific sheets.
+2) Its putting the data into the wrong columns and its not even aware of it. It said that it put entegris in the enterprise column but it was putting it into the data loader column.

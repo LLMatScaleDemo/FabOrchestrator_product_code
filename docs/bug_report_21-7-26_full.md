@@ -80,8 +80,29 @@
 
 ---
 
+## Issue # 5
+
+**Issue details:** Uploading a master-data spreadsheet through the loader wizard fails with a bare "Upload failed / HTTP 413" toast for any file larger than ~1 MB. Root cause (confirmed in config + code): in the deployed environment every request passes through nginx (ALB → nginx:80 → Next.js container:3000, per `claudeai_athena/DEPLOYMENT.md:35`), and nginx's `client_max_body_size` directive — which defaults to **1 MB** — is never raised: the repo's nginx override `claudeai_athena/.platform/nginx/conf.d/proxy.conf` sets only streaming timeouts, and nothing in `.ebextensions/` touches it either. Oversized uploads are therefore refused by nginx with `413 Request Entity Too Large` **before the application ever runs** — the staging route (`app/api/cmf/packages/stage/route.ts`) checks auth and `.xlsx` type but has no size check and no 413 path, and no app code anywhere emits 413. The unhelpful error message is a secondary symptom: nginx returns an HTML error page, so the wizard's `res.json()` fails and the toast falls back to the raw status (`components/cmf/loader-wizard.tsx:1026-1027`) instead of a friendly `{error: {title, description}}` message; the failure never enters the app's error-handling/audit system at all. `admin_athena` ships the identical 6-line `proxy.conf`, so the Admin app shares the same 1 MB ceiling.
+
+**Report date:** 7/23/2026
+
+**Priority:** High (blocks the master-data load workflow for any realistic workbook over 1 MB; deployed environments only — not reproducible locally, where no nginx sits in front of the app)
+
+**Supporting document / screenshot / details:** Runtime observation: loader wizard "Upload and verify" → toast "Upload failed / HTTP 413". Config/code refs: `claudeai_athena/.platform/nginx/conf.d/proxy.conf` and `admin_athena/.platform/nginx/conf.d/proxy.conf` (no `client_max_body_size`; nginx default is 1 MB), `claudeai_athena/.ebextensions/01-alb.config` (no override), `app/api/cmf/packages/stage/route.ts` (no size check or 413 path), `components/cmf/loader-wizard.tsx:1026-1027` (bare-status fallback toast). Quick confirmations: a workbook under 1 MB uploads through the same wizard; DevTools Network shows the 413 response body is nginx HTML, not app JSON. Sizing ramifications to weigh when picking the new limit: the staging route buffers the whole file in Node memory (`Buffer.from(await file.arrayBuffer())`, `stage/route.ts:56`); nginx enforces the ceiling before auth, so the limit is also the unauthenticated request-body exposure on every route (can be location-scoped to the upload path); and larger accepted workbooks mean heavier xlsx parsing/LLM validation and bigger CMF register pushes, aggravating the known AI-path poll-timeout issue where a slow load is reported failed though the commit may still land (`docs/06-error-and-recovery-matrix.md`). Choose the ceiling from the largest legitimate workbook (10–25 MB), not the technical maximum.
+
+**Test outcome:** FAIL — 413 observed at runtime in the deployed environment; root cause confirmed statically (no size limit raised in any repo config; no app-level 413 source exists).
+
+**Proposed fixes (in order of confidence):**
+1. **Raise the nginx limit (primary fix).** Add `client_max_body_size 25M;` (or a ceiling sized to real workbooks) to `.platform/nginx/conf.d/proxy.conf` in **both** `claudeai_athena` and `admin_athena`, then redeploy. Optionally scope it to the upload route only (`location /api/cmf/packages/stage { client_max_body_size 25M; }`) to keep the 1 MB default everywhere else. The ALB imposes no body limit, so nginx is the only knob.
+2. **Add an app-side size check with a friendly error.** In `app/api/cmf/packages/stage/route.ts`, after the `.xlsx` type check, reject files over the app limit with the route's existing JSON shape (`{error: {title: "File too large", description: "Maximum upload size is 25 MB — …"}}`, status 413). Set nginx slightly **above** the app limit (e.g. nginx 26M, app 25M) so realistic oversize files reach the app and get the friendly message; nginx's blunt 413 then only fires for egregious bodies.
+3. **Client-side pre-check in the wizard.** In `UploadStep.submit()` (`loader-wizard.tsx`), toast "File too large" with the actual size before uploading when `file.size` exceeds the limit — instant feedback, no bytes sent (advisory only; layers 1–2 remain the enforcement).
+4. **Optional polish — make nginx speak JSON.** `error_page 413 = @too_large;` returning the wizard's `{error: {title, description}}` shape with `Content-Type: application/json`, so even a true nginx rejection renders as a friendly toast with zero client changes (the wizard already reads `data.error?.title`).
+
+---
+
 ## Triage notes (cross-issue)
 
 - Issues #1 and #2 are both in the Excel generation layer (`ksp-skeleton.ts`) and share a fix vehicle (header/Index rewriting + rebuilt client template). Issue #1 likely also explains the earlier 4.2/4.5 report (corrupt/blank-looking files).
 - Issue #3 is chat/UI plumbing plus validation rubber-stamping — independent of the Excel layer.
 - Cross-cutting theme: every self-check currently short-circuits (skeleton-marker fast path, prompt-only gates), so the agent has no ground truth about what it actually produced.
+- Issue #5 is deployment configuration (nginx), independent of the Excel and chat layers — it gates the upload entry point to the whole loader flow, so it can mask Issues #1–#4 for any workbook over 1 MB. Fix owner is deploy/ops, not the app codebase.

@@ -24,6 +24,32 @@ user request become a response?"* and point to a real file, function, and review
 - 🔵 Findings are **Static** (from reading code) until a human/runtime confirms them. Never
   present a static trace as verified fact. Use the validation badges (see `docs/README.md`).
 
+### Logged exceptions to "documentation only"
+
+The constraint above still stands. These are the only deliberate departures, each
+authorised by the user in-session. **Do not treat them as precedent to widen the scope** —
+ask before making any further non-`docs/` change.
+
+| Date | Change | Why |
+|------|--------|-----|
+| 2026-07-27 | `client_max_body_size 25m;` added to `.platform/nginx/conf.d/proxy.conf` in **both** apps | Fixes the master-data upload 413. nginx's 1 MB default rejected loader-wizard uploads before the app ran; nothing in the repo overrode it. Takes effect only on redeploy. |
+| 2026-07-29 | `turbopack: { root: __dirname }` added to `next.config.ts` in **both** apps | Fixes a `Can't resolve 'tailwindcss'` dev-server failure. Next 16's Turbopack infers its workspace root from the nearest lockfiles and ignores `outputFileTracingRoot`; with four lockfiles in the ancestor chain it picked a directory with no `node_modules`, so `@import "tailwindcss"` in `app/globals.css` could not resolve. |
+
+**Local-environment work (not tracked above, not in git):** a stray `tsc` run had emitted
+1,524 untracked `.js`/`.js.map`/`.d.ts`/`.d.ts.map` files beside the TypeScript sources in
+both apps (638 admin, 886 client). `next.config.js` among them shadowed `next.config.ts`,
+so Next silently discarded the whole config (`output: "standalone"`,
+`outputFileTracingRoot`, `serverExternalPackages`), and ~90 compiled `page.js`/`route.js`
+twins shadowed their `.tsx`/`.ts` originals. All were deleted 2026-07-29 — every one had a
+matching `.ts`/`.tsx` sibling and none were tracked, so this restored the committed state.
+A stray `package.json`/`package-lock.json` in `C:\Users\ATUL ANAND\` (accidental
+`npm install typescript`) was deleted at the same time; its `node_modules/` remains.
+
+`admin_athena/.env` was created
+and the local `faborchestrator` database was set up (schema push, the loose `prisma/*.sql`
+files, `db:seed`, and a hand-added `user_session_logs.idle_episodes` / `idle_episode_count`
+that no repo DDL creates). Local only — no committed file changed.
+
 ## The system in one paragraph
 
 A monorepo with **two Next.js/TypeScript apps sharing one PostgreSQL database**:
