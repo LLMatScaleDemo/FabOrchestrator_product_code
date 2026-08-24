@@ -72,7 +72,14 @@ export const ModelName = {
   PackageFile: 'PackageFile',
   ValidationReport: 'ValidationReport',
   Run: 'Run',
-  McpDataSource: 'McpDataSource'
+  McpDataSource: 'McpDataSource',
+  error_audit_daily_counter: 'error_audit_daily_counter',
+  error_audit_logs: 'error_audit_logs',
+  error_catalog: 'error_catalog',
+  pinned_dashboards: 'pinned_dashboards',
+  ReportSchedule: 'ReportSchedule',
+  prompt_audit_daily_counter: 'prompt_audit_daily_counter',
+  prompt_audit_logs: 'prompt_audit_logs'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -121,14 +128,14 @@ export const UserScalarFieldEnum = {
   avatarUrl: 'avatarUrl',
   anthropicApiKeyEncrypted: 'anthropicApiKeyEncrypted',
   preferences: 'preferences',
-  roleId: 'roleId',
-  isAdmin: 'isAdmin',
-  status: 'status',
-  forcePasswordChange: 'forcePasswordChange',
-  passwordChangedAt: 'passwordChangedAt',
   createdAt: 'createdAt',
   lastLogin: 'lastLogin',
-  emailVerified: 'emailVerified'
+  emailVerified: 'emailVerified',
+  forcePasswordChange: 'forcePasswordChange',
+  isAdmin: 'isAdmin',
+  passwordChangedAt: 'passwordChangedAt',
+  roleId: 'roleId',
+  status: 'status'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -140,9 +147,9 @@ export const SessionScalarFieldEnum = {
   token: 'token',
   expiresAt: 'expiresAt',
   createdAt: 'createdAt',
-  userAgent: 'userAgent',
   ipAddress: 'ipAddress',
-  lastUsedAt: 'lastUsedAt'
+  lastUsedAt: 'lastUsedAt',
+  userAgent: 'userAgent'
 } as const
 
 export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
@@ -153,14 +160,14 @@ export const ConversationScalarFieldEnum = {
   userId: 'userId',
   title: 'title',
   model: 'model',
-  agent: 'agent',
   activeMcpIds: 'activeMcpIds',
   isPinned: 'isPinned',
   isShared: 'isShared',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   lastMessageAt: 'lastMessageAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  agent: 'agent'
 } as const
 
 export type ConversationScalarFieldEnum = (typeof ConversationScalarFieldEnum)[keyof typeof ConversationScalarFieldEnum]
@@ -198,7 +205,6 @@ export type ArtifactScalarFieldEnum = (typeof ArtifactScalarFieldEnum)[keyof typ
 export const McpConnectionScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  roleId: 'roleId',
   name: 'name',
   serverUrl: 'serverUrl',
   authType: 'authType',
@@ -208,10 +214,11 @@ export const McpConnectionScalarFieldEnum = {
   status: 'status',
   lastError: 'lastError',
   sessionId: 'sessionId',
-  registryId: 'registryId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  lastConnectedAt: 'lastConnectedAt'
+  lastConnectedAt: 'lastConnectedAt',
+  roleId: 'roleId',
+  registryId: 'registryId'
 } as const
 
 export type McpConnectionScalarFieldEnum = (typeof McpConnectionScalarFieldEnum)[keyof typeof McpConnectionScalarFieldEnum]
@@ -260,12 +267,12 @@ export type InvitationScalarFieldEnum = (typeof InvitationScalarFieldEnum)[keyof
 export const McpRegistryScalarFieldEnum = {
   id: 'id',
   displayName: 'displayName',
-  description: 'description',
   serverUrl: 'serverUrl',
   authType: 'authType',
+  createdAt: 'createdAt',
+  description: 'description',
   authCredentialsEncrypted: 'authCredentialsEncrypted',
   isActive: 'isActive',
-  createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
@@ -298,7 +305,9 @@ export const UserSessionLogScalarFieldEnum = {
   closedReason: 'closedReason',
   loginIp: 'loginIp',
   loginUserAgent: 'loginUserAgent',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  idle_episodes: 'idle_episodes',
+  idle_episode_count: 'idle_episode_count'
 } as const
 
 export type UserSessionLogScalarFieldEnum = (typeof UserSessionLogScalarFieldEnum)[keyof typeof UserSessionLogScalarFieldEnum]
@@ -324,9 +333,9 @@ export type UsageRecordScalarFieldEnum = (typeof UsageRecordScalarFieldEnum)[key
 export const PlatformSettingsScalarFieldEnum = {
   id: 'id',
   colorTheme: 'colorTheme',
-  auditRetentionDays: 'auditRetentionDays',
   updatedById: 'updatedById',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  auditRetentionDays: 'auditRetentionDays'
 } as const
 
 export type PlatformSettingsScalarFieldEnum = (typeof PlatformSettingsScalarFieldEnum)[keyof typeof PlatformSettingsScalarFieldEnum]
@@ -381,7 +390,8 @@ export const StagedUploadScalarFieldEnum = {
   packageCmfId: 'packageCmfId',
   selectedTypes: 'selectedTypes',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  package_cmf_db_key: 'package_cmf_db_key'
 } as const
 
 export type StagedUploadScalarFieldEnum = (typeof StagedUploadScalarFieldEnum)[keyof typeof StagedUploadScalarFieldEnum]
@@ -455,6 +465,125 @@ export const McpDataSourceScalarFieldEnum = {
 } as const
 
 export type McpDataSourceScalarFieldEnum = (typeof McpDataSourceScalarFieldEnum)[keyof typeof McpDataSourceScalarFieldEnum]
+
+
+export const Error_audit_daily_counterScalarFieldEnum = {
+  counter_date: 'counter_date',
+  last_seq: 'last_seq'
+} as const
+
+export type Error_audit_daily_counterScalarFieldEnum = (typeof Error_audit_daily_counterScalarFieldEnum)[keyof typeof Error_audit_daily_counterScalarFieldEnum]
+
+
+export const Error_audit_logsScalarFieldEnum = {
+  id: 'id',
+  error_id: 'error_id',
+  error_uuid: 'error_uuid',
+  error_type: 'error_type',
+  user_id: 'user_id',
+  datetime: 'datetime',
+  user_message: 'user_message',
+  technical_message: 'technical_message',
+  priority: 'priority',
+  status: 'status',
+  resolved_by: 'resolved_by',
+  resolved_at: 'resolved_at',
+  resolution_note: 'resolution_note',
+  route: 'route',
+  http_method: 'http_method',
+  http_status: 'http_status',
+  stack_preview: 'stack_preview',
+  request_context: 'request_context',
+  created_at: 'created_at'
+} as const
+
+export type Error_audit_logsScalarFieldEnum = (typeof Error_audit_logsScalarFieldEnum)[keyof typeof Error_audit_logsScalarFieldEnum]
+
+
+export const Error_catalogScalarFieldEnum = {
+  error_type: 'error_type',
+  user_message: 'user_message',
+  priority: 'priority',
+  http_status: 'http_status',
+  updated_at: 'updated_at',
+  updated_by: 'updated_by'
+} as const
+
+export type Error_catalogScalarFieldEnum = (typeof Error_catalogScalarFieldEnum)[keyof typeof Error_catalogScalarFieldEnum]
+
+
+export const Pinned_dashboardsScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  dashboard_id: 'dashboard_id',
+  params: 'params',
+  source_key: 'source_key',
+  cached_html: 'cached_html',
+  cached_summary: 'cached_summary',
+  refreshed_at: 'refreshed_at',
+  last_status: 'last_status',
+  created_by_id: 'created_by_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Pinned_dashboardsScalarFieldEnum = (typeof Pinned_dashboardsScalarFieldEnum)[keyof typeof Pinned_dashboardsScalarFieldEnum]
+
+
+export const ReportScheduleScalarFieldEnum = {
+  id: 'id',
+  dashboard_id: 'dashboard_id',
+  source_key: 'source_key',
+  frequency: 'frequency',
+  interval_minutes: 'interval_minutes',
+  at_time: 'at_time',
+  day_of_week: 'day_of_week',
+  days_of_week: 'days_of_week',
+  day_of_month: 'day_of_month',
+  enabled: 'enabled',
+  next_run_at: 'next_run_at',
+  last_run_at: 'last_run_at',
+  last_status: 'last_status',
+  updated_by_id: 'updated_by_id',
+  updated_at: 'updated_at'
+} as const
+
+export type ReportScheduleScalarFieldEnum = (typeof ReportScheduleScalarFieldEnum)[keyof typeof ReportScheduleScalarFieldEnum]
+
+
+export const Prompt_audit_daily_counterScalarFieldEnum = {
+  counter_date: 'counter_date',
+  last_seq: 'last_seq'
+} as const
+
+export type Prompt_audit_daily_counterScalarFieldEnum = (typeof Prompt_audit_daily_counterScalarFieldEnum)[keyof typeof Prompt_audit_daily_counterScalarFieldEnum]
+
+
+export const Prompt_audit_logsScalarFieldEnum = {
+  id: 'id',
+  prompt_id: 'prompt_id',
+  datetime: 'datetime',
+  user_prompt: 'user_prompt',
+  topic_matched: 'topic_matched',
+  data_retrieved: 'data_retrieved',
+  llm_response: 'llm_response',
+  response_time_ms: 'response_time_ms',
+  status: 'status',
+  user_name: 'user_name',
+  user_email: 'user_email',
+  query_executed: 'query_executed',
+  tool_calls: 'tool_calls',
+  user_id: 'user_id',
+  request_tokens: 'request_tokens',
+  retrieval_tokens: 'retrieval_tokens',
+  response_tokens: 'response_tokens',
+  request_cost: 'request_cost',
+  retrieval_cost: 'retrieval_cost',
+  response_cost: 'response_cost',
+  model: 'model'
+} as const
+
+export type Prompt_audit_logsScalarFieldEnum = (typeof Prompt_audit_logsScalarFieldEnum)[keyof typeof Prompt_audit_logsScalarFieldEnum]
 
 
 export const SortOrder = {

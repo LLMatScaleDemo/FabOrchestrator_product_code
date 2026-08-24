@@ -170,7 +170,9 @@ function ReasoningContent({
       <div
         ref={innerRef}
         className={cn(
-          "text-muted-foreground prose prose-sm dark:prose-invert",
+          // No `dark:prose-invert` — reasoning text stays readable ink on the
+          // light surface (console is light-only; matches markdown.tsx).
+          "text-muted-foreground prose prose-sm",
           contentClassName
         )}
       >

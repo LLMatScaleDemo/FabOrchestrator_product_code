@@ -17,6 +17,7 @@ import { ToolTimeline } from "@/components/prompt-kit/tool-timeline";
 import { extractToolParts } from "@/components/prompt-kit/tool";
 import { Button } from "@/components/ui/button";
 import { MCPDataSourceUploadDialog, type CreatedDataSource } from "@/components/mcp/mcp-datasource-upload-dialog";
+import { ReportScheduleCard, type ScheduleFormInitial } from "@/components/admin/report-schedule-card";
 import { Users, FileText, LineChart, Shield } from "lucide-react";
 
 // Inter, scoped to the Admin Assistant hero to match the approved design.
@@ -79,12 +80,20 @@ export default function AdminChatPage() {
     [sendMessage]
   );
 
-  // Triggered ONLY by the composer's dedicated "Secure Upload" menu item — routes
-  // a credentials file to the secure dialog (never into the chat/model).
+  // Triggered by the composer's "Secure Upload" menu item AND the inline
+  // "Secure Upload" button in the requirements message — routes a credentials
+  // file to the secure dialog (never into the chat/model).
   const handleSecureUpload = useCallback((file: File) => {
     setCredsFile(file);
     setCredsDefaultName(file.name.replace(/\.[^.]+$/, ""));
     setCredsOpen(true);
+  }, []);
+
+  // Inline "Secure Upload" button (rendered in the requirements message) opens
+  // a hidden file picker; the chosen file goes straight to the secure dialog.
+  const secureUploadInputRef = useRef<HTMLInputElement>(null);
+  const openSecureUploadPicker = useCallback(() => {
+    secureUploadInputRef.current?.click();
   }, []);
 
   const handleCredsCreated = useCallback(
@@ -112,6 +121,18 @@ export default function AdminChatPage() {
         token={token}
         onClose={() => setCredsOpen(false)}
         onCreated={handleCredsCreated}
+      />
+      {/* Hidden picker for the inline "Secure Upload" button in the chat. */}
+      <input
+        ref={secureUploadInputRef}
+        type="file"
+        accept=".txt,.env,.json,.csv,.md,.docx,.xlsx,.yaml,.yml"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleSecureUpload(f);
+          e.target.value = ""; // allow re-picking the same file
+        }}
       />
       <AnimatePresence mode="wait">
         {isWelcome ? (
@@ -263,6 +284,9 @@ export default function AdminChatPage() {
                               isLast={idx === messages.length - 1}
                               isLoading={isLoading}
                               onConsent={(text) => sendMessage({ text })}
+                              onSecureUpload={openSecureUploadPicker}
+                              token={token}
+                              onScheduleDone={(summary) => { if (summary) sendMessage({ text: summary }); }}
                             />
                           );
                         })}
@@ -332,29 +356,88 @@ export default function AdminChatPage() {
 // three-stage progression (Received → Retrieval → Generating Response).
 // This bubble only renders messages that already have something to show.
 
-// The Step-0 consent gate ends with a "[ Cancel ]   [ Proceed with Connection ]"
-// line. We strip that literal text from the rendered markdown and render real
-// buttons instead (only on the latest message). Clicking a button just sends the
-// same reply the admin would otherwise type, so the conversational gate is
-// unchanged — the buttons are a convenience, not a new flow.
+// The two admin gates render their acknowledgement checkbox + action button(s)
+// as ONE interactive control (ConsentGate). We strip the corresponding lines
+// from the markdown so they aren't duplicated, and render the gate only on the
+// latest, idle message. The action button is DISABLED until the admin ticks the
+// checkbox — so consent is mandatory. Clicking an action just does what the
+// admin would otherwise do (send a reply / open Secure Upload); the flow is
+// unchanged.
+//   • Step-0 consent gate  → "I confirm…" checkbox + [Cancel] [Proceed with Connection]
+//   • Requirements listing → "I have read…" checkbox + [Secure Upload]
 const CONSENT_BUTTONS_RE =
   /\n?[ \t]*>?[ \t]*\[\s*Cancel\s*\][\s>]*\[\s*Proceed with Connection\s*\][ \t]*/i;
+// Acknowledgement checkbox lines (may be a `- [ ]` task item inside a blockquote).
+const CONFIRM_ACK_RE =
+  /\n?[ \t]*>?[ \t]*(?:[-*][ \t]*)?\[[ xX]?\]\s*I confirm that I am authorized to connect this data source and accept the security risks\.?[ \t]*/i;
+const READ_ACK_RE =
+  /\n?[ \t]*>?[ \t]*(?:[-*][ \t]*)?\[[ xX]?\]\s*I have read, understood, and accept the terms and security risks outlined above\.?[ \t]*/i;
+const CONFIRM_ACK_TEXT = "I confirm that I am authorized to connect this data source and accept the security risks.";
+const READ_ACK_TEXT = "I have read, understood, and accept the terms and security risks outlined above.";
+// Report-schedule form marker: the model emits [[schedule-form: {json}]] which
+// the UI turns into an interactive form (and strips from the rendered text).
+const SCHEDULE_FORM_RE = /\[\[schedule-form:\s*(\{[\s\S]*?\})\s*\]\]/i;
 
-function ConsentButtons({
-  onProceed,
-  onCancel,
+// A checkbox the admin MUST tick before the action button(s) enable. Local state.
+function ConsentGate({
+  checkboxLabel,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
+  hint = "Please tick the box above to continue.",
+  active = true,
+  initiallyChecked = false,
 }: {
-  onProceed: () => void;
-  onCancel: () => void;
+  checkboxLabel: string;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+  hint?: string;
+  /** True on the current step (interactive). Historical steps render the
+   *  checkbox read-only and hide the action buttons, but the checked state is
+   *  retained so past acknowledgements stay visibly checked in the chat. */
+  active?: boolean;
+  /** Initial checkbox state. Past (superseded) steps mount already-checked
+   *  (the flow only advanced because the box was ticked); the live step starts
+   *  UNCHECKED so the admin must tick it before the action button enables. */
+  initiallyChecked?: boolean;
 }) {
+  const [checked, setChecked] = useState(initiallyChecked);
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-2">
-      <Button variant="outline" size="sm" onClick={onCancel}>
-        Cancel
-      </Button>
-      <Button size="sm" onClick={onProceed}>
-        Proceed with Connection
-      </Button>
+    <div className="mt-1 space-y-2">
+      <label className={`flex items-start gap-2 text-sm${active ? " cursor-pointer" : ""}`}>
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => setChecked(e.target.checked)}
+          disabled={!active}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded-[4px] border border-input accent-primary disabled:cursor-default disabled:opacity-100"
+        />
+        <span>{checkboxLabel}</span>
+      </label>
+      {active && (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            {secondaryLabel && onSecondary && (
+              <Button variant="outline" size="sm" onClick={onSecondary}>
+                {secondaryLabel}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              onClick={onPrimary}
+              disabled={!checked}
+              aria-disabled={!checked}
+              title={!checked ? hint : undefined}
+            >
+              {primaryLabel}
+            </Button>
+          </div>
+          {!checked && <p className="text-xs text-muted-foreground">{hint}</p>}
+        </>
+      )}
     </div>
   );
 }
@@ -366,6 +449,9 @@ function MessageBubble({
   isLast = false,
   isLoading = false,
   onConsent,
+  onSecureUpload,
+  token,
+  onScheduleDone,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message: any;
@@ -373,6 +459,9 @@ function MessageBubble({
   isLast?: boolean;
   isLoading?: boolean;
   onConsent?: (text: string) => void;
+  onSecureUpload?: () => void;
+  token?: string | null;
+  onScheduleDone?: (summary: string | null) => void;
 }) {
   const isUser = message.role === "user";
   const parts = message.parts || [];
@@ -426,28 +515,82 @@ function MessageBubble({
           />
         )}
 
-        {textParts.map((p: { text: string }, i: number) => {
-          // Strip the literal "[ Cancel ] [ Proceed with Connection ]" line (and
-          // any leftover trailing blockquote marker) — it's rendered as real
-          // buttons below instead.
-          const cleaned = p.text
-            .replace(CONSENT_BUTTONS_RE, "")
-            .replace(/\n\s*>?\s*$/, "")
-            .trimEnd();
-          return <Markdown key={i}>{cleaned}</Markdown>;
-        })}
+        {(() => {
+          const fullText = textParts.map((p: { text: string }) => p.text).join("\n");
+          // Which interactive gate does this message carry?
+          const isConsentGate =
+            CONSENT_BUTTONS_RE.test(fullText) || CONFIRM_ACK_RE.test(fullText);
+          const isRequirements = !isConsentGate && READ_ACK_RE.test(fullText);
+          const showGate = isLast && !isLoading;
+          // Report-schedule form marker → pre-fill an interactive form.
+          const scheduleMatch = SCHEDULE_FORM_RE.exec(fullText);
+          let scheduleInitial: ScheduleFormInitial | null = null;
+          if (scheduleMatch) {
+            try {
+              scheduleInitial = JSON.parse(scheduleMatch[1]) as ScheduleFormInitial;
+            } catch {
+              scheduleInitial = {}; // malformed JSON → empty form, admin fills it
+            }
+          }
+          return (
+            <>
+              {textParts.map((p: { text: string }, i: number) => {
+                // Strip the ack-checkbox line(s) + the "[ Cancel ] [ Proceed ]"
+                // line — the ConsentGate below renders those (checkbox + buttons)
+                // and is ALWAYS mounted (even for past steps) so the ticked state
+                // and the checkbox stay retained in the chat history.
+                const cleaned = p.text
+                  .replace(CONSENT_BUTTONS_RE, "")
+                  .replace(CONFIRM_ACK_RE, "")
+                  .replace(READ_ACK_RE, "")
+                  .replace(SCHEDULE_FORM_RE, "")
+                  .replace(/\n\s*>?\s*$/, "")
+                  .trimEnd();
+                return <Markdown key={i}>{cleaned}</Markdown>;
+              })}
 
-        {/* Consent gate buttons — only on the latest message and when idle, so
-            historical gates don't show live buttons and we can't double-send. */}
-        {onConsent &&
-          isLast &&
-          !isLoading &&
-          textParts.some((p: { text: string }) => CONSENT_BUTTONS_RE.test(p.text)) && (
-            <ConsentButtons
-              onProceed={() => onConsent("Proceed with Connection")}
-              onCancel={() => onConsent("Cancel")}
-            />
-          )}
+              {/* Consent gate — checkbox stays in history (retains ticked state);
+                  the action buttons show only on the live step (active), where
+                  Proceed is disabled until the box is ticked. */}
+              {isConsentGate && onConsent && (
+                <ConsentGate
+                  active={showGate}
+                  initiallyChecked={!isLast}
+                  checkboxLabel={CONFIRM_ACK_TEXT}
+                  primaryLabel="Proceed with Connection"
+                  onPrimary={() => onConsent("Proceed with Connection")}
+                  secondaryLabel="Cancel"
+                  onSecondary={() => onConsent("Cancel")}
+                  hint="Please confirm the box above to proceed with the connection."
+                />
+              )}
+
+              {/* Requirements listing — same: checkbox retained; the Secure Upload
+                  button shows only on the live step, gated on the checkbox. */}
+              {isRequirements && onSecureUpload && (
+                <ConsentGate
+                  active={showGate}
+                  initiallyChecked={!isLast}
+                  checkboxLabel={READ_ACK_TEXT}
+                  primaryLabel="🛡️ Secure Upload"
+                  onPrimary={onSecureUpload}
+                  hint="Please tick the box above, then upload your credentials securely."
+                />
+              )}
+
+              {/* Report-schedule form — pre-filled from the model's marker; the
+                  admin adjusts the dropdowns and Confirm writes it directly. */}
+              {scheduleInitial && onScheduleDone && (
+                <ReportScheduleCard
+                  initial={scheduleInitial}
+                  active={showGate}
+                  token={token ?? null}
+                  onDone={onScheduleDone}
+                />
+              )}
+            </>
+          );
+        })()}
       </MessageContent>
     </Message>
   );

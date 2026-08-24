@@ -23,6 +23,11 @@ import {
 import { costForTurn, costForTurnWithRates, hasPricing, type ModelRates } from '@/lib/model-pricing';
 import { getAllowedModelIds, getRegistryRates, getThinkingConfig } from '@/lib/model-registry';
 import { bumpActivityIfActive } from '@/lib/session-audit';
+import { buildCuratedTurn, type CuratedTurn } from '@/lib/fabinsight/inject';
+import { matchDashboard } from '@/lib/fabinsight/catalog';
+import { glossaryBlock } from '@/lib/fabinsight/aliases';
+import { detectMetricAsk, buildMetricBrief } from '@/lib/fabinsight/metrics';
+import { isDashboardAdmin } from '@/lib/fabinsight/access';
 
 export const maxDuration = 300;
 
@@ -587,6 +592,81 @@ export async function POST(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const messages = cleanToolMessages(await convertToModelMessages(sanitizedMessages as any));
 
+    // ── Curated FabInsight prompts ────────────────────────────────────────
+    //
+    // One of the seven deck prompts has hand-verified SQL and a fixed dashboard
+    // layout behind it. The query runs and the dashboard is PRE-RENDERED, then
+    // the rows are handed to the model so it writes the analysis beside it. The
+    // model never authors the visual — that keeps the layout identical run to
+    // run — but the user still gets a real written read of the data.
+    //
+    // Matching is cheap and synchronous; the actual fetch happens INSIDE the
+    // stream (see `execute` below) so the client can show retrieval progress
+    // while it runs. Non-curated prompts fall straight through untouched.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user');
+    const lastUserText = Array.isArray(lastUserMsg?.content)
+      ? lastUserMsg.content
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .filter((c: any) => c?.type === 'text')
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((c: any) => c.text as string)
+          .join('\n')
+      : typeof lastUserMsg?.content === 'string'
+        ? lastUserMsg.content
+        : '';
+    // Dashboard creation is admin-only. Enforced here, on the server — hiding
+    // the bubbles in the UI is presentation, not security, and a non-admin can
+    // type one of the seven prompts by hand. They still get a normal chat
+    // answer; only the pre-built dashboard is withheld.
+    const canCreateDashboards = await isDashboardAdmin(user.id);
+
+    // A broad metric question ("give me the yield", "give me the OEE") takes
+    // precedence over dashboard matching.
+    const metricAsk = lastUserText ? detectMetricAsk(lastUserText) : null;
+
+    const curatedMeta =
+      lastUserText && canCreateDashboards && !metricAsk
+        ? matchDashboard(lastUserText)
+        : undefined;
+    let curated: CuratedTurn | null = null;
+
+    // Broad metric brief — real figures for yield / OEE, attached like the
+    // glossary. Not a dashboard: the brief tells the model to answer in prose.
+    if (metricAsk && lastUserMsg && lastUserText) {
+      const brief = await buildMetricBrief(metricAsk);
+      if (brief) {
+        if (Array.isArray(lastUserMsg.content)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (lastUserMsg.content as any[]).push({ type: 'text' as const, text: brief });
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (lastUserMsg as any).content = `${lastUserText}\n\n${brief}`;
+        }
+        logger.info(`[Chat] Metric brief attached (${metricAsk})`);
+      }
+    }
+
+    // ── Fab shorthand glossary ────────────────────────────────────────────
+    // Attach the meaning of whichever shortforms this message used, so any
+    // non-curated turn reads them the way the fab floor does. Curated turns get
+    // the same glossary inside `curated.context`, so this is guarded by
+    // `!curatedMeta` to avoid appearing twice. Appended to the last user
+    // message (not the system prompt) so it never busts the cached prefix.
+    if (!curatedMeta && lastUserMsg && lastUserText) {
+      const glossary = glossaryBlock(lastUserText);
+      if (glossary) {
+        if (Array.isArray(lastUserMsg.content)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (lastUserMsg.content as any[]).push({ type: 'text' as const, text: glossary });
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (lastUserMsg as any).content = `${lastUserText}\n\n${glossary}`;
+        }
+        logger.info(`[Chat] Alias glossary attached (${glossary.split('\n').length - 4} term(s))`);
+      }
+    }
+
     // Use a custom provider with transformRequestBody when we have container uploads
     const modelProvider = containerUploadFileIds.length > 0
       ? createAnthropicWithContainerUploads(containerUploadFileIds.map(f => f.fileId))
@@ -632,6 +712,11 @@ export async function POST(req: NextRequest) {
       }))
     );
 
+    // Everything from here to `streamText` depends on `messages`, which a
+    // curated turn mutates only once its data has arrived. Wrapping it in a
+    // thunk lets a normal turn build eagerly (unchanged) while a curated turn
+    // defers until the fetch completes inside the stream.
+    const buildStream = () => {
     // Build dynamic system prompt with available tools (+ this conversation's S3 file URLs)
     const systemPrompt = buildSystemPromptWithTools(
       toolNames,
@@ -787,13 +872,24 @@ export async function POST(req: NextRequest) {
     // DB persistence uses onFinish which receives responseMessage.parts — the exact
     // parts the client saw (including step-start, interleaved text/tool parts).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = streamText(streamConfig as any);
+    return streamText(streamConfig as any);
+    };
 
-    // Issue 18: Ensure backend completes even if client disconnects
-    result.consumeStream();
+    // A normal turn builds immediately, exactly as before. A curated turn waits
+    // until its rows are in — see `execute`.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let result: any;
+    if (!curatedMeta) {
+      result = buildStream();
+      // Issue 18: Ensure backend completes even if client disconnects
+      result.consumeStream();
+    }
 
     // Shared state between execute and onFinish
     const fileDownloadParts: Array<Record<string, unknown>> = [];
+    // The pre-built dashboard <antArtifact>, appended to the stream after the
+    // model finishes its analysis (see execute) and topped into the DB content.
+    let curatedArtifactText = '';
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
@@ -809,13 +905,96 @@ export async function POST(req: NextRequest) {
         }, 15_000);
 
         try {
-        // 1. Merge AI stream (tokens flow to client in real-time)
-        writer.merge(result.toUIMessageStream({ sendReasoning: true, sendSources: true }));
+        // 0. Curated turn: the retrieval happens HERE, inside the open stream,
+        // so the client shows "Retrieval in progress..." for its whole duration.
+        // Emitting it as a tool part is what makes the existing timeline render
+        // at all — without one the client has no tool-group to attach progress to.
+        if (curatedMeta) {
+          const toolCallId = `fabinsight-query-${curatedMeta.id}-${Date.now().toString(36)}`;
+          try {
+            // Announce the retrieval BEFORE awaiting it.
+            writer.write({
+              type: 'tool-input-available',
+              toolCallId,
+              toolName: 'query_manufacturing_data',
+              input: { dashboard: curatedMeta.id, source: 'live manufacturing warehouse' },
+            });
+
+            curated = await buildCuratedTurn(lastUserText);
+
+            if (curated && lastUserMsg) {
+              curatedArtifactText = curated.artifactText;
+              const block = { type: 'text' as const, text: curated.context };
+              if (Array.isArray(lastUserMsg.content)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (lastUserMsg.content as any[]).push(block);
+              } else {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (lastUserMsg as any).content = `${lastUserText}\n\n${curated.context}`;
+              }
+              logger.info(
+                `[Chat] FabInsight "${curated.dashboardId}": ${curated.rowCount} rows in ${curated.tookMs}ms, dashboard pre-rendered`
+              );
+            }
+
+            writer.write({
+              type: 'tool-output-available',
+              toolCallId,
+              output:
+                !curated || curated.unavailable
+                  ? { status: 'unavailable' }
+                  : {
+                      status: 'ok',
+                      rows: curated.rowCount,
+                      elapsedMs: curated.tookMs,
+                      dashboard: curated.title,
+                    },
+            });
+          } catch (err) {
+            // Grounding is an enhancement — fall back to an ordinary turn, but
+            // still close the tool part or the stream is left inconsistent.
+            console.error('[Chat] FabInsight grounding failed:', err);
+            curated = null;
+            curatedArtifactText = '';
+            try {
+              writer.write({
+                type: 'tool-output-available',
+                toolCallId,
+                output: { status: 'unavailable' },
+              });
+            } catch { /* stream already closed */ }
+          }
+
+          // Build the model stream only now — its context needed those rows.
+          result = buildStream();
+          result.consumeStream();
+        }
+
+        // 1. Merge AI stream (tokens flow to client in real-time). `sendStart`
+        // is false on a curated turn: parts were already written above, which
+        // opened the assistant message — letting toUIMessageStream emit its own
+        // `start` would open a second empty bubble.
+        writer.merge(result.toUIMessageStream({ sendStart: !curatedMeta, sendReasoning: true, sendSources: true }));
 
         // 2. Wait for completion
         const [, , steps] = await Promise.all([
           result.text, result.reasoning, result.steps,
         ]);
+
+        // 2b. Curated turn: append the pre-built dashboard AFTER the model's
+        // analysis, as its own text part. The model was told not to author it;
+        // writing it here means it renders live and round-trips into
+        // responseMessage.parts (so onFinish persists it without duplication).
+        if (curatedMeta && curatedArtifactText) {
+          const artTextId = `fab-artifact-${curatedMeta.id}-${Date.now().toString(36)}`;
+          try {
+            writer.write({ type: 'text-start', id: artTextId });
+            writer.write({ type: 'text-delta', id: artTextId, delta: curatedArtifactText });
+            writer.write({ type: 'text-end', id: artTextId });
+          } catch (err) {
+            console.error('[Chat] FabInsight artifact write failed:', err);
+          }
+        }
 
         // 3. Extract file_ids from code_execution outputs and write to stream
         if (conversationId && steps && steps.length > 0) {
@@ -980,9 +1159,26 @@ export async function POST(req: NextRequest) {
             dbParts.push({ type: 'text', text });
           }
 
+          // `responseMessage.parts` ALREADY contains the curated artifact — it
+          // was written to the stream, so it round-trips like any other text
+          // part. Pushing another copy would duplicate it. Only `content` needs
+          // topping up, because that comes from `result.text`, which the manual
+          // artifact write bypasses.
+          const alreadyPersisted = dbParts.some(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (p: any) => p.type === 'text' && typeof p.text === 'string' && p.text.includes('<antArtifact')
+          );
+          const persistedText =
+            curatedArtifactText && !String(text ?? '').includes('<antArtifact')
+              ? `${text || ''}${curatedArtifactText}`
+              : text;
+          if (curatedArtifactText && !alreadyPersisted) {
+            dbParts.push({ type: 'text', text: curatedArtifactText });
+          }
+
           await addMessage(conversationId, {
             role: 'assistant',
-            content: text || '',
+            content: persistedText || '',
             parts: dbParts.length > 0 ? dbParts : [{ type: 'text', text: text || '' }],
             metadata: {
               reasoning: reasoning || null,

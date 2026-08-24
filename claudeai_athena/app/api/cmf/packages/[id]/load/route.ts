@@ -13,6 +13,8 @@ import {
   isOpenRunConflict,
 } from "@/lib/repo-cmf/runs";
 import { recordAudit } from "@/lib/cmf/audit";
+import { runWithCmfDb } from "@/lib/cmf/db-context";
+import { resolveCmfDbKey } from "@/lib/cmf/request-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,6 +31,10 @@ export async function POST(
         { status: 401 },
       );
     }
+
+    // Commit (op=0) into the database the loader toggle selected.
+    const dbKey = await resolveCmfDbKey(request, userId);
+    return await runWithCmfDb(dbKey, async () => {
 
     const { id } = await params;
     const body = (await request.json().catch(() => null)) as
@@ -107,6 +113,7 @@ export async function POST(
       { packageId: id, runId: run.id, queued: true },
       { status: 202 },
     );
+    });
   } catch (err) {
     console.error("[api/cmf/packages/:id/load] failed", err);
     const { status, body } = friendlyErrorPayload(err);

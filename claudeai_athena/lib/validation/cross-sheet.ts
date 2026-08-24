@@ -1,5 +1,5 @@
 import { cmfQuery } from "@/lib/cmf/cmf-sql";
-import { loadRulesets, type EntityRuleset } from "@/lib/validation/metadata";
+import { loadRulesets, isFkReference, type EntityRuleset } from "@/lib/validation/metadata";
 import type { ParsedSheet, ValidationError, ValidationResult } from "@/lib/validation/types";
 
 /**
@@ -167,7 +167,7 @@ export function checkCrossSheet(
   for (const sheet of sheets) {
     const ruleset = rulesetFor(sheet.objectType);
     if (!ruleset) continue;
-    const fkProps = ruleset.properties.filter((p) => p.referenceTargetType);
+    const fkProps = ruleset.properties.filter(isFkReference);
     if (!fkProps.length) continue;
 
     for (const prop of fkProps) {
@@ -245,13 +245,13 @@ export async function checkCrossSheetWithMetadata(
       const rs = rulesetFor(s.objectType);
       if (!rs) continue;
       for (const p of rs.properties) {
-        if (!p.referenceTargetType) continue;
-        const set = wantedByTarget.get(p.referenceTargetType) ?? new Set<string>();
+        if (!isFkReference(p)) continue; // skip CMF's noisy scalar "references"
+        const set = wantedByTarget.get(p.referenceTargetType!) ?? new Set<string>();
         for (const row of s.rows) {
           const v = cell(row, p.name);
           if (v) set.add(v);
         }
-        wantedByTarget.set(p.referenceTargetType, set);
+        wantedByTarget.set(p.referenceTargetType!, set);
       }
     }
 

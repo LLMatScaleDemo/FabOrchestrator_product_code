@@ -34,6 +34,7 @@ export type StagedUploadMinAggregateOutputType = {
   packageCmfId: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  package_cmf_db_key: string | null
 }
 
 export type StagedUploadMaxAggregateOutputType = {
@@ -46,6 +47,7 @@ export type StagedUploadMaxAggregateOutputType = {
   packageCmfId: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  package_cmf_db_key: string | null
 }
 
 export type StagedUploadCountAggregateOutputType = {
@@ -59,6 +61,7 @@ export type StagedUploadCountAggregateOutputType = {
   selectedTypes: number
   createdAt: number
   updatedAt: number
+  package_cmf_db_key: number
   _all: number
 }
 
@@ -73,6 +76,7 @@ export type StagedUploadMinAggregateInputType = {
   packageCmfId?: true
   createdAt?: true
   updatedAt?: true
+  package_cmf_db_key?: true
 }
 
 export type StagedUploadMaxAggregateInputType = {
@@ -85,6 +89,7 @@ export type StagedUploadMaxAggregateInputType = {
   packageCmfId?: true
   createdAt?: true
   updatedAt?: true
+  package_cmf_db_key?: true
 }
 
 export type StagedUploadCountAggregateInputType = {
@@ -98,6 +103,7 @@ export type StagedUploadCountAggregateInputType = {
   selectedTypes?: true
   createdAt?: true
   updatedAt?: true
+  package_cmf_db_key?: true
   _all?: true
 }
 
@@ -184,6 +190,7 @@ export type StagedUploadGroupByOutputType = {
   selectedTypes: runtime.JsonValue | null
   createdAt: Date
   updatedAt: Date
+  package_cmf_db_key: string | null
   _count: StagedUploadCountAggregateOutputType | null
   _min: StagedUploadMinAggregateOutputType | null
   _max: StagedUploadMaxAggregateOutputType | null
@@ -218,6 +225,7 @@ export type StagedUploadWhereInput = {
   selectedTypes?: Prisma.JsonNullableFilter<"StagedUpload">
   createdAt?: Prisma.DateTimeFilter<"StagedUpload"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StagedUpload"> | Date | string
+  package_cmf_db_key?: Prisma.StringNullableFilter<"StagedUpload"> | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
@@ -232,6 +240,7 @@ export type StagedUploadOrderByWithRelationInput = {
   selectedTypes?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  package_cmf_db_key?: Prisma.SortOrderInput | Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
 }
 
@@ -249,6 +258,7 @@ export type StagedUploadWhereUniqueInput = Prisma.AtLeast<{
   selectedTypes?: Prisma.JsonNullableFilter<"StagedUpload">
   createdAt?: Prisma.DateTimeFilter<"StagedUpload"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StagedUpload"> | Date | string
+  package_cmf_db_key?: Prisma.StringNullableFilter<"StagedUpload"> | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id">
 
@@ -263,6 +273,7 @@ export type StagedUploadOrderByWithAggregationInput = {
   selectedTypes?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  package_cmf_db_key?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.StagedUploadCountOrderByAggregateInput
   _max?: Prisma.StagedUploadMaxOrderByAggregateInput
   _min?: Prisma.StagedUploadMinOrderByAggregateInput
@@ -282,6 +293,7 @@ export type StagedUploadScalarWhereWithAggregatesInput = {
   selectedTypes?: Prisma.JsonNullableWithAggregatesFilter<"StagedUpload">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"StagedUpload"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"StagedUpload"> | Date | string
+  package_cmf_db_key?: Prisma.StringNullableWithAggregatesFilter<"StagedUpload"> | string | null
 }
 
 export type StagedUploadCreateInput = {
@@ -294,6 +306,7 @@ export type StagedUploadCreateInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  package_cmf_db_key?: string | null
   user: Prisma.UserCreateNestedOneWithoutCmfStagedUploadsInput
 }
 
@@ -308,6 +321,7 @@ export type StagedUploadUncheckedCreateInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  package_cmf_db_key?: string | null
 }
 
 export type StagedUploadUpdateInput = {
@@ -320,6 +334,7 @@ export type StagedUploadUpdateInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  package_cmf_db_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutCmfStagedUploadsNestedInput
 }
 
@@ -334,6 +349,7 @@ export type StagedUploadUncheckedUpdateInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  package_cmf_db_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type StagedUploadCreateManyInput = {
@@ -347,6 +363,7 @@ export type StagedUploadCreateManyInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  package_cmf_db_key?: string | null
 }
 
 export type StagedUploadUpdateManyMutationInput = {
@@ -359,6 +376,7 @@ export type StagedUploadUpdateManyMutationInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  package_cmf_db_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type StagedUploadUncheckedUpdateManyInput = {
@@ -372,6 +390,7 @@ export type StagedUploadUncheckedUpdateManyInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  package_cmf_db_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type StagedUploadListRelationFilter = {
@@ -395,6 +414,7 @@ export type StagedUploadCountOrderByAggregateInput = {
   selectedTypes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  package_cmf_db_key?: Prisma.SortOrder
 }
 
 export type StagedUploadMaxOrderByAggregateInput = {
@@ -407,6 +427,7 @@ export type StagedUploadMaxOrderByAggregateInput = {
   packageCmfId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  package_cmf_db_key?: Prisma.SortOrder
 }
 
 export type StagedUploadMinOrderByAggregateInput = {
@@ -419,6 +440,7 @@ export type StagedUploadMinOrderByAggregateInput = {
   packageCmfId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  package_cmf_db_key?: Prisma.SortOrder
 }
 
 export type StagedUploadCreateNestedManyWithoutUserInput = {
@@ -473,6 +495,7 @@ export type StagedUploadCreateWithoutUserInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  package_cmf_db_key?: string | null
 }
 
 export type StagedUploadUncheckedCreateWithoutUserInput = {
@@ -485,6 +508,7 @@ export type StagedUploadUncheckedCreateWithoutUserInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  package_cmf_db_key?: string | null
 }
 
 export type StagedUploadCreateOrConnectWithoutUserInput = {
@@ -527,6 +551,7 @@ export type StagedUploadScalarWhereInput = {
   selectedTypes?: Prisma.JsonNullableFilter<"StagedUpload">
   createdAt?: Prisma.DateTimeFilter<"StagedUpload"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StagedUpload"> | Date | string
+  package_cmf_db_key?: Prisma.StringNullableFilter<"StagedUpload"> | string | null
 }
 
 export type StagedUploadCreateManyUserInput = {
@@ -539,6 +564,7 @@ export type StagedUploadCreateManyUserInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  package_cmf_db_key?: string | null
 }
 
 export type StagedUploadUpdateWithoutUserInput = {
@@ -551,6 +577,7 @@ export type StagedUploadUpdateWithoutUserInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  package_cmf_db_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type StagedUploadUncheckedUpdateWithoutUserInput = {
@@ -563,6 +590,7 @@ export type StagedUploadUncheckedUpdateWithoutUserInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  package_cmf_db_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type StagedUploadUncheckedUpdateManyWithoutUserInput = {
@@ -575,6 +603,7 @@ export type StagedUploadUncheckedUpdateManyWithoutUserInput = {
   selectedTypes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  package_cmf_db_key?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -590,6 +619,7 @@ export type StagedUploadSelect<ExtArgs extends runtime.Types.Extensions.Internal
   selectedTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  package_cmf_db_key?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["stagedUpload"]>
 
@@ -604,6 +634,7 @@ export type StagedUploadSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   selectedTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  package_cmf_db_key?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["stagedUpload"]>
 
@@ -618,6 +649,7 @@ export type StagedUploadSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   selectedTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  package_cmf_db_key?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["stagedUpload"]>
 
@@ -632,9 +664,10 @@ export type StagedUploadSelectScalar = {
   selectedTypes?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  package_cmf_db_key?: boolean
 }
 
-export type StagedUploadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "filename" | "s3Key" | "status" | "packageName" | "packageCmfId" | "selectedTypes" | "createdAt" | "updatedAt", ExtArgs["result"]["stagedUpload"]>
+export type StagedUploadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "filename" | "s3Key" | "status" | "packageName" | "packageCmfId" | "selectedTypes" | "createdAt" | "updatedAt" | "package_cmf_db_key", ExtArgs["result"]["stagedUpload"]>
 export type StagedUploadInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -661,6 +694,7 @@ export type $StagedUploadPayload<ExtArgs extends runtime.Types.Extensions.Intern
     selectedTypes: runtime.JsonValue | null
     createdAt: Date
     updatedAt: Date
+    package_cmf_db_key: string | null
   }, ExtArgs["result"]["stagedUpload"]>
   composites: {}
 }
@@ -1095,6 +1129,7 @@ export interface StagedUploadFieldRefs {
   readonly selectedTypes: Prisma.FieldRef<"StagedUpload", 'Json'>
   readonly createdAt: Prisma.FieldRef<"StagedUpload", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"StagedUpload", 'DateTime'>
+  readonly package_cmf_db_key: Prisma.FieldRef<"StagedUpload", 'String'>
 }
     
 

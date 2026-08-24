@@ -1,5 +1,5 @@
 import { cmfQuery } from "@/lib/cmf/cmf-sql";
-import { loadRuleset } from "@/lib/validation/metadata";
+import { loadRuleset, isFkReference } from "@/lib/validation/metadata";
 import { isObjectRemoved } from "@/lib/validation/removal-policy";
 
 /**
@@ -53,7 +53,10 @@ export async function checkParentReferences(
     if (!ruleset) continue;
 
     for (const prop of ruleset.properties) {
-      if (!prop.referenceTargetType) continue;
+      // Only genuine FK references (BigInt id columns). CMF's metadata tags many
+      // plain scalar columns (e.g. Step.Type = "Standard") with a bogus reference
+      // target; validating those as FKs yields false "value not recognized" errors.
+      if (!isFkReference(prop)) continue;
       // Check every FK column, not only mandatory ones. CMF marks most
       // logical parents as optional in metadata (e.g. Enterprise on Site),
       // but the moment the user supplies a value, that parent MUST resolve

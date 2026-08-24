@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
-import { Loader2, Wrench, Plus, X } from "lucide-react";
+import { Loader2, Wrench, Plus, X, Database } from "lucide-react";
 import { ALL_MODELS } from "@/lib/constants/role-templates";
 
 interface AssignedMcp { id: string; name: string }
@@ -110,6 +110,103 @@ function RoleMcpSection({ roleId }: { roleId: string }) {
   );
 }
 
+interface CmfGrant { id: string; dbKey: string; label: string }
+interface CmfConn { dbKey: string; label: string; enabled: boolean }
+
+function RoleCmfSection({ roleId }: { roleId: string }) {
+  const token = typeof window !== "undefined" ? localStorage.getItem("admin_athena_token") : null;
+  const [assigned, setAssigned] = useState<CmfGrant[]>([]);
+  const [catalog, setCatalog] = useState<CmfConn[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pick, setPick] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const [aRes, cRes] = await Promise.all([
+        fetch(`/api/admin/cmf-access?roleId=${roleId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`/api/admin/database-connections`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      const a = await aRes.json(); const c = await cRes.json();
+      setAssigned(a.grants || []);
+      setCatalog((c.connections || []).filter((x: CmfConn) => x.enabled));
+    } catch { /* ignore */ } finally { setLoading(false); }
+  }, [token, roleId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const assign = async () => {
+    if (!pick) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/cmf-access`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ dbKey: pick, roleId }),
+      });
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Failed to grant"); return; }
+      toast.success("Database granted to role");
+      setPick(""); load();
+    } catch { toast.error("Failed to grant"); } finally { setBusy(false); }
+  };
+
+  const remove = async (grantId: string, label: string) => {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/cmf-access/${grantId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) { toast.error("Failed to remove"); return; }
+      toast.success(`"${label}" removed`); load();
+    } catch { toast.error("Failed to remove"); } finally { setBusy(false); }
+  };
+
+  const available = catalog.filter((c) => !assigned.some((a) => a.dbKey === c.dbKey));
+
+  return (
+    <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+      <p className="text-sm font-medium">Role CMF Database Access</p>
+      <p className="text-xs text-muted-foreground">Databases granted here are available to every user in this role.</p>
+      {loading ? (
+        <div className="h-8 animate-pulse rounded-md bg-muted" />
+      ) : (
+        <>
+          {assigned.length === 0 ? (
+            <p className="text-sm text-muted-foreground">None granted.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {assigned.map((g) => (
+                <div key={g.id} className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5">
+                  <Database className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate text-sm">{g.label}</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={busy} onClick={() => remove(g.id, g.label)} title="Remove" aria-label={`Remove ${g.label}`}>
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col gap-2 pt-1 sm:flex-row">
+            <Select value={pick} onValueChange={setPick} disabled={available.length === 0}>
+              <SelectTrigger aria-label="Grant CMF database to role" className="h-9 w-full flex-1">
+                <SelectValue placeholder={available.length ? "Grant a database..." : "All databases granted"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {available.map((c) => <SelectItem key={c.dbKey} value={c.dbKey}>{c.label}</SelectItem>)}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Button type="button" size="sm" disabled={!pick || busy} onClick={assign} aria-label="Grant database">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 interface RoleFormData {
   name: string;
   description: string;
@@ -154,7 +251,7 @@ const defaultForm: RoleFormData = {
 export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModalProps) {
   const [form, setForm] = useState<RoleFormData>(defaultForm);
   const [submitting, setSubmitting] = useState(false);
-  const [tab, setTab] = useState<"general" | "models" | "limits" | "tools">("general");
+  const [tab, setTab] = useState<"general" | "models" | "limits" | "tools" | "databases">("general");
   const [errors, setErrors] = useState<{ name?: string; models?: string }>({});
 
   useEffect(() => {
@@ -231,6 +328,7 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
     { id: "models" as const, label: "Models" },
     { id: "limits" as const, label: "Limits" },
     { id: "tools" as const, label: "MCP" },
+    { id: "databases" as const, label: "Databases" },
   ];
 
   return (
@@ -395,6 +493,19 @@ export function RoleFormModal({ open, onClose, onSaved, editRole }: RoleFormModa
                   <Label htmlFor="role-personal-mcp-max-count">Max MCP Connections</Label>
                   <Input id="role-personal-mcp-max-count" type="number" value={form.personalMcpMaxCount} onChange={(e) => setForm({ ...form, personalMcpMaxCount: Number(e.target.value) })} min={1} max={20} />
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Databases Tab */}
+          {tab === "databases" && (
+            <div className="space-y-4">
+              {editRole?.id ? (
+                <RoleCmfSection roleId={editRole.id} />
+              ) : (
+                <p className="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
+                  Save the role first, then reopen it to grant CMF databases.
+                </p>
               )}
             </div>
           )}

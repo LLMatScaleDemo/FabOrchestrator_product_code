@@ -2,19 +2,44 @@ import { tool } from "ai";
 import { z } from "zod";
 import templateSchema from "@/lib/validation/template-schema.json";
 import { resolveObjectType } from "@/lib/chat-cmf/object-types";
-import { loadRuleset } from "@/lib/validation/metadata";
+import { loadRuleset, isFkReference } from "@/lib/validation/metadata";
 import { generateSkeletonBlank, generateFromSkeleton, readSkeletonMarker } from "@/lib/validation/ksp-skeleton";
+// Narrow (object-only) templates use the from-scratch generator, ENHANCED to copy
+// the source header comments + fills + column widths. (The PRESERVE generator that
+// kept the x14 dropdowns byte-for-byte broke CMF — "key '2' not present" — the same
+// way Index trimming did in Change 7, so it is not used.)
+import { generateLeanTemplate } from "@/lib/validation/lean-template";
 import { getComposition, parentOf } from "@/lib/validation/composition";
-import { createStagedUpload, getStagedUpload } from "@/lib/repo-cmf/validation";
-import { validateParsedSheets } from "@/lib/validation/template-check";
+import {
+  createStagedUpload,
+  getStagedUpload,
+  getStagedMeta,
+  updateStagedUpload,
+  markFlowLoaded,
+} from "@/lib/repo-cmf/validation";
+import {
+  validateParsedSheets,
+  validateAgainstTemplate,
+  readUploadSheets,
+} from "@/lib/validation/template-check";
 import { checkCrossSheetWithMetadata, mergeFindings } from "@/lib/validation/cross-sheet";
 import { parseWorkbook } from "@/lib/validation/xlsx";
 import { prefillFormFromInput } from "@/lib/chat-cmf/prefill";
 import { lookupExisting } from "@/lib/chat-cmf/lookup-existing";
-import { browseCmfRecords } from "@/lib/chat-cmf/browse";
+import { browseCmfRecords, getFieldValueOptions } from "@/lib/chat-cmf/browse";
 import { fillFromExisting } from "@/lib/chat-cmf/fill-from-existing";
+import { exportWithDependencies } from "@/lib/chat-cmf/export-with-deps";
+import { removeFromLoader } from "@/lib/chat-cmf/loader-edit";
 import { previewLoadImpact } from "@/lib/chat-cmf/load-preview";
-import { loadMasterData } from "@/lib/cmf/cmf-client";
+import {
+  prepareMasterData,
+  executeMasterData,
+  getObjectById,
+  getObjectTypes,
+} from "@/lib/cmf/cmf-client";
+import type { UserFriendlyObjectType, ExecutionLogEntry } from "@/lib/cmf/types";
+import { runWithCmfDb, currentDbKey } from "@/lib/cmf/db-context";
+import { DEFAULT_DB_KEY, profileFor, type CmfDbKey } from "@/lib/cmf/db-registry";
 import { toModelSafeError } from "@/lib/cmf/cmf-errors";
 import { isSystemManaged } from "@/lib/validation/system-columns";
 import { isObjectRemoved, isColumnRemoved, getRemovedColumns } from "@/lib/validation/removal-policy";
@@ -27,8 +52,18 @@ import { isObjectRemoved, isColumnRemoved, getRemovedColumns } from "@/lib/valid
  * only write is the app's own StagedUpload (never CMF). All are scoped to the
  * signed-in user via the `buildChatTools(userId)` factory.
  *
+ * Dual CMF database: the factory takes `{ exportDbKey, loadDbKey }` and wraps
+ * each tool's `execute` in the AsyncLocalStorage DB context (db-context.ts) so
+ * every CMF call it makes hits the right database — READ/export tools run under
+ * `exportDbKey`, the WRITE tools (validateForLoad, loadToCmf) under `loadDbKey`.
+ * This lets a single turn export from one DB and load into another. Both default
+ * to the source DB, so omitting the selection is the app's legacy behaviour.
+ *
  * Note: v6 uses `inputSchema` (not `parameters`).
  */
+
+/** Tools that WRITE to CMF — run under the LOAD database, not the export one. */
+const LOAD_TOOLS = new Set(["validateForLoad", "loadToCmf"]);
 
 const RESERVED = new Set(["$order", "$ambiguous"]);
 type TemplateEntry = { raw: string; columns: string[] };
@@ -52,8 +87,23 @@ function slug(s: string): string {
   return s.trim().replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/^_+|_+$/g, "") || "package";
 }
 
-export function buildChatTools(userId: string) {
-  return {
+export function buildChatTools(
+  userId: string,
+  dbSel: { exportDbKey?: CmfDbKey; loadDbKey?: CmfDbKey; loadDbAmbiguous?: boolean } = {},
+) {
+  const exportDbKey: CmfDbKey = dbSel.exportDbKey ?? DEFAULT_DB_KEY;
+  const loadDbKey: CmfDbKey = dbSel.loadDbKey ?? DEFAULT_DB_KEY;
+  // Both databases enabled but the user hasn't picked a load target — the write
+  // tools must ask which DB before doing anything, so a load can't fire against
+  // an ambiguous/default target.
+  const loadDbAmbiguous = dbSel.loadDbAmbiguous ?? false;
+  const needsDbSelection = () => ({
+    ok: false as const,
+    needsDbSelection: true as const,
+    message:
+      "Both CMF databases are enabled. Ask the user which database to load into — source (Entegris/KSP) or target (OOB) — then retry once they choose.",
+  });
+  const tools = {
     resolveObjectType: tool({
       description:
         "Map a user's free-text request (e.g. 'production orders', 'materials') to a real CMF object type. Returns a DECISION, not just a list: when one type clearly wins it returns `confident: true` with `objectType` — proceed with it, do NOT ask the user to confirm. Only when `ambiguous: true` should you ask the user to pick from `candidates`. This keeps the choice deterministic (the tool decides), not a guess.",
@@ -86,7 +136,7 @@ export function buildChatTools(userId: string) {
 
     getRequiredFields: tool({
       description:
-        "List the fields for a CMF object type: which are mandatory, their scalar type, max length, regex, and which are foreign keys (referenceTargetType) that must already exist in CMF. Use this to tell the user exactly what to provide.",
+        "List the fields for a CMF object type: which are mandatory, their scalar type, max length, regex, the CMF-declared `defaultValue`, and which are genuine foreign keys (referenceTargetType) that must already exist in CMF. Use this to tell the user exactly what to provide. IMPORTANT when filling mandatory fields: (1) a field with a non-null `defaultValue` (typically Int enums and Bit flags → \"0\"/\"1\") should be filled with THAT value — it is what CMF applies on load — not asked of the user or guessed; (2) for a mandatory field with NO defaultValue whose value you don't know, do NOT invent one — call `suggestFieldValues` to see the values that field actually holds in CMF and offer those; (3) only `referenceTargetType` fields are real references needing existing CMF records — a scalar field (e.g. a string 'Type') is a literal value, not a reference, so never validate it against other records.",
       inputSchema: z.object({
         objectType: z.string().describe("The exact CMF object type (template key), e.g. 'ProductionOrder'"),
       }),
@@ -119,7 +169,14 @@ export function buildChatTools(userId: string) {
             scalarType: p.scalarType,
             maxLength: p.scalarSize,
             regex: p.validationRegex,
-            referenceTargetType: p.referenceTargetType,
+            // Only expose GENUINE FK references. CMF tags many scalar columns
+            // (e.g. Step.Type = "Standard") with a bogus reference target; showing
+            // those as FKs makes the model reject valid values as "not a reference".
+            referenceTargetType: isFkReference(p) ? p.referenceTargetType : null,
+            // CMF-declared default. Many mandatory scalars (Int enums, Bit flags)
+            // default to "0"/"1"; use this value when filling them rather than
+            // guessing — it is exactly what CMF applies on load.
+            defaultValue: p.defaultValue,
           })),
         };
       },
@@ -189,6 +246,23 @@ export function buildChatTools(userId: string) {
       },
     }),
 
+    suggestFieldValues: tool({
+      description:
+        "Suggest REAL values for a field instead of guessing. When you must fill a mandatory field but don't know a valid value (a scalar with no defaultValue — e.g. Step.Type, or an enum), call this: it returns the values that field ACTUALLY holds across existing CMF records, most-common first (with counts), so you can present real options for the user to pick. Works for scalar fields (returns the literal values, e.g. Step.Type → 'Standard') and for genuine FK fields (resolves ids to the referenced object's Names). RULE: never invent a value for a mandatory field — if it has a non-null defaultValue use that; otherwise call this and suggest what CMF actually uses.",
+      inputSchema: z.object({
+        objectType: z.string().describe("The CMF object type (template key), e.g. 'Step'."),
+        field: z.string().describe("The field/column to get existing values for, e.g. 'Type'."),
+        limit: z.number().optional().describe("Max distinct values to return (default 20, max 100)."),
+      }),
+      execute: async ({ objectType, field, limit }) => {
+        try {
+          return await getFieldValueOptions(objectType, field, limit ?? 20);
+        } catch (err) {
+          return { error: errMessage(err) };
+        }
+      },
+    }),
+
     browseCmfRecords: tool({
       description:
         "CMF database lookup for DISCOVERY — use when the user is looking for records but does NOT know the exact name(s): 'what flows exist?', 'list existing flow names', 'products and their flow', 'which products use flow F1', 'flows with wafer in the name'. Lists / searches the live CMF records of ANY object type (Flow, Product, Resource, Step, Area, …) and returns Name + Description + the object's link fields (e.g. Product → FlowPath), plus the TOTAL count so you can say 'showing 50 of 3,120'. Read-only. Use `search` for a keyword, `filterColumn`+`filterValue` for a reverse lookup ('which products use flow F1' → filterColumn 'FlowPath', filterValue 'F1'), and `columns` to request specific fields. This is the tool for browsing; use lookupExisting instead only when the user already gave exact Names to update/clone/inspect. Present results as a clean list in business language and offer to continue the build/load with a name the user picks.",
@@ -250,7 +324,7 @@ export function buildChatTools(userId: string) {
 
     fillFromExisting: tool({
       description:
-        "Build a template PRE-FILLED with EXISTING CMF records, so the user edits instead of typing from scratch. Reads live data and maps it into the template (relationships resolved to names), then stages a ready file. Use when the user wants to: start from existing data ('pre-fill a Resource template with the resources in the Assembly area'), CLONE a set ('make a Product template from the products in group BULK'), or BULK-EDIT existing records ('set Type=Standard on every product in group BULK' → pass `set`). Select records by `names`, or by `filterColumn`+`filterValue` (a direct field OR a related object's name, e.g. filter Resource by Area='Assembly'), or by `search`. The retrieved data comes straight from CMF — it is never invented. After this returns a stagingId, call validateTemplate then present the Download (same gate as generateExcel). Single-sheet objects for now. Tell the user how many rows were filled and remind them referenced parents must exist in CMF.",
+        "Build a template PRE-FILLED with EXISTING CMF records, so the user edits instead of typing from scratch. Reads live data and maps it into the template (relationships resolved to names), then stages a ready file. Use when the user wants to: start from existing data ('pre-fill a Resource template with the resources in the Assembly area'), CLONE a set ('make a Product template from the products in group BULK'), or BULK-EDIT existing records ('set Type=Standard on every product in group BULK' → pass `set`). Select records by `names`, or by `filterColumn`+`filterValue` (a direct field OR a related object's name, e.g. filter Resource by Area='Assembly'), or by `search`. The retrieved data comes straight from CMF — it is never invented. MULTI-SHEET OBJECTS (DataCollection, Step, Resource, Checklist, …) are handled automatically: because such an object is NOT loadable as a lone parent sheet (e.g. a DataCollection needs its DataCollectionParameters), this tool includes the object's composition sub-sheets + required dependencies in load order — so the file actually loads. When that happens the result carries `multiSheet:true` and a `dependencyList` (show it to the user). After this returns a stagingId, call validateForLoad then present the Download. Tell the user how many rows were filled and (for cross-environment loads) that referenced parents must exist in the target CMF.",
       inputSchema: z.object({
         objectType: z.string().describe("Object type to fill, e.g. 'Resource', 'Product'. Fuzzy words are resolved."),
         names: z.array(z.string()).optional().describe("Specific existing records to pull, by Name."),
@@ -273,6 +347,36 @@ export function buildChatTools(userId: string) {
           const canonical = SCHEMA_BY_LOWER.get(objectType.toLowerCase())
             ? objectType
             : resolveObjectType(objectType)[0]?.objectType ?? objectType;
+
+          // Multi-sheet objects are NOT loadable as a lone parent sheet — CMF
+          // needs their composition sub-sheets (a DataCollection needs its
+          // DataCollectionParameters, etc.). Route a plain export of such an
+          // object through the composition/dependency-aware export so the file
+          // actually loads. Bulk-edit (`set`) stays on the single parent sheet.
+          const comp = getComposition(canonical);
+          if (comp && comp.subSheets.length > 0 && !set) {
+            const dep = await exportWithDependencies({
+              userId,
+              rootObjectType: canonical,
+              selector: { names, filterColumn, filterValue, search, limit },
+              includeOptional: false,
+              packageName,
+            });
+            if (dep.error) return { error: dep.error };
+            const rootRows = dep.dependencyList.find((d) => d.objectType === dep.root)?.rowCount ?? 0;
+            return {
+              stagingId: dep.stagingId,
+              filename: dep.filename,
+              objectType: dep.root,
+              rowCount: rootRows,
+              totalRows: dep.totalRows,
+              multiSheet: true as const,
+              dependencyList: dep.dependencyList,
+              notes: dep.notes,
+              parentCheckPerformed: false as const,
+            };
+          }
+
           const result = await fillFromExisting({
             userId,
             objectType: canonical,
@@ -455,7 +559,10 @@ export function buildChatTools(userId: string) {
               isKey: p.isKey,
               maxLength: p.scalarSize,
               regex: p.validationRegex,
-              referenceTargetType: p.referenceTargetType,
+              // Genuine FK references only — hide CMF's bogus scalar "references".
+              referenceTargetType: isFkReference(p) ? p.referenceTargetType : null,
+              // CMF-declared default for mandatory scalars (Int enums / Bit flags).
+              defaultValue: p.defaultValue,
             }));
         } else {
           metadataMissing = true;
@@ -522,15 +629,27 @@ export function buildChatTools(userId: string) {
             };
           }
 
-          // Use the KSP_DL skeleton (Option D): inherits CMF's defined names,
-          // custom.xml, named tables, and ContentTypeId so the resulting file
-          // is uploadable to CMF's MasterData API directly. Without this CMF
-          // crashes at GetMasterDataPackageObjectTypes with KeyNotFoundException.
           const ruleset = await loadRuleset(parent);
           const mandatoryColumns =
             ruleset?.properties.filter((p) => p.mandatory).map((p) => p.name) ?? [];
 
-          const gen = await generateSkeletonBlank({ keepObjectTypes: [parent], scope });
+          // NARROW (object-specific) → lean generator: ONLY the 6 meta sheets +
+          // this object's sheet(s), with the Index trimmed to the 7 default rows
+          // + those sheets (the client's requirement — not all ~170 objects).
+          // Built from scratch so Index/WorksheetNameMapping/sheet-set are
+          // self-consistent; verified live in CMF for single-, sub- and heavy
+          // multi-sheet objects (Config/Site/Document/Step/StateModel, result=0).
+          //
+          // FULL → keep the KSP_DL skeleton (all ~213 sheets, full Index): the
+          // whole master-template layout the user asked to keep for adding more
+          // objects later. It inherits CMF's defined names / ContentTypeId etc.
+          const useNarrow = (scope ?? "narrow") === "narrow";
+          const gen = useNarrow
+            ? await (async () => {
+                const lean = await generateLeanTemplate(parent);
+                return { bytes: lean.bytes, visibleSheets: lean.objectSheets.map((s) => s.tab) };
+              })()
+            : await generateSkeletonBlank({ keepObjectTypes: [parent], scope });
           const name = packageName ?? `${parent}_template`;
           const filename = `${parent}_${slug(name)}.xlsx`;
           const staged = await createStagedUpload({
@@ -635,7 +754,29 @@ export function buildChatTools(userId: string) {
             baseFileBytes = staged.bytes;
           }
 
-          const gen = await generateFromSkeleton({ rowsByType: byType, baseFileBytes, scope });
+          // NARROW data (and NOT appending to an uploaded file) → lean generator:
+          // 6 meta sheets + this object's sheet(s), trimmed Index, rows filled in.
+          // (Appending to an upload must preserve that file, so it stays on the
+          // skeleton path; FULL keeps the whole master-template layout.)
+          const useNarrowData = scope === "narrow" && !startFromStagingId;
+          const gen = useNarrowData
+            ? await (async () => {
+                const lean = await generateLeanTemplate(objectType, byType);
+                const written = lean.objectSheets
+                  .filter((s) => (byType[s.objectType]?.length ?? 0) > 0)
+                  .map((s) => ({
+                    objectType: s.objectType,
+                    sheetName: s.raw,
+                    rowsAppended: byType[s.objectType]!.length,
+                    startedFromRow: 2,
+                  }));
+                return {
+                  bytes: lean.bytes,
+                  sheetsWritten: written,
+                  skipped: [] as { objectType: string; reason: string }[],
+                };
+              })()
+            : await generateFromSkeleton({ rowsByType: byType, baseFileBytes, scope });
 
           const filename = `${objectType}_${slug(packageName)}.xlsx`;
           const staged = await createStagedUpload({
@@ -658,6 +799,66 @@ export function buildChatTools(userId: string) {
             // CMF or be included in this same file.
             parentCheckPerformed: false as const,
           };
+        } catch (err) {
+          return { error: errMessage(err) };
+        }
+      },
+    }),
+
+    exportWithDependencies: tool({
+      description:
+        "SCOPE 2 — export a complex object (e.g. a Flow) PLUS its entire dependency chain into ONE loader, pre-filled with the object's real CMF records, sheets ordered by execution order (parents first). Use when the user asks to 'export all dependent objects in <flow>' / 'export this flow with everything it needs'. Resolves the dependency tree, then walks the live records following FK links so only the records tied to the chosen root(s) are pulled (unlinked types come back as empty sheets — never unrelated data). Pass multiple root names to merge several flows into one loader. Pass startFromStagingId to add the export to the loader already in this session. Returns a dependencyList (type, required/optional, rowCount, how it was filled) — SHOW it to the user and offer to drop optional context sheets before they download.",
+      inputSchema: z.object({
+        rootObjectType: z.string().describe("The root object type to export from, e.g. 'Flow'."),
+        names: z
+          .array(z.string())
+          .optional()
+          .describe("Specific root record name(s), e.g. ['ALL IN ONE - BULK']. Multiple names merge into one loader."),
+        filterColumn: z.string().optional().describe("Instead of names: a field on the root to match (direct or a related object's Name)."),
+        filterValue: z.string().optional().describe("Value for filterColumn."),
+        search: z.string().optional().describe("Instead of names: a keyword on the root's Name/Description."),
+        includeOptional: z
+          .boolean()
+          .optional()
+          .describe("Include optional context/association sheets (ResourceChartContext, StepChartContext, DataCollectionLimitSet, …). Default false. The user can ask to include them, then trim."),
+        packageName: z.string().describe("Short name for the generated loader, e.g. 'BULK_flow_export'."),
+        startFromStagingId: z
+          .string()
+          .optional()
+          .describe("To ADD this export to the loader already staged in this session (save-and-add-more), pass that loader's stagingId. Omit to start a fresh loader."),
+      }),
+      execute: async ({ rootObjectType, names, filterColumn, filterValue, search, includeOptional, packageName, startFromStagingId }) => {
+        try {
+          const res = await exportWithDependencies({
+            userId,
+            rootObjectType,
+            selector: { names, filterColumn, filterValue, search },
+            includeOptional,
+            packageName,
+            startFromStagingId,
+          });
+          return res;
+        } catch (err) {
+          return { error: errMessage(err) };
+        }
+      },
+    }),
+
+    removeFromLoader: tool({
+      description:
+        "SCOPE 3 (remove) — drop an object type's sheet data (or specific named rows) from the loader currently staged in this session. Use when the user says 'remove the data collections' / 'take X out of this loader'. Re-stages the loader and returns the new stagingId. To ADD an object to a loader, use generateExcel with startFromStagingId instead.",
+      inputSchema: z.object({
+        stagingId: z.string().describe("The staged loader to edit."),
+        objectType: z.string().describe("Canonical object type whose rows to remove, e.g. 'DataCollection'."),
+        rowNames: z
+          .array(z.string())
+          .optional()
+          .describe("Optional: remove only rows whose Name is in this list. Omit to clear ALL rows of the type."),
+        packageName: z.string().optional().describe("Optional new package name for the re-staged loader."),
+      }),
+      execute: async ({ stagingId, objectType, rowNames, packageName }) => {
+        try {
+          return await removeFromLoader({ userId, stagingId, objectType, rowNames, packageName });
         } catch (err) {
           return { error: errMessage(err) };
         }
@@ -747,43 +948,172 @@ export function buildChatTools(userId: string) {
       },
     }),
 
-    loadToCmf: tool({
+    validateForLoad: tool({
       description:
-        "Actually load a staged .xlsx into CMF (op=0 commit). Only call this AFTER previewLoadImpact AND the user has explicitly confirmed they want to load (not download). Uploads the file, runs PerformMasterDataPackage, polls for completion, returns the verdict and per-type log. Remember CMF's atomic-batch rule: any failure rolls back the entire load.",
+        "Validate a staged .xlsx for LOADING into CMF. Runs BOTH checks: (1) the local template/mandatory-field check, and (2) the CMF dry-run (validate-only, NO write) which reports whether CMF will accept every row. Also returns the record count per object type. Call this before any load. If templateOk AND cmfOk are both true, tell the user the record counts and ASK them to confirm before loading. If either fails, report the errors precisely and do NOT offer to load.",
       inputSchema: z.object({
-        stagingId: z.string().describe("The stagingId returned by generateExcel."),
-        packageName: z
-          .string()
-          .optional()
-          .describe("Optional name for the CMF MasterDataPackage. Defaults to '<filename>_<timestamp>'."),
+        stagingId: z.string().describe("The stagingId of the file to validate (from generateExcel/generateTemplate/fillFromExisting or an upload)."),
+        packageName: z.string().optional().describe("Optional name for the CMF package. Defaults to '<filename>_<timestamp>'."),
       }),
       execute: async ({ stagingId, packageName }) => {
+        if (loadDbAmbiguous) return needsDbSelection();
         try {
           const staged = await getStagedUpload(stagingId, userId);
-          if (!staged) return { ok: false, error: `Staged file ${stagingId} not found.` };
+          if (!staged) return { ok: false, error: `Staged file ${stagingId} not found for this user.` };
           const bytes = staged.bytes;
+          // The CMF database this validation runs against (whichever is toggled).
+          const database = profileFor(currentDbKey()).label;
+
+          // Per-object-type record counts (data rows only) — for the "load N records" confirmation.
+          const sheets = await readUploadSheets(bytes);
+          const recordCounts = sheets
+            .filter((s) => s.rows.length > 0)
+            .map((s) => ({ objectType: s.objectType, count: s.rows.length }));
+          const totalRecords = recordCounts.reduce((n, r) => n + r.count, 0);
+
+          // 1. Local template check (mandatory Name). If it fails, stop before touching CMF.
+          const tpl = await validateAgainstTemplate(bytes);
+          const templateErrors = Object.entries(tpl.errorsByType).flatMap(([objectType, list]) =>
+            list.map((e) => ({ objectType, row: e.row, column: e.column, severity: e.severity, message: e.message })),
+          );
+          if (!tpl.ok) {
+            return {
+              ok: false, templateOk: false, cmfOk: false, database, stagingId, filename: staged.filename,
+              recordCounts, totalRecords, errors: templateErrors,
+            };
+          }
+
+          // 2. CMF dry-run (op=1 = validate only, no write). Register then validate.
+          const name = packageName ?? `${staged.filename.replace(/\.xlsx$/i, "")}_${Date.now()}`;
           const fileObj = {
             name: staged.filename,
             type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             size: bytes.length,
-            arrayBuffer: async () =>
-              bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
+            arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
           };
-          const name = packageName ?? `${staged.filename.replace(/\.xlsx$/i, "")}_${Date.now()}`;
-          const result = await loadMasterData(name, fileObj, 0);
-          const log = (result.log ?? []) as { Type?: string; Result?: number; Message?: string; Severity?: string }[];
-          const errors = log.filter((e) => /error|failed|exception/i.test(`${e.Severity ?? ""} ${e.Message ?? ""}`));
-          const warnings = log.filter((e) => /warning/i.test(`${e.Severity ?? ""} ${e.Message ?? ""}`));
-          return {
-            ok: result.result === 0 && errors.length === 0,
-            packageId: result.package?.Id ?? null,
+          const prep = await prepareMasterData(name, fileObj);
+          const exec = await executeMasterData(prep.instance.Id, 1, prep.objectTypes);
+          const cmfErrors = (exec.log ?? [])
+            .filter((e: ExecutionLogEntry) => e.State === 3)
+            .flatMap((e: ExecutionLogEntry) => e.Messages.map((m) => ({ objectType: e.Name, severity: "error" as const, message: m })));
+          const cmfOk = exec.result === 0 && cmfErrors.length === 0;
+
+          // Persist the CMF package + discovered types so loadToCmf reuses them (no re-register).
+          // Tag the DB it was registered against — a package id is instance-specific,
+          // so a later load to a DIFFERENT DB must re-register, not reuse this id.
+          await updateStagedUpload(stagingId, userId, {
+            status: cmfOk ? "REGISTERED" : "VALIDATED",
             packageName: name,
-            cmfResult: result.result,
-            objectTypesLoaded: (result.objectTypes ?? []).length,
-            errorCount: errors.length,
-            warningCount: warnings.length,
-            errors: errors.slice(0, 6).map((e) => e.Message ?? ""),
-            warnings: warnings.slice(0, 6).map((e) => e.Message ?? ""),
+            packageCmfId: prep.instance.Id,
+            packageCmfDbKey: currentDbKey(),
+            selectedTypes: prep.objectTypes.map((t) => t.ObjectType),
+          });
+
+          return {
+            ok: cmfOk, templateOk: true, cmfOk, database, resultCode: exec.result,
+            stagingId, filename: staged.filename, packageCmfId: prep.instance.Id,
+            objectTypes: prep.objectTypes.map((t) => t.ObjectType),
+            recordCounts, totalRecords,
+            errors: cmfErrors.slice(0, 12),
+          };
+        } catch (err) {
+          return { ok: false, error: errMessage(err) };
+        }
+      },
+    }),
+
+    loadToCmf: tool({
+      description:
+        "Load a staged .xlsx into CMF — this COMMITS to production. STRICT PROTOCOL: (1) validateForLoad must have passed (templateOk AND cmfOk), (2) you must have shown the user the record counts and the user must have EXPLICITLY agreed to load in their latest message. Only then call with confirmed:true. If confirmed is not true, this tool refuses and returns the record counts so you can ask first. Optional selectedTypes narrows which object types load (default: every type present in the file). Returns a receipt with created/updated/skipped counts.",
+      inputSchema: z.object({
+        stagingId: z.string().describe("The stagingId of the validated file."),
+        confirmed: z.boolean().describe("Set true ONLY after the user has explicitly agreed to load, having seen the record counts. If false/omitted the tool will NOT load and returns the counts to ask with."),
+        selectedTypes: z.array(z.string()).optional().describe("Object type names to load. Omit to load every object type present in the file."),
+        packageName: z.string().optional().describe("Optional CMF package name (used only if the file wasn't already registered by validateForLoad)."),
+      }),
+      execute: async ({ stagingId, confirmed, selectedTypes, packageName }) => {
+        if (loadDbAmbiguous) return needsDbSelection();
+        try {
+          const staged = await getStagedUpload(stagingId, userId);
+          if (!staged) return { ok: false, error: `Staged file ${stagingId} not found.` };
+          const bytes = staged.bytes;
+
+          // Record counts (data rows) for the confirmation message / sanity.
+          const sheets = await readUploadSheets(bytes);
+          const recordCounts = sheets
+            .filter((s) => s.rows.length > 0)
+            .map((s) => ({ objectType: s.objectType, count: s.rows.length }));
+          const totalRecords = recordCounts.reduce((n, r) => n + r.count, 0);
+
+          // Deterministic confirmation gate — never commit without confirmed:true.
+          // The confirmation MUST name the target database, since a load writes to
+          // whichever DB is toggled (source Entegris vs target OOB) and the user
+          // needs to confirm they're writing to the right one.
+          const targetDb = profileFor(currentDbKey()).label;
+          if (confirmed !== true) {
+            return {
+              ok: false, needsConfirmation: true, stagingId, filename: staged.filename,
+              targetDb, recordCounts, totalRecords,
+              message: `Confirmation required. Tell the user you are about to LOAD ${totalRecords} record${totalRecords === 1 ? "" : "s"} into the "${targetDb}" database — name that database explicitly — and ask them to confirm this is the correct database. Only after they confirm, call loadToCmf again with confirmed:true.`,
+            };
+          }
+          if (totalRecords === 0) {
+            return { ok: false, error: "This file has no data rows to load. Fill the template with data first, then load." };
+          }
+
+          // Resolve the CMF package: reuse validateForLoad's registration ONLY if it
+          // was registered against the SAME database we're now loading into. A
+          // package id belongs to one CMF instance — reusing a source-registered id
+          // for a target load would silently load into the wrong DB. On mismatch (or
+          // no prior registration) we re-register against the current (load) DB.
+          const meta = await getStagedMeta(stagingId, userId);
+          const canReuse = !!meta?.packageCmfId && meta.packageCmfDbKey === currentDbKey();
+          let packageId = canReuse ? meta!.packageCmfId! : null;
+          let availableTypes: UserFriendlyObjectType[];
+          if (packageId) {
+            const inst = await getObjectById(packageId);
+            availableTypes = await getObjectTypes(inst);
+          } else {
+            const name = packageName ?? meta?.packageName ?? `${staged.filename.replace(/\.xlsx$/i, "")}_${Date.now()}`;
+            const fileObj = {
+              name: staged.filename,
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              size: bytes.length,
+              arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
+            };
+            const prep = await prepareMasterData(name, fileObj);
+            packageId = prep.instance.Id;
+            availableTypes = prep.objectTypes;
+            await updateStagedUpload(stagingId, userId, {
+              status: "REGISTERED", packageName: name, packageCmfId: packageId, packageCmfDbKey: currentDbKey(),
+            });
+          }
+
+          // Narrow to the user's selected types (default: all discovered).
+          const chosen = selectedTypes && selectedTypes.length
+            ? availableTypes.filter((t) => selectedTypes.some((s) => s.toLowerCase() === t.ObjectType.toLowerCase()))
+            : availableTypes;
+          if (chosen.length === 0) {
+            return { ok: false, error: "None of the requested object types are present in this file." };
+          }
+
+          // COMMIT — op=0 writes to production CMF.
+          const exec = await executeMasterData(packageId, 0, chosen);
+          const log = (exec.log ?? []) as ExecutionLogEntry[];
+          const created = log.reduce((n, e) => n + (e.CreatedObjectsCounter || 0), 0);
+          const updated = log.reduce((n, e) => n + (e.UpdatedObjectsCounter || 0), 0);
+          const skipped = log.reduce((n, e) => n + (e.SkippedObjectsCounter || 0), 0);
+          const failedEntries = log.filter((e) => e.State === 3);
+          const errors = failedEntries.flatMap((e) => e.Messages.map((m) => `${e.Name}: ${m}`)).slice(0, 10);
+          const ok = exec.result === 0 && failedEntries.length === 0;
+          if (ok) await markFlowLoaded(packageId);
+
+          return {
+            ok, packageId, packageName: meta?.packageName ?? packageName ?? null,
+            targetDb, cmfResult: exec.result,
+            loadedTypes: chosen.map((t) => t.ObjectType),
+            created, updated, skipped, failedCount: failedEntries.length,
+            errors,
           };
         } catch (err) {
           return { ok: false, error: errMessage(err) };
@@ -791,6 +1121,19 @@ export function buildChatTools(userId: string) {
       },
     }),
   };
+
+  // Wrap every tool's execute in the AsyncLocalStorage DB context so all CMF
+  // calls it makes target the right database: WRITE tools under `loadDbKey`,
+  // everything else under `exportDbKey`. Done once here rather than per-tool.
+  for (const [name, t] of Object.entries(tools)) {
+    const holder = t as unknown as { execute?: (...a: unknown[]) => Promise<unknown> };
+    const orig = holder.execute;
+    if (typeof orig !== "function") continue;
+    const dbKey = LOAD_TOOLS.has(name) ? loadDbKey : exportDbKey;
+    holder.execute = (...a: unknown[]) => runWithCmfDb(dbKey, () => orig(...a));
+  }
+
+  return tools;
 }
 
 function errMessage(err: unknown): string {

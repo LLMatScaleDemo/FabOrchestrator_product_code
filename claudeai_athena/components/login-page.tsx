@@ -44,7 +44,7 @@ export function LoginPage() {
 
     const writeSession = (
         token: string,
-        user: { id: string; email: string; name?: string | null },
+        user: { id: string; email: string; name?: string | null; canCreateDashboards?: boolean },
         expiresAt: string
     ) => {
         window.localStorage.setItem(AUTH_TOKEN_KEY, token)

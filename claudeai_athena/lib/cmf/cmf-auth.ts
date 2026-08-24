@@ -2,8 +2,9 @@
  * CMF MES API token provider.
  *
  * The CMF Bearer JWT is minted every ~45 min by the separate `cmf-auth-token`
- * Lambda and published to AWS Secrets Manager (default secret `cmf/mes-token`,
- * us-west-2). This app is a READ-ONLY consumer: it fetches the secret, caches
+ * Lambda and published to AWS Secrets Manager (default secret
+ * `cmf/portal-token-entegris-224`, us-west-2). This app is a READ-ONLY consumer:
+ * it fetches the secret, caches
  * it in memory, and refreshes ONLY when `expiresAt` is near — never on every
  * request (Secrets Manager has per-call cost + rate limits). We never mint or
  * write the token.
@@ -16,19 +17,25 @@
  * Secret payload shape: { token: "<jwt>", expiresAt: <ms epoch> }.
  *
  * IAM: the app/Lambda role needs `secretsmanager:GetSecretValue` on
- * arn:aws:secretsmanager:us-west-2:628203515088:secret:cmf/mes-token-*.
+ * arn:aws:secretsmanager:us-west-2:628203515088:secret:cmf/portal-token-entegris-224-*.
  */
 
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { currentDbKey } from "@/lib/cmf/db-context";
+import { profileFor } from "@/lib/cmf/db-registry";
+import { prisma } from "@/lib/db";
 
 const REGION = process.env.CMF_TOKEN_REGION ?? process.env.AWS_REGION ?? "us-west-2";
-const SECRET_ID = process.env.CMF_TOKEN_SECRET_ID ?? "cmf/mes-token";
 const MARGIN_MS = Number(process.env.TOKEN_SAFETY_MARGIN_SEC ?? "60") * 1000;
 
 type TokenCache = { token: string; expiresAt: number };
 
-let cache: TokenCache | null = null;
-let inflight: Promise<string> | null = null;
+// Token cache + in-flight refresh are keyed by SECRET ID (not dbKey): the app
+// targets two CMF databases with two distinct token secrets, and keying by the
+// actual secret keeps a source refresh from ever satisfying a target waiter (or
+// vice versa) — and dedupes if two DBs ever share a secret.
+const caches = new Map<string, TokenCache | null>();
+const inflights = new Map<string, Promise<string> | null>();
 
 let _sm: SecretsManagerClient | null = null;
 function sm(): SecretsManagerClient {
@@ -37,20 +44,20 @@ function sm(): SecretsManagerClient {
 
 export class TokenUnavailableError extends Error {}
 
-async function readTokenFromSecretsManager(): Promise<TokenCache> {
+async function readTokenFromSecretsManager(secretId: string): Promise<TokenCache> {
   let secretString: string | undefined;
   try {
-    const res = await sm().send(new GetSecretValueCommand({ SecretId: SECRET_ID }));
+    const res = await sm().send(new GetSecretValueCommand({ SecretId: secretId }));
     secretString = res.SecretString;
   } catch (err) {
     throw new TokenUnavailableError(
-      `Could not read the CMF token secret "${SECRET_ID}" (${REGION}). It is refreshed on a schedule (~45 min); check IAM (secretsmanager:GetSecretValue) and retry. Cause: ${
+      `Could not read the CMF token secret "${secretId}" (${REGION}). It is refreshed on a schedule (~45 min); check IAM (secretsmanager:GetSecretValue) and retry. Cause: ${
         err instanceof Error ? err.message : String(err)
       }`,
     );
   }
   if (!secretString) {
-    throw new TokenUnavailableError(`CMF token secret "${SECRET_ID}" has no SecretString.`);
+    throw new TokenUnavailableError(`CMF token secret "${secretId}" has no SecretString.`);
   }
   let parsed: { token?: string; expiresAt?: number };
   try {
@@ -64,38 +71,68 @@ async function readTokenFromSecretsManager(): Promise<TokenCache> {
   return { token: parsed.token, expiresAt: Number(parsed.expiresAt) };
 }
 
-function valid(entry: TokenCache | null): entry is TokenCache {
+function valid(entry: TokenCache | null | undefined): entry is TokenCache {
   return !!entry && Date.now() < entry.expiresAt - MARGIN_MS;
 }
 
 /**
- * Return a valid MES API Bearer token from the cached Secrets Manager value.
+ * Read the current token from the DB-backed `cmf_bearer_tokens` table, which the
+ * auth Lambda UPSERTs every ~45 min (keyed by CMF database name). Returns null
+ * (never throws) so the caller can fall back to Secrets Manager during migration
+ * or if the row isn't populated yet. Requires a non-null `expires_at` so we can
+ * tell whether the JWT is still valid.
+ */
+async function readTokenFromDb(tokenDbName: string): Promise<TokenCache | null> {
+  try {
+    const row = await prisma.cmfBearerToken.findUnique({ where: { cmfDatabaseName: tokenDbName } });
+    if (!row?.token || !row.expiresAt) return null;
+    return { token: row.token, expiresAt: new Date(row.expiresAt).getTime() };
+  } catch (e) {
+    console.error(`[cmf-auth] DB token read failed for "${tokenDbName}" — will try Secrets Manager`, e);
+    return null;
+  }
+}
+
+/**
+ * Return a valid MES API Bearer token for the currently-selected CMF database.
  * Refreshes only when the cached token is within MARGIN_MS of expiry. Throws
  * TokenUnavailableError if no valid token can currently be read.
  */
 export async function getMesToken(): Promise<string> {
-  if (valid(cache)) return cache.token;
-  if (inflight) return inflight;
+  const profile = profileFor(currentDbKey());
+  // Cache keyed by the token's DB name (the new source of truth); fall back to
+  // the secret id for connections that only have a Secrets Manager source.
+  const cacheKey = profile.tokenDbName || profile.tokenSecretId;
+  const cached = caches.get(cacheKey);
+  if (valid(cached)) return cached.token;
+  const pending = inflights.get(cacheKey);
+  if (pending) return pending;
 
-  inflight = (async () => {
+  const p = (async () => {
     try {
-      const entry = await readTokenFromSecretsManager();
+      // DB first (Lambda-written table), Secrets Manager as the migration fallback.
+      let entry: TokenCache | null = profile.tokenDbName ? await readTokenFromDb(profile.tokenDbName) : null;
+      if (!valid(entry) && profile.tokenSecretId) {
+        entry = await readTokenFromSecretsManager(profile.tokenSecretId);
+      }
       if (!valid(entry)) {
         throw new TokenUnavailableError(
-          "The published CMF token has expired. It is refreshed on a schedule (~45 min); retry shortly.",
+          "No valid CMF token is available (the DB token table and Secrets Manager are both empty or expired). " +
+            "The token is refreshed on a schedule (~45 min); retry shortly.",
         );
       }
-      cache = entry;
+      caches.set(cacheKey, entry);
       return entry.token;
     } finally {
-      inflight = null;
+      inflights.set(cacheKey, null);
     }
   })();
-
-  return inflight;
+  inflights.set(cacheKey, p);
+  return p;
 }
 
-/** Test/debug helper: drop the in-memory cache so the next call re-reads the secret. */
-export function clearMesTokenCache(): void {
-  cache = null;
+/** Test/debug helper: drop cached tokens (all keys, or a specific one). */
+export function clearMesTokenCache(cacheKey?: string): void {
+  if (cacheKey) caches.set(cacheKey, null);
+  else caches.clear();
 }

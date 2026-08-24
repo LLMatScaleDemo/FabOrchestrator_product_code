@@ -4,6 +4,9 @@ import { getMesToken } from "@/lib/cmf/cmf-auth";
 import { friendlyErrorPayload } from "@/lib/cmf/cmf-errors";
 import { CMF_TYPES, type MasterDataPackage } from "@/lib/cmf/types";
 import { requireAuth } from "@/lib/auth-middleware";
+import { runWithCmfDb, currentDbKey } from "@/lib/cmf/db-context";
+import { profileFor } from "@/lib/cmf/db-registry";
+import { resolveCmfDbKey } from "@/lib/cmf/request-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,8 +32,12 @@ type GetObjectsByFilterResponse = {
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
+  const dbKey = await resolveCmfDbKey(request, auth.user.id);
   try {
-    const base = (process.env.CMF_BASE_URL ?? "").replace(/\/+$/, "");
+    return await runWithCmfDb(dbKey, async () => {
+    // Base URL and token both follow the selected database, so the Recent list
+    // shows packages from whichever CMF the loader toggle points at.
+    const base = (profileFor(currentDbKey()).baseUrl ?? "").replace(/\/+$/, "");
     if (!base) {
       return NextResponse.json(
         { error: "CMF_BASE_URL not configured" },
@@ -71,6 +78,7 @@ export async function GET(request: NextRequest) {
 
     const data = (await res.json()) as GetObjectsByFilterResponse;
     return NextResponse.json({ packages: data.Instances ?? [] });
+    });
   } catch (err) {
     console.error("[api/cmf/packages] failed", err);
     const { status, body } = friendlyErrorPayload(err);

@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getSessionUserId } from "@/lib/cmf/session";
 import { getStagedUpload, updateStagedUpload } from "@/lib/repo-cmf/validation";
-import { validateParsedSheets, readUploadSheets } from "@/lib/validation/template-check";
-import { checkCrossSheetWithMetadata, mergeFindings } from "@/lib/validation/cross-sheet";
+import { validateSheetsComprehensive, readUploadSheets } from "@/lib/validation/template-check";
 import { explainErrors } from "@/lib/validation/llm-advisor";
 
 export const runtime = "nodejs";
@@ -62,19 +61,11 @@ export async function POST(
         explanations: [],
       });
     }
-    const structural = validateParsedSheets(sheets);
-
-    // Layer on cross-sheet integrity (PK uniqueness + FK/key consistency across
-    // sheets). Uses CMF metadata to know which columns are keys/foreign-keys;
-    // degrades to PK-only when CMF is unreachable and never throws, so a CMF
-    // outage can't break the offline structural check.
-    let result = structural;
-    try {
-      const crossErrors = await checkCrossSheetWithMetadata(sheets);
-      result = mergeFindings(structural, crossErrors);
-    } catch (crossErr) {
-      console.error("[api/cmf/packages/stage/:id/validate] cross-sheet check failed", crossErr);
-    }
+    // Comprehensive check in ONE pass — empty-file, no-data, and EVERY required
+    // field across every sheet/row (all mandatory fields from CMF metadata, not
+    // just Name), so the user sees all problems at once. Everything else
+    // (order, referential integrity) is left to CMF's own dry-run, which runs next.
+    const result = await validateSheetsComprehensive(sheets);
 
     // Record progress so an interrupted flow resumes at the right step.
     await updateStagedUpload(id, userId, { status: result.ok ? "VALIDATED" : "UPLOADED" });

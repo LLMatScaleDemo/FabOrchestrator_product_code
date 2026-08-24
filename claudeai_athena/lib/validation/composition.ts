@@ -1,4 +1,5 @@
 import templateSchema from "@/lib/validation/template-schema.json";
+import compositionOverrides from "@/lib/validation/composition-overrides.json";
 
 /**
  * Master-data "object composition" — which sub-sheets belong to a parent type.
@@ -19,6 +20,20 @@ const RESERVED = new Set(["$order", "$ambiguous"]);
 type Entry = { raw: string; columns: string[] };
 const SCHEMA = templateSchema as unknown as Record<string, Entry>;
 const ORDER = (templateSchema as unknown as { $order: string[] }).$order;
+
+/**
+ * Corrected parent → sub-sheet groupings (from the Index Execution Order — the
+ * authoritative CMF grouping). The default $order derivation below groups a few
+ * objects wrong because the physical sheet order is scrambled (e.g. Flow would
+ * grab Resource's sheets and miss FlowLogicalName). When a parent is listed here
+ * its sub-sheets come from this map instead of $order. Values are canonical
+ * object types; an empty array means the object has NO sub-sheets.
+ */
+const OVERRIDES = new Map<string, string[]>(
+  Object.entries(compositionOverrides as Record<string, unknown>)
+    .filter(([k, v]) => !k.startsWith("$") && Array.isArray(v))
+    .map(([k, v]) => [k.toLowerCase(), (v as string[]).slice()]),
+);
 
 const hasPrefix = (raw: string) => /^<[^>]+>/.test(raw);
 
@@ -51,6 +66,18 @@ function build(parent: string): Composition | null {
     // This is a sub-sheet itself, not a parent.
     return null;
   }
+
+  // Corrected grouping (from the Index execution order) wins over $order.
+  const override = OVERRIDES.get(parent.toLowerCase());
+  if (override) {
+    const subSheets: SubSheet[] = [];
+    for (const subType of override) {
+      const st = SCHEMA[subType];
+      if (st) subSheets.push({ objectType: subType, raw: st.raw, columns: st.columns });
+    }
+    return { parent, parentRaw: tpl.raw, parentColumns: tpl.columns, subSheets };
+  }
+
   const idx = ORDER.indexOf(parent);
   if (idx < 0) {
     // Type is in the schema but not in $order — treat as single-sheet (no

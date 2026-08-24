@@ -1,6 +1,7 @@
 {
   "extractedFrom": "/Users/vikramans/Downloads/TemplateObjectCatalog.xlsx",
   "extractedAt": "2026-07-08T05:21:58.673Z",
+  "manualOverrides": "ResourceService was REMOVED from removedObjects on 2026-08-14: the client's catalog struck it through, but it is the REQUIRED Resource<->Service association sheet (confirmed by Yogita) and is a declared sub-sheet of both Resource and Service in composition-overrides.json. Keeping it blacklisted made isObjectRemoved(ResourceService)=true, so any path that treated it as a top-level object skipped it with 'removed by client policy' (ksp-skeleton.ts) and dropped the ResourceService sheet — while dependency exports that carry it as a passenger sub-sheet still included it (inconsistent). Do NOT re-add it from the catalog.",
   "removedObjects": [
     "AreaSupplyArea",
     "AreaTransferRequirementType",
@@ -23,7 +24,6 @@
     "Notification",
     "Protocol",
     "ResourcePersonnelRequirements",
-    "ResourceService",
     "SamplingPattern",
     "SamplingPlan",
     "ShiftLogbookEntrySeverity",

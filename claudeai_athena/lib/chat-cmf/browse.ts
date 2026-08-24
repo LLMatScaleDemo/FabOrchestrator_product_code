@@ -164,6 +164,15 @@ export async function browseCmfRecords(input: BrowseInput): Promise<BrowseResult
       return { ...empty, error: `"${objectType}" has no field called "${input.filterColumn}".` };
     }
   }
+  // Effective-revision filter. CMF versions entities (Flow, Step, …) as MANY
+  // rows per name; `IsDefaultRevision = 1` is the single EFFECTIVE / current
+  // revision. Without it, browsing "effective flows with bulk" returned all 98
+  // version-rows (capped, then de-duplicated by eye) → 10 flows instead of the
+  // 20 effective ones. Filtering here yields exactly one row per effective
+  // object and a truthful count. Non-versioned tables lack the column → no-op.
+  const effCol = realLower.get("isdefaultrevision");
+  if (effCol) where.push(`${base}.[${effCol}] = 1`);
+
   const joinSql = joins.length ? " " + joins.join(" ") : "";
   const whereSql = where.length ? ` where ${where.join(" and ")}` : "";
 
@@ -194,4 +203,92 @@ export async function browseCmfRecords(input: BrowseInput): Promise<BrowseResult
     returned: rows.length,
     truncated: total > rows.length,
   };
+}
+
+export type FieldValueOptions = {
+  objectType: string;
+  field: string;
+  /** Distinct values the field actually holds in CMF, most-common first. */
+  values: { value: string; count: number }[];
+  /** Total number of distinct values (values[] may be capped below this). */
+  distinctTotal: number;
+  /** True when the field is a real FK — values are the referenced object's Names. */
+  isReference?: boolean;
+  metadataMissing?: boolean;
+  removed?: boolean;
+  error?: string;
+};
+
+/**
+ * "Don't guess — suggest real values." For a field whose valid value the model
+ * doesn't know (e.g. a mandatory scalar like Step.Type with no declared default),
+ * return the values that field ACTUALLY holds across existing CMF records,
+ * most-common first, so the model can offer real options instead of inventing.
+ *
+ * Handles a direct scalar column (group by the value) and a genuine FK column
+ * (resolve the id to the referenced object's Name, then group). Read-only; the
+ * column/table identifiers are validated against INFORMATION_SCHEMA.
+ */
+export async function getFieldValueOptions(
+  objectType: string,
+  field: string,
+  limit = 20,
+): Promise<FieldValueOptions> {
+  const empty = { objectType, field, values: [], distinctTotal: 0 };
+  if (isObjectRemoved(objectType)) return { ...empty, removed: true };
+
+  const ruleset = await loadRuleset(objectType);
+  if (!ruleset?.table) return { ...empty, metadataMissing: true };
+  const { schema, name: table } = ruleset.table;
+
+  const real = await physicalColumns(schema, table);
+  const realLower = new Map(real.map((c) => [c.toLowerCase(), c]));
+  const removedCols = getRemovedColumns(objectType);
+  const cap = Math.min(Math.max(1, Math.floor(limit)), 100);
+
+  if (removedCols.has(field.toLowerCase())) {
+    return { ...empty, error: `"${field}" is not available on "${objectType}".` };
+  }
+
+  // Direct scalar column → distinct values in use.
+  const directCol = realLower.get(field.toLowerCase());
+  if (directCol) {
+    const rows = await cmfQuery<{ value: unknown; n: number }>(
+      `select top ${cap} [${directCol}] as value, count(*) as n
+       from [${schema}].[${table}]
+       where [${directCol}] is not null and ltrim(rtrim(cast([${directCol}] as nvarchar(400)))) <> ''
+       group by [${directCol}] order by count(*) desc`,
+    );
+    const distinct = await cmfQuery<{ n: number }>(
+      `select count(*) as n from (select distinct [${directCol}] from [${schema}].[${table}] where [${directCol}] is not null) t`,
+    );
+    return {
+      objectType: ruleset.objectType,
+      field: directCol,
+      values: rows.map((r) => ({ value: String(r.value), count: Number(r.n) })),
+      distinctTotal: Number(distinct[0]?.n ?? rows.length),
+    };
+  }
+
+  // Genuine FK column → resolve the id to the target's Name, then group.
+  const refJoins = await resolveRefJoins(ruleset, realLower, removedCols, { trustAll: true });
+  const ref = refJoins.find((j) => j.prop.toLowerCase() === field.toLowerCase());
+  if (ref) {
+    const rows = await cmfQuery<{ value: string; n: number }>(
+      `select top ${cap} r.[Name] as value, count(*) as n
+       from [${schema}].[${table}] t
+       join [${ref.targetSchema}].[${ref.targetTable}] r on t.[${ref.fkCol}] = r.[${ref.targetPk}]
+       where r.[Name] is not null
+       group by r.[Name] order by count(*) desc`,
+    );
+    return {
+      objectType: ruleset.objectType,
+      field: ref.prop,
+      values: rows.map((r) => ({ value: String(r.value), count: Number(r.n) })),
+      distinctTotal: rows.length,
+      isReference: true,
+    };
+  }
+
+  return { ...empty, error: `"${objectType}" has no field called "${field}".` };
 }

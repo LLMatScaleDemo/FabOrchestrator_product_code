@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
   Code2, Eye, Copy, Check, X, Download,
   ExternalLink, Sparkles, RefreshCw, Loader2, FileText, FileCode,
   Image as ImageIcon, FileSpreadsheet, Presentation, File, AlertCircle,
-  ChevronDown,
+  ChevronDown, Pin,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -197,8 +197,86 @@ export function ArtifactPreview({
   const [fileLoading, setFileLoading] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
 
+  // ── FabInsight dashboards: live refresh + pin ────────────────────────────
+  //
+  // A curated dashboard carries its recipe in the document (`fab-recipe` meta,
+  // written by renderDashboard). If it's there we can re-run the query rather
+  // than just remounting the iframe with the same HTML — which is what the
+  // "refresh should show changes in the backend" requirement actually needs.
+  const fabRecipe = useMemo((): { id: string; params: Record<string, string> } | null => {
+    const m = /<meta name="fab-recipe" content="([^"]*)"/.exec(artifact.content ?? "")
+    if (!m) return null
+    try {
+      return JSON.parse(
+        m[1].replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">").replace(/&amp;/g, "&"),
+      )
+    } catch {
+      return null
+    }
+  }, [artifact.content])
+
+  const [liveHtml, setLiveHtml] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [canPin, setCanPin] = useState(false)
+  const [pinOpen, setPinOpen] = useState(false)
+  const [pinName, setPinName] = useState("")
+  const [pinState, setPinState] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  const [pinError, setPinError] = useState<string | null>(null)
+  const [pinNeedsReplace, setPinNeedsReplace] = useState(false)
+
+  const authHeaders = useCallback((): HeadersInit => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("llmatscale_auth_token") : null
+    return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  }, [])
+
+  useEffect(() => {
+    if (!fabRecipe) return
+    let cancelled = false
+    fetch("/api/fabinsight/access", { headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : { canCreateDashboards: false }))
+      .then((j) => { if (!cancelled) setCanPin(!!j.canCreateDashboards) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [fabRecipe, authHeaders])
+
+  const submitPin = useCallback(async (replace = false) => {
+    if (!fabRecipe || !pinName.trim()) return
+    setPinState("saving")
+    setPinError(null)
+    try {
+      const res = await fetch("/api/fabinsight/pinned", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ title: pinName.trim(), dashboardId: fabRecipe.id, params: fabRecipe.params ?? {}, replace }),
+      })
+      // A 500 can arrive with an empty or HTML body, so never assume JSON —
+      // parsing blindly turns a server error into an unreadable parse error.
+      const raw = await res.text()
+      const json = raw ? (JSON.parse(raw) as { error?: string; needsReplace?: boolean }) : {}
+      if (res.ok) {
+        setPinNeedsReplace(false)
+        setPinState("saved")
+        setTimeout(() => { setPinOpen(false); setPinState("idle") }, 1400)
+        return
+      }
+      // Duplicate name — warn and offer to replace instead of hard-failing.
+      if (json.needsReplace) {
+        setPinNeedsReplace(true)
+        setPinState("idle")
+        setPinError(json.error ?? `A report named “${pinName.trim()}” already exists.`)
+        return
+      }
+      throw new Error(json.error ?? `Could not pin this dashboard (${res.status}).`)
+    } catch (e) {
+      setPinState("error")
+      setPinError(e instanceof Error ? e.message : "Could not pin this dashboard.")
+    }
+  }, [fabRecipe, pinName, authHeaders])
+
   // Determine the displayable content
-  const displayContent = isFileArtifact ? fileContent : artifact.content
+  // A live-refreshed dashboard supersedes the stored artifact content.
+  const displayContent = isFileArtifact ? fileContent : (liveHtml ?? artifact.content)
 
   // Load file content when a file artifact becomes active
   useEffect(() => {
@@ -260,6 +338,9 @@ export function ArtifactPreview({
       setFileLoading(false)
       setFileError(null)
     }
+    // Clear any live-refreshed dashboard HTML so a Refresh on artifact A does
+    // not bleed into artifact B when the panel instance is reused across tabs.
+    setLiveHtml(null)
   }, [artifact.id, isFileArtifact])
 
   const wasStreamingRef = useRef(isStreaming)
@@ -354,9 +435,31 @@ export function ArtifactPreview({
     window.open(url, "_blank")
   }, [displayContent, artifact.content, artifact.type, strategy])
 
-  const handleRefreshPreview = useCallback(() => {
-    setIframeKey((prev) => prev + 1)
-  }, [])
+  const handleRefreshPreview = useCallback(async () => {
+    if (!fabRecipe) {
+      setIframeKey((prev) => prev + 1)
+      return
+    }
+    setRefreshing(true)
+    try {
+      const res = await fetch("/api/fabinsight/render", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ dashboardId: fabRecipe.id, params: fabRecipe.params ?? {} }),
+      })
+      const raw = await res.text()
+      const json = raw ? (JSON.parse(raw) as { html?: string }) : {}
+      if (res.ok && json.html) {
+        setLiveHtml(json.html)
+        setIframeKey((prev) => prev + 1)
+      }
+    } catch {
+      // Leave the existing dashboard on screen — a failed refresh should not
+      // blank out a chart the user is reading.
+    } finally {
+      setRefreshing(false)
+    }
+  }, [fabRecipe, authHeaders])
 
   const handleRetryLoad = useCallback(() => {
     if (!artifact.fileId) return
@@ -644,11 +747,71 @@ export function ArtifactPreview({
   // 'exiting': transitions to off-screen right
   const isAnimating = animationPhase === 'entering' || animationPhase === 'exiting'
 
+  // Naming dialog for pinning a curated dashboard to Recent Reports. Stored as
+  // a recipe (id + params), never HTML — see /api/fabinsight/pinned.
+  const pinDialog = pinOpen ? (
+    <div
+      className="absolute inset-0 z-30 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+      onClick={() => { if (pinState !== "saving") setPinOpen(false) }}
+    >
+      <div
+        className="w-[320px] max-w-[90%] rounded-lg border bg-background p-4 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+          <Pin className="h-4 w-4" />
+          Pin to Recent Reports
+        </div>
+        <input
+          type="text"
+          value={pinName}
+          onChange={(e) => { setPinName(e.target.value); setPinNeedsReplace(false); setPinError(null) }}
+          onKeyDown={(e) => { if (e.key === "Enter") submitPin(pinNeedsReplace) }}
+          placeholder="Report name"
+          maxLength={120}
+          autoFocus
+          disabled={pinState === "saving"}
+          className="mb-2 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+        />
+        {pinError && (
+          <p className={cn("mb-2 text-xs", pinNeedsReplace ? "text-amber-600" : "text-destructive")}>
+            {pinNeedsReplace ? "⚠ " : ""}{pinError}
+          </p>
+        )}
+        {pinState === "saved" && <p className="mb-2 text-xs text-green-600">Pinned.</p>}
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setPinOpen(false)} disabled={pinState === "saving"}>
+            Cancel
+          </Button>
+          {pinNeedsReplace ? (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => submitPin(true)}
+              disabled={!pinName.trim() || pinState === "saving" || pinState === "saved"}
+            >
+              {pinState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Replace"}
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => submitPin(false)}
+              disabled={!pinName.trim() || pinState === "saving" || pinState === "saved"}
+            >
+              {pinState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Pin"}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null
+
   return (
     <div
       ref={containerRef}
       className={cn(
-        "artifact-panel-container flex h-full flex-col border-l bg-background",
+        "artifact-panel-container relative flex h-full flex-col border-l bg-background",
         animationPhase === 'entering' && "artifact-panel-enter",
         animationPhase === 'exiting' && "artifact-panel-exit",
       )}
@@ -759,10 +922,6 @@ export function ArtifactPreview({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-36">
-                  <DropdownMenuItem onClick={handleDownload}>
-                    <Download className="h-3.5 w-3.5 mr-2" />
-                    Download
-                  </DropdownMenuItem>
                   {(hasVisualPreview || !isFileArtifact) && (
                     <DropdownMenuItem onClick={handleOpenInBrowser} disabled={isFileArtifact && fileLoading}>
                       <ExternalLink className="h-3.5 w-3.5 mr-2" />
@@ -771,6 +930,19 @@ export function ArtifactPreview({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              {/* Download is a first-class action beside Copy, not a dropdown
+                  item — saving the dashboard is a primary task here. */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-1 h-7 gap-1 px-2.5 text-xs"
+                onClick={handleDownload}
+                disabled={isFileArtifact && fileLoading}
+                title="Download this artifact"
+              >
+                <Download className="h-3 w-3" />
+                <span>Download</span>
+              </Button>
             </div>
           )}
 
@@ -782,6 +954,19 @@ export function ArtifactPreview({
             </Button>
           )}
 
+          {/* Pin (curated dashboards, admins only) — names + saves the recipe */}
+          {fabRecipe && canPin && !isStreaming && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => { setPinName(displayTitle || ""); setPinError(null); setPinState("idle"); setPinNeedsReplace(false); setPinOpen(true) }}
+              title="Pin this dashboard to Recent Reports"
+            >
+              <Pin className="h-3.5 w-3.5" />
+            </Button>
+          )}
+
           {/* Refresh (preview mode only) */}
           {mode === "preview" && hasVisualPreview && !isStreaming && (
             <Button
@@ -789,9 +974,10 @@ export function ArtifactPreview({
               size="sm"
               className="h-7 w-7 p-0"
               onClick={handleRefreshPreview}
-              title="Refresh preview"
+              disabled={refreshing}
+              title={fabRecipe ? "Refresh from live data" : "Refresh preview"}
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
             </Button>
           )}
 
@@ -817,6 +1003,8 @@ export function ArtifactPreview({
           {renderContent()}
         </div>
       </div>
+
+      {pinDialog}
     </div>
   )
 }

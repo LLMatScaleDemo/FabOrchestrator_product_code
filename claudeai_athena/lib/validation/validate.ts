@@ -1,5 +1,5 @@
 import { parseWorkbook } from "@/lib/validation/xlsx";
-import { loadRulesets, type EntityRuleset } from "@/lib/validation/metadata";
+import { loadRulesets, isFkReference, type EntityRuleset } from "@/lib/validation/metadata";
 import { buildParentIndex } from "@/lib/validation/referential";
 import { runRules } from "@/lib/validation/rule-engine";
 import { runCrossChecks, type CrossCheckOptions } from "@/lib/validation/cross-check";
@@ -73,13 +73,13 @@ export async function validatePreflightFromSheets(
 
     // Collect referenced parent values for batch existence checks.
     for (const p of ruleset.properties) {
-      if (!p.referenceTargetType) continue;
+      if (!isFkReference(p)) continue; // skip CMF's noisy scalar "references"
       const values = new Set<string>();
       for (const row of sheet.rows) {
         const v = (row[p.name] ?? "").trim();
         if (v) values.add(v);
       }
-      if (values.size) refs.push({ targetType: p.referenceTargetType, values });
+      if (values.size) refs.push({ targetType: p.referenceTargetType!, values });
     }
   }
 

@@ -31,14 +31,14 @@ export type UserMinAggregateOutputType = {
   name: string | null
   avatarUrl: string | null
   anthropicApiKeyEncrypted: string | null
-  roleId: string | null
-  isAdmin: boolean | null
-  status: string | null
-  forcePasswordChange: boolean | null
-  passwordChangedAt: Date | null
   createdAt: Date | null
   lastLogin: Date | null
   emailVerified: boolean | null
+  forcePasswordChange: boolean | null
+  isAdmin: boolean | null
+  passwordChangedAt: Date | null
+  roleId: string | null
+  status: string | null
 }
 
 export type UserMaxAggregateOutputType = {
@@ -48,14 +48,14 @@ export type UserMaxAggregateOutputType = {
   name: string | null
   avatarUrl: string | null
   anthropicApiKeyEncrypted: string | null
-  roleId: string | null
-  isAdmin: boolean | null
-  status: string | null
-  forcePasswordChange: boolean | null
-  passwordChangedAt: Date | null
   createdAt: Date | null
   lastLogin: Date | null
   emailVerified: boolean | null
+  forcePasswordChange: boolean | null
+  isAdmin: boolean | null
+  passwordChangedAt: Date | null
+  roleId: string | null
+  status: string | null
 }
 
 export type UserCountAggregateOutputType = {
@@ -66,14 +66,14 @@ export type UserCountAggregateOutputType = {
   avatarUrl: number
   anthropicApiKeyEncrypted: number
   preferences: number
-  roleId: number
-  isAdmin: number
-  status: number
-  forcePasswordChange: number
-  passwordChangedAt: number
   createdAt: number
   lastLogin: number
   emailVerified: number
+  forcePasswordChange: number
+  isAdmin: number
+  passwordChangedAt: number
+  roleId: number
+  status: number
   _all: number
 }
 
@@ -85,14 +85,14 @@ export type UserMinAggregateInputType = {
   name?: true
   avatarUrl?: true
   anthropicApiKeyEncrypted?: true
-  roleId?: true
-  isAdmin?: true
-  status?: true
-  forcePasswordChange?: true
-  passwordChangedAt?: true
   createdAt?: true
   lastLogin?: true
   emailVerified?: true
+  forcePasswordChange?: true
+  isAdmin?: true
+  passwordChangedAt?: true
+  roleId?: true
+  status?: true
 }
 
 export type UserMaxAggregateInputType = {
@@ -102,14 +102,14 @@ export type UserMaxAggregateInputType = {
   name?: true
   avatarUrl?: true
   anthropicApiKeyEncrypted?: true
-  roleId?: true
-  isAdmin?: true
-  status?: true
-  forcePasswordChange?: true
-  passwordChangedAt?: true
   createdAt?: true
   lastLogin?: true
   emailVerified?: true
+  forcePasswordChange?: true
+  isAdmin?: true
+  passwordChangedAt?: true
+  roleId?: true
+  status?: true
 }
 
 export type UserCountAggregateInputType = {
@@ -120,14 +120,14 @@ export type UserCountAggregateInputType = {
   avatarUrl?: true
   anthropicApiKeyEncrypted?: true
   preferences?: true
-  roleId?: true
-  isAdmin?: true
-  status?: true
-  forcePasswordChange?: true
-  passwordChangedAt?: true
   createdAt?: true
   lastLogin?: true
   emailVerified?: true
+  forcePasswordChange?: true
+  isAdmin?: true
+  passwordChangedAt?: true
+  roleId?: true
+  status?: true
   _all?: true
 }
 
@@ -211,14 +211,14 @@ export type UserGroupByOutputType = {
   avatarUrl: string | null
   anthropicApiKeyEncrypted: string | null
   preferences: runtime.JsonValue
-  roleId: string | null
-  isAdmin: boolean
-  status: string
-  forcePasswordChange: boolean
-  passwordChangedAt: Date | null
   createdAt: Date
   lastLogin: Date | null
   emailVerified: boolean
+  forcePasswordChange: boolean
+  isAdmin: boolean
+  passwordChangedAt: Date | null
+  roleId: string | null
+  status: string
   _count: UserCountAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
@@ -250,27 +250,31 @@ export type UserWhereInput = {
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
   anthropicApiKeyEncrypted?: Prisma.StringNullableFilter<"User"> | string | null
   preferences?: Prisma.JsonFilter<"User">
-  roleId?: Prisma.StringNullableFilter<"User"> | string | null
-  isAdmin?: Prisma.BoolFilter<"User"> | boolean
-  status?: Prisma.StringFilter<"User"> | string
-  forcePasswordChange?: Prisma.BoolFilter<"User"> | boolean
-  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   lastLogin?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   emailVerified?: Prisma.BoolFilter<"User"> | boolean
-  role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null
-  conversations?: Prisma.ConversationListRelationFilter
+  forcePasswordChange?: Prisma.BoolFilter<"User"> | boolean
+  isAdmin?: Prisma.BoolFilter<"User"> | boolean
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  roleId?: Prisma.StringNullableFilter<"User"> | string | null
+  status?: Prisma.StringFilter<"User"> | string
   artifacts?: Prisma.ArtifactListRelationFilter
-  mcpConnections?: Prisma.McpConnectionListRelationFilter
-  sessions?: Prisma.SessionListRelationFilter
-  memoryFiles?: Prisma.MemoryFileListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
-  usageRecords?: Prisma.UsageRecordListRelationFilter
-  invitationsSent?: Prisma.InvitationListRelationFilter
-  sessionLogs?: Prisma.UserSessionLogListRelationFilter
   cmfPackages?: Prisma.PackageListRelationFilter
   cmfRuns?: Prisma.RunListRelationFilter
   cmfStagedUploads?: Prisma.StagedUploadListRelationFilter
+  conversations?: Prisma.ConversationListRelationFilter
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.Error_audit_logsListRelationFilter
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.Error_audit_logsListRelationFilter
+  invitationsSent?: Prisma.InvitationListRelationFilter
+  mcpConnections?: Prisma.McpConnectionListRelationFilter
+  memoryFiles?: Prisma.MemoryFileListRelationFilter
+  pinned_dashboards?: Prisma.Pinned_dashboardsListRelationFilter
+  prompt_audit_logs?: Prisma.Prompt_audit_logsListRelationFilter
+  sessions?: Prisma.SessionListRelationFilter
+  usageRecords?: Prisma.UsageRecordListRelationFilter
+  sessionLogs?: Prisma.UserSessionLogListRelationFilter
+  role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null
 }
 
 export type UserOrderByWithRelationInput = {
@@ -281,27 +285,31 @@ export type UserOrderByWithRelationInput = {
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   anthropicApiKeyEncrypted?: Prisma.SortOrderInput | Prisma.SortOrder
   preferences?: Prisma.SortOrder
-  roleId?: Prisma.SortOrderInput | Prisma.SortOrder
-  isAdmin?: Prisma.SortOrder
-  status?: Prisma.SortOrder
-  forcePasswordChange?: Prisma.SortOrder
-  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrderInput | Prisma.SortOrder
   emailVerified?: Prisma.SortOrder
-  role?: Prisma.RoleOrderByWithRelationInput
-  conversations?: Prisma.ConversationOrderByRelationAggregateInput
+  forcePasswordChange?: Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  roleId?: Prisma.SortOrderInput | Prisma.SortOrder
+  status?: Prisma.SortOrder
   artifacts?: Prisma.ArtifactOrderByRelationAggregateInput
-  mcpConnections?: Prisma.McpConnectionOrderByRelationAggregateInput
-  sessions?: Prisma.SessionOrderByRelationAggregateInput
-  memoryFiles?: Prisma.MemoryFileOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
-  usageRecords?: Prisma.UsageRecordOrderByRelationAggregateInput
-  invitationsSent?: Prisma.InvitationOrderByRelationAggregateInput
-  sessionLogs?: Prisma.UserSessionLogOrderByRelationAggregateInput
   cmfPackages?: Prisma.PackageOrderByRelationAggregateInput
   cmfRuns?: Prisma.RunOrderByRelationAggregateInput
   cmfStagedUploads?: Prisma.StagedUploadOrderByRelationAggregateInput
+  conversations?: Prisma.ConversationOrderByRelationAggregateInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsOrderByRelationAggregateInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsOrderByRelationAggregateInput
+  invitationsSent?: Prisma.InvitationOrderByRelationAggregateInput
+  mcpConnections?: Prisma.McpConnectionOrderByRelationAggregateInput
+  memoryFiles?: Prisma.MemoryFileOrderByRelationAggregateInput
+  pinned_dashboards?: Prisma.pinned_dashboardsOrderByRelationAggregateInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsOrderByRelationAggregateInput
+  sessions?: Prisma.SessionOrderByRelationAggregateInput
+  usageRecords?: Prisma.UsageRecordOrderByRelationAggregateInput
+  sessionLogs?: Prisma.UserSessionLogOrderByRelationAggregateInput
+  role?: Prisma.RoleOrderByWithRelationInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -315,27 +323,31 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
   anthropicApiKeyEncrypted?: Prisma.StringNullableFilter<"User"> | string | null
   preferences?: Prisma.JsonFilter<"User">
-  roleId?: Prisma.StringNullableFilter<"User"> | string | null
-  isAdmin?: Prisma.BoolFilter<"User"> | boolean
-  status?: Prisma.StringFilter<"User"> | string
-  forcePasswordChange?: Prisma.BoolFilter<"User"> | boolean
-  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   lastLogin?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   emailVerified?: Prisma.BoolFilter<"User"> | boolean
-  role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null
-  conversations?: Prisma.ConversationListRelationFilter
+  forcePasswordChange?: Prisma.BoolFilter<"User"> | boolean
+  isAdmin?: Prisma.BoolFilter<"User"> | boolean
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  roleId?: Prisma.StringNullableFilter<"User"> | string | null
+  status?: Prisma.StringFilter<"User"> | string
   artifacts?: Prisma.ArtifactListRelationFilter
-  mcpConnections?: Prisma.McpConnectionListRelationFilter
-  sessions?: Prisma.SessionListRelationFilter
-  memoryFiles?: Prisma.MemoryFileListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
-  usageRecords?: Prisma.UsageRecordListRelationFilter
-  invitationsSent?: Prisma.InvitationListRelationFilter
-  sessionLogs?: Prisma.UserSessionLogListRelationFilter
   cmfPackages?: Prisma.PackageListRelationFilter
   cmfRuns?: Prisma.RunListRelationFilter
   cmfStagedUploads?: Prisma.StagedUploadListRelationFilter
+  conversations?: Prisma.ConversationListRelationFilter
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.Error_audit_logsListRelationFilter
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.Error_audit_logsListRelationFilter
+  invitationsSent?: Prisma.InvitationListRelationFilter
+  mcpConnections?: Prisma.McpConnectionListRelationFilter
+  memoryFiles?: Prisma.MemoryFileListRelationFilter
+  pinned_dashboards?: Prisma.Pinned_dashboardsListRelationFilter
+  prompt_audit_logs?: Prisma.Prompt_audit_logsListRelationFilter
+  sessions?: Prisma.SessionListRelationFilter
+  usageRecords?: Prisma.UsageRecordListRelationFilter
+  sessionLogs?: Prisma.UserSessionLogListRelationFilter
+  role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -346,14 +358,14 @@ export type UserOrderByWithAggregationInput = {
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   anthropicApiKeyEncrypted?: Prisma.SortOrderInput | Prisma.SortOrder
   preferences?: Prisma.SortOrder
-  roleId?: Prisma.SortOrderInput | Prisma.SortOrder
-  isAdmin?: Prisma.SortOrder
-  status?: Prisma.SortOrder
-  forcePasswordChange?: Prisma.SortOrder
-  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrderInput | Prisma.SortOrder
   emailVerified?: Prisma.SortOrder
+  forcePasswordChange?: Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  roleId?: Prisma.SortOrderInput | Prisma.SortOrder
+  status?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
   _min?: Prisma.UserMinOrderByAggregateInput
@@ -370,14 +382,14 @@ export type UserScalarWhereWithAggregatesInput = {
   avatarUrl?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   anthropicApiKeyEncrypted?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   preferences?: Prisma.JsonWithAggregatesFilter<"User">
-  roleId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
-  isAdmin?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
-  status?: Prisma.StringWithAggregatesFilter<"User"> | string
-  forcePasswordChange?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
-  passwordChangedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   lastLogin?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   emailVerified?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  forcePasswordChange?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  isAdmin?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  passwordChangedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  roleId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  status?: Prisma.StringWithAggregatesFilter<"User"> | string
 }
 
 export type UserCreateInput = {
@@ -388,26 +400,30 @@ export type UserCreateInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -418,26 +434,30 @@ export type UserUncheckedCreateInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -448,26 +468,30 @@ export type UserUpdateInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -478,26 +502,30 @@ export type UserUncheckedUpdateInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -508,14 +536,14 @@ export type UserCreateManyInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
 }
 
 export type UserUpdateManyMutationInput = {
@@ -526,13 +554,13 @@ export type UserUpdateManyMutationInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type UserUncheckedUpdateManyInput = {
@@ -543,14 +571,14 @@ export type UserUncheckedUpdateManyInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type UserListRelationFilter = {
@@ -571,14 +599,14 @@ export type UserCountOrderByAggregateInput = {
   avatarUrl?: Prisma.SortOrder
   anthropicApiKeyEncrypted?: Prisma.SortOrder
   preferences?: Prisma.SortOrder
-  roleId?: Prisma.SortOrder
-  isAdmin?: Prisma.SortOrder
-  status?: Prisma.SortOrder
-  forcePasswordChange?: Prisma.SortOrder
-  passwordChangedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrder
   emailVerified?: Prisma.SortOrder
+  forcePasswordChange?: Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
+  roleId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -588,14 +616,14 @@ export type UserMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
   anthropicApiKeyEncrypted?: Prisma.SortOrder
-  roleId?: Prisma.SortOrder
-  isAdmin?: Prisma.SortOrder
-  status?: Prisma.SortOrder
-  forcePasswordChange?: Prisma.SortOrder
-  passwordChangedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrder
   emailVerified?: Prisma.SortOrder
+  forcePasswordChange?: Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
+  roleId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
@@ -605,14 +633,14 @@ export type UserMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
   anthropicApiKeyEncrypted?: Prisma.SortOrder
-  roleId?: Prisma.SortOrder
-  isAdmin?: Prisma.SortOrder
-  status?: Prisma.SortOrder
-  forcePasswordChange?: Prisma.SortOrder
-  passwordChangedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrder
   emailVerified?: Prisma.SortOrder
+  forcePasswordChange?: Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
+  roleId?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type UserScalarRelationFilter = {
@@ -843,6 +871,68 @@ export type UserUpdateOneRequiredWithoutCmfRunsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCmfRunsInput, Prisma.UserUpdateWithoutCmfRunsInput>, Prisma.UserUncheckedUpdateWithoutCmfRunsInput>
 }
 
+export type UserCreateNestedOneWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput, Prisma.UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutError_audit_logs_error_audit_logs_user_idTousersInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput, Prisma.UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutError_audit_logs_error_audit_logs_user_idTousersInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutError_audit_logs_error_audit_logs_resolved_byTousersNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput, Prisma.UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput
+  upsert?: Prisma.UserUpsertWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput, Prisma.UserUpdateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput>, Prisma.UserUncheckedUpdateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput>
+}
+
+export type UserUpdateOneWithoutError_audit_logs_error_audit_logs_user_idTousersNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput, Prisma.UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutError_audit_logs_error_audit_logs_user_idTousersInput
+  upsert?: Prisma.UserUpsertWithoutError_audit_logs_error_audit_logs_user_idTousersInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutError_audit_logs_error_audit_logs_user_idTousersInput, Prisma.UserUpdateWithoutError_audit_logs_error_audit_logs_user_idTousersInput>, Prisma.UserUncheckedUpdateWithoutError_audit_logs_error_audit_logs_user_idTousersInput>
+}
+
+export type UserCreateNestedOneWithoutPinned_dashboardsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPinned_dashboardsInput, Prisma.UserUncheckedCreateWithoutPinned_dashboardsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPinned_dashboardsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPinned_dashboardsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPinned_dashboardsInput, Prisma.UserUncheckedCreateWithoutPinned_dashboardsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPinned_dashboardsInput
+  upsert?: Prisma.UserUpsertWithoutPinned_dashboardsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPinned_dashboardsInput, Prisma.UserUpdateWithoutPinned_dashboardsInput>, Prisma.UserUncheckedUpdateWithoutPinned_dashboardsInput>
+}
+
+export type UserCreateNestedOneWithoutPrompt_audit_logsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPrompt_audit_logsInput, Prisma.UserUncheckedCreateWithoutPrompt_audit_logsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPrompt_audit_logsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutPrompt_audit_logsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPrompt_audit_logsInput, Prisma.UserUncheckedCreateWithoutPrompt_audit_logsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPrompt_audit_logsInput
+  upsert?: Prisma.UserUpsertWithoutPrompt_audit_logsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPrompt_audit_logsInput, Prisma.UserUpdateWithoutPrompt_audit_logsInput>, Prisma.UserUncheckedUpdateWithoutPrompt_audit_logsInput>
+}
+
 export type UserCreateWithoutRoleInput = {
   id?: string
   email: string
@@ -851,25 +941,29 @@ export type UserCreateWithoutRoleInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRoleInput = {
@@ -880,25 +974,29 @@ export type UserUncheckedCreateWithoutRoleInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRoleInput = {
@@ -938,14 +1036,14 @@ export type UserScalarWhereInput = {
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
   anthropicApiKeyEncrypted?: Prisma.StringNullableFilter<"User"> | string | null
   preferences?: Prisma.JsonFilter<"User">
-  roleId?: Prisma.StringNullableFilter<"User"> | string | null
-  isAdmin?: Prisma.BoolFilter<"User"> | boolean
-  status?: Prisma.StringFilter<"User"> | string
-  forcePasswordChange?: Prisma.BoolFilter<"User"> | boolean
-  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   lastLogin?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   emailVerified?: Prisma.BoolFilter<"User"> | boolean
+  forcePasswordChange?: Prisma.BoolFilter<"User"> | boolean
+  isAdmin?: Prisma.BoolFilter<"User"> | boolean
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  roleId?: Prisma.StringNullableFilter<"User"> | string | null
+  status?: Prisma.StringFilter<"User"> | string
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -956,25 +1054,29 @@ export type UserCreateWithoutSessionsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -985,25 +1087,29 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -1030,25 +1136,29 @@ export type UserUpdateWithoutSessionsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -1059,25 +1169,29 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutConversationsInput = {
@@ -1088,25 +1202,29 @@ export type UserCreateWithoutConversationsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutConversationsInput = {
@@ -1117,25 +1235,29 @@ export type UserUncheckedCreateWithoutConversationsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutConversationsInput = {
@@ -1162,25 +1284,29 @@ export type UserUpdateWithoutConversationsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutConversationsInput = {
@@ -1191,25 +1317,29 @@ export type UserUncheckedUpdateWithoutConversationsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutArtifactsInput = {
@@ -1220,25 +1350,29 @@ export type UserCreateWithoutArtifactsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutArtifactsInput = {
@@ -1249,25 +1383,29 @@ export type UserUncheckedCreateWithoutArtifactsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutArtifactsInput = {
@@ -1294,25 +1432,29 @@ export type UserUpdateWithoutArtifactsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutArtifactsInput = {
@@ -1323,25 +1465,29 @@ export type UserUncheckedUpdateWithoutArtifactsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutMcpConnectionsInput = {
@@ -1352,25 +1498,29 @@ export type UserCreateWithoutMcpConnectionsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutMcpConnectionsInput = {
@@ -1381,25 +1531,29 @@ export type UserUncheckedCreateWithoutMcpConnectionsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutMcpConnectionsInput = {
@@ -1426,25 +1580,29 @@ export type UserUpdateWithoutMcpConnectionsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMcpConnectionsInput = {
@@ -1455,25 +1613,29 @@ export type UserUncheckedUpdateWithoutMcpConnectionsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutMemoryFilesInput = {
@@ -1484,25 +1646,29 @@ export type UserCreateWithoutMemoryFilesInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutMemoryFilesInput = {
@@ -1513,25 +1679,29 @@ export type UserUncheckedCreateWithoutMemoryFilesInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutMemoryFilesInput = {
@@ -1558,25 +1728,29 @@ export type UserUpdateWithoutMemoryFilesInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMemoryFilesInput = {
@@ -1587,25 +1761,29 @@ export type UserUncheckedUpdateWithoutMemoryFilesInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutInvitationsSentInput = {
@@ -1616,25 +1794,29 @@ export type UserCreateWithoutInvitationsSentInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutInvitationsSentInput = {
@@ -1645,25 +1827,29 @@ export type UserUncheckedCreateWithoutInvitationsSentInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutInvitationsSentInput = {
@@ -1690,25 +1876,29 @@ export type UserUpdateWithoutInvitationsSentInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInvitationsSentInput = {
@@ -1719,25 +1909,29 @@ export type UserUncheckedUpdateWithoutInvitationsSentInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -1748,25 +1942,29 @@ export type UserCreateWithoutAuditLogsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -1777,25 +1975,29 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -1822,25 +2024,29 @@ export type UserUpdateWithoutAuditLogsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -1851,25 +2057,29 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionLogsInput = {
@@ -1880,25 +2090,29 @@ export type UserCreateWithoutSessionLogsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutSessionLogsInput = {
@@ -1909,25 +2123,29 @@ export type UserUncheckedCreateWithoutSessionLogsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionLogsInput = {
@@ -1954,25 +2172,29 @@ export type UserUpdateWithoutSessionLogsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionLogsInput = {
@@ -1983,25 +2205,29 @@ export type UserUncheckedUpdateWithoutSessionLogsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutUsageRecordsInput = {
@@ -2012,25 +2238,29 @@ export type UserCreateWithoutUsageRecordsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutUsageRecordsInput = {
@@ -2041,25 +2271,29 @@ export type UserUncheckedCreateWithoutUsageRecordsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutUsageRecordsInput = {
@@ -2086,25 +2320,29 @@ export type UserUpdateWithoutUsageRecordsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUsageRecordsInput = {
@@ -2115,25 +2353,29 @@ export type UserUncheckedUpdateWithoutUsageRecordsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCmfPackagesInput = {
@@ -2144,25 +2386,29 @@ export type UserCreateWithoutCmfPackagesInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutCmfPackagesInput = {
@@ -2173,25 +2419,29 @@ export type UserUncheckedCreateWithoutCmfPackagesInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCmfPackagesInput = {
@@ -2218,25 +2468,29 @@ export type UserUpdateWithoutCmfPackagesInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCmfPackagesInput = {
@@ -2247,25 +2501,29 @@ export type UserUncheckedUpdateWithoutCmfPackagesInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCmfStagedUploadsInput = {
@@ -2276,25 +2534,29 @@ export type UserCreateWithoutCmfStagedUploadsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutCmfStagedUploadsInput = {
@@ -2305,25 +2567,29 @@ export type UserUncheckedCreateWithoutCmfStagedUploadsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCmfStagedUploadsInput = {
@@ -2350,25 +2616,29 @@ export type UserUpdateWithoutCmfStagedUploadsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCmfStagedUploadsInput = {
@@ -2379,25 +2649,29 @@ export type UserUncheckedUpdateWithoutCmfStagedUploadsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCmfRunsInput = {
@@ -2408,25 +2682,29 @@ export type UserCreateWithoutCmfRunsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
-  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
   artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
   cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutCmfRunsInput = {
@@ -2437,25 +2715,29 @@ export type UserUncheckedCreateWithoutCmfRunsInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: string | null
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
-  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
   artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
-  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
   cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCmfRunsInput = {
@@ -2482,25 +2764,29 @@ export type UserUpdateWithoutCmfRunsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCmfRunsInput = {
@@ -2511,25 +2797,621 @@ export type UserUncheckedUpdateWithoutCmfRunsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
+  artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
+}
+
+export type UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
+  artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput, Prisma.UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput>
+}
+
+export type UserCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
+  artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
+}
+
+export type UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
+  artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutError_audit_logs_error_audit_logs_user_idTousersInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput, Prisma.UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput>
+}
+
+export type UserUpsertWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput, Prisma.UserUncheckedUpdateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput, Prisma.UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput, Prisma.UserUncheckedUpdateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput>
+}
+
+export type UserUpdateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
+}
+
+export type UserUncheckedUpdateWithoutError_audit_logs_error_audit_logs_resolved_byTousersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserUpsertWithoutError_audit_logs_error_audit_logs_user_idTousersInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutError_audit_logs_error_audit_logs_user_idTousersInput, Prisma.UserUncheckedUpdateWithoutError_audit_logs_error_audit_logs_user_idTousersInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput, Prisma.UserUncheckedCreateWithoutError_audit_logs_error_audit_logs_user_idTousersInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutError_audit_logs_error_audit_logs_user_idTousersInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutError_audit_logs_error_audit_logs_user_idTousersInput, Prisma.UserUncheckedUpdateWithoutError_audit_logs_error_audit_logs_user_idTousersInput>
+}
+
+export type UserUpdateWithoutError_audit_logs_error_audit_logs_user_idTousersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
+}
+
+export type UserUncheckedUpdateWithoutError_audit_logs_error_audit_logs_user_idTousersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPinned_dashboardsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
+  artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
+}
+
+export type UserUncheckedCreateWithoutPinned_dashboardsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
+  artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPinned_dashboardsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPinned_dashboardsInput, Prisma.UserUncheckedCreateWithoutPinned_dashboardsInput>
+}
+
+export type UserUpsertWithoutPinned_dashboardsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPinned_dashboardsInput, Prisma.UserUncheckedUpdateWithoutPinned_dashboardsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPinned_dashboardsInput, Prisma.UserUncheckedCreateWithoutPinned_dashboardsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPinned_dashboardsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPinned_dashboardsInput, Prisma.UserUncheckedUpdateWithoutPinned_dashboardsInput>
+}
+
+export type UserUpdateWithoutPinned_dashboardsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPinned_dashboardsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPrompt_audit_logsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
+  artifacts?: Prisma.ArtifactCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogCreateNestedManyWithoutUserInput
+  role?: Prisma.RoleCreateNestedOneWithoutUsersInput
+}
+
+export type UserUncheckedCreateWithoutPrompt_audit_logsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  name?: string | null
+  avatarUrl?: string | null
+  anthropicApiKeyEncrypted?: string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  lastLogin?: Date | string | null
+  emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  roleId?: string | null
+  status?: string
+  artifacts?: Prisma.ArtifactUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  cmfPackages?: Prisma.PackageUncheckedCreateNestedManyWithoutCreatedByInput
+  cmfRuns?: Prisma.RunUncheckedCreateNestedManyWithoutUserInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedCreateNestedManyWithoutUserInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutUserInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_resolved_byTousersInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedCreateNestedManyWithoutUsers_error_audit_logs_user_idTousersInput
+  invitationsSent?: Prisma.InvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutUserInput
+  memoryFiles?: Prisma.MemoryFileUncheckedCreateNestedManyWithoutUserInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedCreateNestedManyWithoutUsersInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  usageRecords?: Prisma.UsageRecordUncheckedCreateNestedManyWithoutUserInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPrompt_audit_logsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPrompt_audit_logsInput, Prisma.UserUncheckedCreateWithoutPrompt_audit_logsInput>
+}
+
+export type UserUpsertWithoutPrompt_audit_logsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPrompt_audit_logsInput, Prisma.UserUncheckedUpdateWithoutPrompt_audit_logsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPrompt_audit_logsInput, Prisma.UserUncheckedCreateWithoutPrompt_audit_logsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPrompt_audit_logsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPrompt_audit_logsInput, Prisma.UserUncheckedUpdateWithoutPrompt_audit_logsInput>
+}
+
+export type UserUpdateWithoutPrompt_audit_logsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPrompt_audit_logsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
+  cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
+  cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyRoleInput = {
@@ -2540,13 +3422,13 @@ export type UserCreateManyRoleInput = {
   avatarUrl?: string | null
   anthropicApiKeyEncrypted?: string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: boolean
-  status?: string
-  forcePasswordChange?: boolean
-  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   lastLogin?: Date | string | null
   emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: Date | string | null
+  status?: string
 }
 
 export type UserUpdateWithoutRoleInput = {
@@ -2557,25 +3439,29 @@ export type UserUpdateWithoutRoleInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleInput = {
@@ -2586,25 +3472,29 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
   artifacts?: Prisma.ArtifactUncheckedUpdateManyWithoutUserNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
-  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
-  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
   cmfPackages?: Prisma.PackageUncheckedUpdateManyWithoutCreatedByNestedInput
   cmfRuns?: Prisma.RunUncheckedUpdateManyWithoutUserNestedInput
   cmfStagedUploads?: Prisma.StagedUploadUncheckedUpdateManyWithoutUserNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutUserNestedInput
+  error_audit_logs_error_audit_logs_resolved_byTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_resolved_byTousersNestedInput
+  error_audit_logs_error_audit_logs_user_idTousers?: Prisma.error_audit_logsUncheckedUpdateManyWithoutUsers_error_audit_logs_user_idTousersNestedInput
+  invitationsSent?: Prisma.InvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutUserNestedInput
+  memoryFiles?: Prisma.MemoryFileUncheckedUpdateManyWithoutUserNestedInput
+  pinned_dashboards?: Prisma.pinned_dashboardsUncheckedUpdateManyWithoutUsersNestedInput
+  prompt_audit_logs?: Prisma.prompt_audit_logsUncheckedUpdateManyWithoutUsersNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  usageRecords?: Prisma.UsageRecordUncheckedUpdateManyWithoutUserNestedInput
+  sessionLogs?: Prisma.UserSessionLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutRoleInput = {
@@ -2615,13 +3505,13 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   anthropicApiKeyEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   preferences?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  forcePasswordChange?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -2630,33 +3520,41 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
  */
 
 export type UserCountOutputType = {
-  conversations: number
   artifacts: number
-  mcpConnections: number
-  sessions: number
-  memoryFiles: number
   auditLogs: number
-  usageRecords: number
-  invitationsSent: number
-  sessionLogs: number
   cmfPackages: number
   cmfRuns: number
   cmfStagedUploads: number
+  conversations: number
+  error_audit_logs_error_audit_logs_resolved_byTousers: number
+  error_audit_logs_error_audit_logs_user_idTousers: number
+  invitationsSent: number
+  mcpConnections: number
+  memoryFiles: number
+  pinned_dashboards: number
+  prompt_audit_logs: number
+  sessions: number
+  usageRecords: number
+  sessionLogs: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  conversations?: boolean | UserCountOutputTypeCountConversationsArgs
   artifacts?: boolean | UserCountOutputTypeCountArtifactsArgs
-  mcpConnections?: boolean | UserCountOutputTypeCountMcpConnectionsArgs
-  sessions?: boolean | UserCountOutputTypeCountSessionsArgs
-  memoryFiles?: boolean | UserCountOutputTypeCountMemoryFilesArgs
   auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
-  usageRecords?: boolean | UserCountOutputTypeCountUsageRecordsArgs
-  invitationsSent?: boolean | UserCountOutputTypeCountInvitationsSentArgs
-  sessionLogs?: boolean | UserCountOutputTypeCountSessionLogsArgs
   cmfPackages?: boolean | UserCountOutputTypeCountCmfPackagesArgs
   cmfRuns?: boolean | UserCountOutputTypeCountCmfRunsArgs
   cmfStagedUploads?: boolean | UserCountOutputTypeCountCmfStagedUploadsArgs
+  conversations?: boolean | UserCountOutputTypeCountConversationsArgs
+  error_audit_logs_error_audit_logs_resolved_byTousers?: boolean | UserCountOutputTypeCountError_audit_logs_error_audit_logs_resolved_byTousersArgs
+  error_audit_logs_error_audit_logs_user_idTousers?: boolean | UserCountOutputTypeCountError_audit_logs_error_audit_logs_user_idTousersArgs
+  invitationsSent?: boolean | UserCountOutputTypeCountInvitationsSentArgs
+  mcpConnections?: boolean | UserCountOutputTypeCountMcpConnectionsArgs
+  memoryFiles?: boolean | UserCountOutputTypeCountMemoryFilesArgs
+  pinned_dashboards?: boolean | UserCountOutputTypeCountPinned_dashboardsArgs
+  prompt_audit_logs?: boolean | UserCountOutputTypeCountPrompt_audit_logsArgs
+  sessions?: boolean | UserCountOutputTypeCountSessionsArgs
+  usageRecords?: boolean | UserCountOutputTypeCountUsageRecordsArgs
+  sessionLogs?: boolean | UserCountOutputTypeCountSessionLogsArgs
 }
 
 /**
@@ -2672,13 +3570,6 @@ export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ConversationWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
 export type UserCountOutputTypeCountArtifactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ArtifactWhereInput
 }
@@ -2686,50 +3577,8 @@ export type UserCountOutputTypeCountArtifactsArgs<ExtArgs extends runtime.Types.
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountMcpConnectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.McpConnectionWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.SessionWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountMemoryFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.MemoryFileWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
 export type UserCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AuditLogWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountUsageRecordsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.UsageRecordWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountInvitationsSentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.InvitationWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountSessionLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.UserSessionLogWhereInput
 }
 
 /**
@@ -2753,6 +3602,83 @@ export type UserCountOutputTypeCountCmfStagedUploadsArgs<ExtArgs extends runtime
   where?: Prisma.StagedUploadWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ConversationWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountError_audit_logs_error_audit_logs_resolved_byTousersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.error_audit_logsWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountError_audit_logs_error_audit_logs_user_idTousersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.error_audit_logsWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountInvitationsSentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.InvitationWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountMcpConnectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.McpConnectionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountMemoryFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MemoryFileWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPinned_dashboardsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.pinned_dashboardsWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPrompt_audit_logsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.prompt_audit_logsWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SessionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountUsageRecordsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UsageRecordWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountSessionLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserSessionLogWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2762,27 +3688,31 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   avatarUrl?: boolean
   anthropicApiKeyEncrypted?: boolean
   preferences?: boolean
-  roleId?: boolean
-  isAdmin?: boolean
-  status?: boolean
-  forcePasswordChange?: boolean
-  passwordChangedAt?: boolean
   createdAt?: boolean
   lastLogin?: boolean
   emailVerified?: boolean
-  role?: boolean | Prisma.User$roleArgs<ExtArgs>
-  conversations?: boolean | Prisma.User$conversationsArgs<ExtArgs>
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: boolean
+  roleId?: boolean
+  status?: boolean
   artifacts?: boolean | Prisma.User$artifactsArgs<ExtArgs>
-  mcpConnections?: boolean | Prisma.User$mcpConnectionsArgs<ExtArgs>
-  sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
-  memoryFiles?: boolean | Prisma.User$memoryFilesArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
-  usageRecords?: boolean | Prisma.User$usageRecordsArgs<ExtArgs>
-  invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
-  sessionLogs?: boolean | Prisma.User$sessionLogsArgs<ExtArgs>
   cmfPackages?: boolean | Prisma.User$cmfPackagesArgs<ExtArgs>
   cmfRuns?: boolean | Prisma.User$cmfRunsArgs<ExtArgs>
   cmfStagedUploads?: boolean | Prisma.User$cmfStagedUploadsArgs<ExtArgs>
+  conversations?: boolean | Prisma.User$conversationsArgs<ExtArgs>
+  error_audit_logs_error_audit_logs_resolved_byTousers?: boolean | Prisma.User$error_audit_logs_error_audit_logs_resolved_byTousersArgs<ExtArgs>
+  error_audit_logs_error_audit_logs_user_idTousers?: boolean | Prisma.User$error_audit_logs_error_audit_logs_user_idTousersArgs<ExtArgs>
+  invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
+  mcpConnections?: boolean | Prisma.User$mcpConnectionsArgs<ExtArgs>
+  memoryFiles?: boolean | Prisma.User$memoryFilesArgs<ExtArgs>
+  pinned_dashboards?: boolean | Prisma.User$pinned_dashboardsArgs<ExtArgs>
+  prompt_audit_logs?: boolean | Prisma.User$prompt_audit_logsArgs<ExtArgs>
+  sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
+  usageRecords?: boolean | Prisma.User$usageRecordsArgs<ExtArgs>
+  sessionLogs?: boolean | Prisma.User$sessionLogsArgs<ExtArgs>
+  role?: boolean | Prisma.User$roleArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2794,14 +3724,14 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   avatarUrl?: boolean
   anthropicApiKeyEncrypted?: boolean
   preferences?: boolean
-  roleId?: boolean
-  isAdmin?: boolean
-  status?: boolean
-  forcePasswordChange?: boolean
-  passwordChangedAt?: boolean
   createdAt?: boolean
   lastLogin?: boolean
   emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: boolean
+  roleId?: boolean
+  status?: boolean
   role?: boolean | Prisma.User$roleArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2813,14 +3743,14 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   avatarUrl?: boolean
   anthropicApiKeyEncrypted?: boolean
   preferences?: boolean
-  roleId?: boolean
-  isAdmin?: boolean
-  status?: boolean
-  forcePasswordChange?: boolean
-  passwordChangedAt?: boolean
   createdAt?: boolean
   lastLogin?: boolean
   emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: boolean
+  roleId?: boolean
+  status?: boolean
   role?: boolean | Prisma.User$roleArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2832,31 +3762,35 @@ export type UserSelectScalar = {
   avatarUrl?: boolean
   anthropicApiKeyEncrypted?: boolean
   preferences?: boolean
-  roleId?: boolean
-  isAdmin?: boolean
-  status?: boolean
-  forcePasswordChange?: boolean
-  passwordChangedAt?: boolean
   createdAt?: boolean
   lastLogin?: boolean
   emailVerified?: boolean
+  forcePasswordChange?: boolean
+  isAdmin?: boolean
+  passwordChangedAt?: boolean
+  roleId?: boolean
+  status?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "name" | "avatarUrl" | "anthropicApiKeyEncrypted" | "preferences" | "roleId" | "isAdmin" | "status" | "forcePasswordChange" | "passwordChangedAt" | "createdAt" | "lastLogin" | "emailVerified", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "name" | "avatarUrl" | "anthropicApiKeyEncrypted" | "preferences" | "createdAt" | "lastLogin" | "emailVerified" | "forcePasswordChange" | "isAdmin" | "passwordChangedAt" | "roleId" | "status", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  role?: boolean | Prisma.User$roleArgs<ExtArgs>
-  conversations?: boolean | Prisma.User$conversationsArgs<ExtArgs>
   artifacts?: boolean | Prisma.User$artifactsArgs<ExtArgs>
-  mcpConnections?: boolean | Prisma.User$mcpConnectionsArgs<ExtArgs>
-  sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
-  memoryFiles?: boolean | Prisma.User$memoryFilesArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
-  usageRecords?: boolean | Prisma.User$usageRecordsArgs<ExtArgs>
-  invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
-  sessionLogs?: boolean | Prisma.User$sessionLogsArgs<ExtArgs>
   cmfPackages?: boolean | Prisma.User$cmfPackagesArgs<ExtArgs>
   cmfRuns?: boolean | Prisma.User$cmfRunsArgs<ExtArgs>
   cmfStagedUploads?: boolean | Prisma.User$cmfStagedUploadsArgs<ExtArgs>
+  conversations?: boolean | Prisma.User$conversationsArgs<ExtArgs>
+  error_audit_logs_error_audit_logs_resolved_byTousers?: boolean | Prisma.User$error_audit_logs_error_audit_logs_resolved_byTousersArgs<ExtArgs>
+  error_audit_logs_error_audit_logs_user_idTousers?: boolean | Prisma.User$error_audit_logs_error_audit_logs_user_idTousersArgs<ExtArgs>
+  invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
+  mcpConnections?: boolean | Prisma.User$mcpConnectionsArgs<ExtArgs>
+  memoryFiles?: boolean | Prisma.User$memoryFilesArgs<ExtArgs>
+  pinned_dashboards?: boolean | Prisma.User$pinned_dashboardsArgs<ExtArgs>
+  prompt_audit_logs?: boolean | Prisma.User$prompt_audit_logsArgs<ExtArgs>
+  sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
+  usageRecords?: boolean | Prisma.User$usageRecordsArgs<ExtArgs>
+  sessionLogs?: boolean | Prisma.User$sessionLogsArgs<ExtArgs>
+  role?: boolean | Prisma.User$roleArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2869,19 +3803,23 @@ export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
-    role: Prisma.$RolePayload<ExtArgs> | null
-    conversations: Prisma.$ConversationPayload<ExtArgs>[]
     artifacts: Prisma.$ArtifactPayload<ExtArgs>[]
-    mcpConnections: Prisma.$McpConnectionPayload<ExtArgs>[]
-    sessions: Prisma.$SessionPayload<ExtArgs>[]
-    memoryFiles: Prisma.$MemoryFilePayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
-    usageRecords: Prisma.$UsageRecordPayload<ExtArgs>[]
-    invitationsSent: Prisma.$InvitationPayload<ExtArgs>[]
-    sessionLogs: Prisma.$UserSessionLogPayload<ExtArgs>[]
     cmfPackages: Prisma.$PackagePayload<ExtArgs>[]
     cmfRuns: Prisma.$RunPayload<ExtArgs>[]
     cmfStagedUploads: Prisma.$StagedUploadPayload<ExtArgs>[]
+    conversations: Prisma.$ConversationPayload<ExtArgs>[]
+    error_audit_logs_error_audit_logs_resolved_byTousers: Prisma.$error_audit_logsPayload<ExtArgs>[]
+    error_audit_logs_error_audit_logs_user_idTousers: Prisma.$error_audit_logsPayload<ExtArgs>[]
+    invitationsSent: Prisma.$InvitationPayload<ExtArgs>[]
+    mcpConnections: Prisma.$McpConnectionPayload<ExtArgs>[]
+    memoryFiles: Prisma.$MemoryFilePayload<ExtArgs>[]
+    pinned_dashboards: Prisma.$pinned_dashboardsPayload<ExtArgs>[]
+    prompt_audit_logs: Prisma.$prompt_audit_logsPayload<ExtArgs>[]
+    sessions: Prisma.$SessionPayload<ExtArgs>[]
+    usageRecords: Prisma.$UsageRecordPayload<ExtArgs>[]
+    sessionLogs: Prisma.$UserSessionLogPayload<ExtArgs>[]
+    role: Prisma.$RolePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2891,14 +3829,14 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     avatarUrl: string | null
     anthropicApiKeyEncrypted: string | null
     preferences: runtime.JsonValue
-    roleId: string | null
-    isAdmin: boolean
-    status: string
-    forcePasswordChange: boolean
-    passwordChangedAt: Date | null
     createdAt: Date
     lastLogin: Date | null
     emailVerified: boolean
+    forcePasswordChange: boolean
+    isAdmin: boolean
+    passwordChangedAt: Date | null
+    roleId: string | null
+    status: string
   }, ExtArgs["result"]["user"]>
   composites: {}
 }
@@ -3293,19 +4231,23 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  role<T extends Prisma.User$roleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$roleArgs<ExtArgs>>): Prisma.Prisma__RoleClient<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  conversations<T extends Prisma.User$conversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$conversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConversationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   artifacts<T extends Prisma.User$artifactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$artifactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ArtifactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  mcpConnections<T extends Prisma.User$mcpConnectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$mcpConnectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$McpConnectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  sessions<T extends Prisma.User$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  memoryFiles<T extends Prisma.User$memoryFilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$memoryFilesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MemoryFilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  usageRecords<T extends Prisma.User$usageRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$usageRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UsageRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  invitationsSent<T extends Prisma.User$invitationsSentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitationsSentArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  sessionLogs<T extends Prisma.User$sessionLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserSessionLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   cmfPackages<T extends Prisma.User$cmfPackagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$cmfPackagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PackagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   cmfRuns<T extends Prisma.User$cmfRunsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$cmfRunsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   cmfStagedUploads<T extends Prisma.User$cmfStagedUploadsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$cmfStagedUploadsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StagedUploadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  conversations<T extends Prisma.User$conversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$conversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConversationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  error_audit_logs_error_audit_logs_resolved_byTousers<T extends Prisma.User$error_audit_logs_error_audit_logs_resolved_byTousersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$error_audit_logs_error_audit_logs_resolved_byTousersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$error_audit_logsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  error_audit_logs_error_audit_logs_user_idTousers<T extends Prisma.User$error_audit_logs_error_audit_logs_user_idTousersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$error_audit_logs_error_audit_logs_user_idTousersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$error_audit_logsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  invitationsSent<T extends Prisma.User$invitationsSentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitationsSentArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  mcpConnections<T extends Prisma.User$mcpConnectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$mcpConnectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$McpConnectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  memoryFiles<T extends Prisma.User$memoryFilesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$memoryFilesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MemoryFilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  pinned_dashboards<T extends Prisma.User$pinned_dashboardsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pinned_dashboardsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$pinned_dashboardsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  prompt_audit_logs<T extends Prisma.User$prompt_audit_logsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$prompt_audit_logsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$prompt_audit_logsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sessions<T extends Prisma.User$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  usageRecords<T extends Prisma.User$usageRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$usageRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UsageRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sessionLogs<T extends Prisma.User$sessionLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserSessionLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  role<T extends Prisma.User$roleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$roleArgs<ExtArgs>>): Prisma.Prisma__RoleClient<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3342,14 +4284,14 @@ export interface UserFieldRefs {
   readonly avatarUrl: Prisma.FieldRef<"User", 'String'>
   readonly anthropicApiKeyEncrypted: Prisma.FieldRef<"User", 'String'>
   readonly preferences: Prisma.FieldRef<"User", 'Json'>
-  readonly roleId: Prisma.FieldRef<"User", 'String'>
-  readonly isAdmin: Prisma.FieldRef<"User", 'Boolean'>
-  readonly status: Prisma.FieldRef<"User", 'String'>
-  readonly forcePasswordChange: Prisma.FieldRef<"User", 'Boolean'>
-  readonly passwordChangedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly lastLogin: Prisma.FieldRef<"User", 'DateTime'>
   readonly emailVerified: Prisma.FieldRef<"User", 'Boolean'>
+  readonly forcePasswordChange: Prisma.FieldRef<"User", 'Boolean'>
+  readonly isAdmin: Prisma.FieldRef<"User", 'Boolean'>
+  readonly passwordChangedAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly roleId: Prisma.FieldRef<"User", 'String'>
+  readonly status: Prisma.FieldRef<"User", 'String'>
 }
     
 
@@ -3751,49 +4693,6 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * User.role
- */
-export type User$roleArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Role
-   */
-  select?: Prisma.RoleSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Role
-   */
-  omit?: Prisma.RoleOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.RoleInclude<ExtArgs> | null
-  where?: Prisma.RoleWhereInput
-}
-
-/**
- * User.conversations
- */
-export type User$conversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Conversation
-   */
-  select?: Prisma.ConversationSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Conversation
-   */
-  omit?: Prisma.ConversationOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ConversationInclude<ExtArgs> | null
-  where?: Prisma.ConversationWhereInput
-  orderBy?: Prisma.ConversationOrderByWithRelationInput | Prisma.ConversationOrderByWithRelationInput[]
-  cursor?: Prisma.ConversationWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ConversationScalarFieldEnum | Prisma.ConversationScalarFieldEnum[]
-}
-
-/**
  * User.artifacts
  */
 export type User$artifactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3818,78 +4717,6 @@ export type User$artifactsArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * User.mcpConnections
- */
-export type User$mcpConnectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the McpConnection
-   */
-  select?: Prisma.McpConnectionSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the McpConnection
-   */
-  omit?: Prisma.McpConnectionOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.McpConnectionInclude<ExtArgs> | null
-  where?: Prisma.McpConnectionWhereInput
-  orderBy?: Prisma.McpConnectionOrderByWithRelationInput | Prisma.McpConnectionOrderByWithRelationInput[]
-  cursor?: Prisma.McpConnectionWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.McpConnectionScalarFieldEnum | Prisma.McpConnectionScalarFieldEnum[]
-}
-
-/**
- * User.sessions
- */
-export type User$sessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Session
-   */
-  select?: Prisma.SessionSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Session
-   */
-  omit?: Prisma.SessionOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.SessionInclude<ExtArgs> | null
-  where?: Prisma.SessionWhereInput
-  orderBy?: Prisma.SessionOrderByWithRelationInput | Prisma.SessionOrderByWithRelationInput[]
-  cursor?: Prisma.SessionWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.SessionScalarFieldEnum | Prisma.SessionScalarFieldEnum[]
-}
-
-/**
- * User.memoryFiles
- */
-export type User$memoryFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the MemoryFile
-   */
-  select?: Prisma.MemoryFileSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the MemoryFile
-   */
-  omit?: Prisma.MemoryFileOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.MemoryFileInclude<ExtArgs> | null
-  where?: Prisma.MemoryFileWhereInput
-  orderBy?: Prisma.MemoryFileOrderByWithRelationInput | Prisma.MemoryFileOrderByWithRelationInput[]
-  cursor?: Prisma.MemoryFileWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.MemoryFileScalarFieldEnum | Prisma.MemoryFileScalarFieldEnum[]
-}
-
-/**
  * User.auditLogs
  */
 export type User$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3911,78 +4738,6 @@ export type User$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.AuditLogScalarFieldEnum | Prisma.AuditLogScalarFieldEnum[]
-}
-
-/**
- * User.usageRecords
- */
-export type User$usageRecordsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the UsageRecord
-   */
-  select?: Prisma.UsageRecordSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the UsageRecord
-   */
-  omit?: Prisma.UsageRecordOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.UsageRecordInclude<ExtArgs> | null
-  where?: Prisma.UsageRecordWhereInput
-  orderBy?: Prisma.UsageRecordOrderByWithRelationInput | Prisma.UsageRecordOrderByWithRelationInput[]
-  cursor?: Prisma.UsageRecordWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.UsageRecordScalarFieldEnum | Prisma.UsageRecordScalarFieldEnum[]
-}
-
-/**
- * User.invitationsSent
- */
-export type User$invitationsSentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Invitation
-   */
-  select?: Prisma.InvitationSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Invitation
-   */
-  omit?: Prisma.InvitationOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.InvitationInclude<ExtArgs> | null
-  where?: Prisma.InvitationWhereInput
-  orderBy?: Prisma.InvitationOrderByWithRelationInput | Prisma.InvitationOrderByWithRelationInput[]
-  cursor?: Prisma.InvitationWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.InvitationScalarFieldEnum | Prisma.InvitationScalarFieldEnum[]
-}
-
-/**
- * User.sessionLogs
- */
-export type User$sessionLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the UserSessionLog
-   */
-  select?: Prisma.UserSessionLogSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the UserSessionLog
-   */
-  omit?: Prisma.UserSessionLogOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.UserSessionLogInclude<ExtArgs> | null
-  where?: Prisma.UserSessionLogWhereInput
-  orderBy?: Prisma.UserSessionLogOrderByWithRelationInput | Prisma.UserSessionLogOrderByWithRelationInput[]
-  cursor?: Prisma.UserSessionLogWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.UserSessionLogScalarFieldEnum | Prisma.UserSessionLogScalarFieldEnum[]
 }
 
 /**
@@ -4055,6 +4810,289 @@ export type User$cmfStagedUploadsArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.StagedUploadScalarFieldEnum | Prisma.StagedUploadScalarFieldEnum[]
+}
+
+/**
+ * User.conversations
+ */
+export type User$conversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Conversation
+   */
+  select?: Prisma.ConversationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Conversation
+   */
+  omit?: Prisma.ConversationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ConversationInclude<ExtArgs> | null
+  where?: Prisma.ConversationWhereInput
+  orderBy?: Prisma.ConversationOrderByWithRelationInput | Prisma.ConversationOrderByWithRelationInput[]
+  cursor?: Prisma.ConversationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ConversationScalarFieldEnum | Prisma.ConversationScalarFieldEnum[]
+}
+
+/**
+ * User.error_audit_logs_error_audit_logs_resolved_byTousers
+ */
+export type User$error_audit_logs_error_audit_logs_resolved_byTousersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the error_audit_logs
+   */
+  select?: Prisma.error_audit_logsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the error_audit_logs
+   */
+  omit?: Prisma.error_audit_logsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.error_audit_logsInclude<ExtArgs> | null
+  where?: Prisma.error_audit_logsWhereInput
+  orderBy?: Prisma.error_audit_logsOrderByWithRelationInput | Prisma.error_audit_logsOrderByWithRelationInput[]
+  cursor?: Prisma.error_audit_logsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Error_audit_logsScalarFieldEnum | Prisma.Error_audit_logsScalarFieldEnum[]
+}
+
+/**
+ * User.error_audit_logs_error_audit_logs_user_idTousers
+ */
+export type User$error_audit_logs_error_audit_logs_user_idTousersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the error_audit_logs
+   */
+  select?: Prisma.error_audit_logsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the error_audit_logs
+   */
+  omit?: Prisma.error_audit_logsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.error_audit_logsInclude<ExtArgs> | null
+  where?: Prisma.error_audit_logsWhereInput
+  orderBy?: Prisma.error_audit_logsOrderByWithRelationInput | Prisma.error_audit_logsOrderByWithRelationInput[]
+  cursor?: Prisma.error_audit_logsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Error_audit_logsScalarFieldEnum | Prisma.Error_audit_logsScalarFieldEnum[]
+}
+
+/**
+ * User.invitationsSent
+ */
+export type User$invitationsSentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Invitation
+   */
+  select?: Prisma.InvitationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Invitation
+   */
+  omit?: Prisma.InvitationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.InvitationInclude<ExtArgs> | null
+  where?: Prisma.InvitationWhereInput
+  orderBy?: Prisma.InvitationOrderByWithRelationInput | Prisma.InvitationOrderByWithRelationInput[]
+  cursor?: Prisma.InvitationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.InvitationScalarFieldEnum | Prisma.InvitationScalarFieldEnum[]
+}
+
+/**
+ * User.mcpConnections
+ */
+export type User$mcpConnectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the McpConnection
+   */
+  select?: Prisma.McpConnectionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the McpConnection
+   */
+  omit?: Prisma.McpConnectionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.McpConnectionInclude<ExtArgs> | null
+  where?: Prisma.McpConnectionWhereInput
+  orderBy?: Prisma.McpConnectionOrderByWithRelationInput | Prisma.McpConnectionOrderByWithRelationInput[]
+  cursor?: Prisma.McpConnectionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.McpConnectionScalarFieldEnum | Prisma.McpConnectionScalarFieldEnum[]
+}
+
+/**
+ * User.memoryFiles
+ */
+export type User$memoryFilesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MemoryFile
+   */
+  select?: Prisma.MemoryFileSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MemoryFile
+   */
+  omit?: Prisma.MemoryFileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MemoryFileInclude<ExtArgs> | null
+  where?: Prisma.MemoryFileWhereInput
+  orderBy?: Prisma.MemoryFileOrderByWithRelationInput | Prisma.MemoryFileOrderByWithRelationInput[]
+  cursor?: Prisma.MemoryFileWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MemoryFileScalarFieldEnum | Prisma.MemoryFileScalarFieldEnum[]
+}
+
+/**
+ * User.pinned_dashboards
+ */
+export type User$pinned_dashboardsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the pinned_dashboards
+   */
+  select?: Prisma.pinned_dashboardsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the pinned_dashboards
+   */
+  omit?: Prisma.pinned_dashboardsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.pinned_dashboardsInclude<ExtArgs> | null
+  where?: Prisma.pinned_dashboardsWhereInput
+  orderBy?: Prisma.pinned_dashboardsOrderByWithRelationInput | Prisma.pinned_dashboardsOrderByWithRelationInput[]
+  cursor?: Prisma.pinned_dashboardsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Pinned_dashboardsScalarFieldEnum | Prisma.Pinned_dashboardsScalarFieldEnum[]
+}
+
+/**
+ * User.prompt_audit_logs
+ */
+export type User$prompt_audit_logsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the prompt_audit_logs
+   */
+  select?: Prisma.prompt_audit_logsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the prompt_audit_logs
+   */
+  omit?: Prisma.prompt_audit_logsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.prompt_audit_logsInclude<ExtArgs> | null
+  where?: Prisma.prompt_audit_logsWhereInput
+  orderBy?: Prisma.prompt_audit_logsOrderByWithRelationInput | Prisma.prompt_audit_logsOrderByWithRelationInput[]
+  cursor?: Prisma.prompt_audit_logsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Prompt_audit_logsScalarFieldEnum | Prisma.Prompt_audit_logsScalarFieldEnum[]
+}
+
+/**
+ * User.sessions
+ */
+export type User$sessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Session
+   */
+  select?: Prisma.SessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Session
+   */
+  omit?: Prisma.SessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SessionInclude<ExtArgs> | null
+  where?: Prisma.SessionWhereInput
+  orderBy?: Prisma.SessionOrderByWithRelationInput | Prisma.SessionOrderByWithRelationInput[]
+  cursor?: Prisma.SessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SessionScalarFieldEnum | Prisma.SessionScalarFieldEnum[]
+}
+
+/**
+ * User.usageRecords
+ */
+export type User$usageRecordsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UsageRecord
+   */
+  select?: Prisma.UsageRecordSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UsageRecord
+   */
+  omit?: Prisma.UsageRecordOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UsageRecordInclude<ExtArgs> | null
+  where?: Prisma.UsageRecordWhereInput
+  orderBy?: Prisma.UsageRecordOrderByWithRelationInput | Prisma.UsageRecordOrderByWithRelationInput[]
+  cursor?: Prisma.UsageRecordWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UsageRecordScalarFieldEnum | Prisma.UsageRecordScalarFieldEnum[]
+}
+
+/**
+ * User.sessionLogs
+ */
+export type User$sessionLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserSessionLog
+   */
+  select?: Prisma.UserSessionLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserSessionLog
+   */
+  omit?: Prisma.UserSessionLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserSessionLogInclude<ExtArgs> | null
+  where?: Prisma.UserSessionLogWhereInput
+  orderBy?: Prisma.UserSessionLogOrderByWithRelationInput | Prisma.UserSessionLogOrderByWithRelationInput[]
+  cursor?: Prisma.UserSessionLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserSessionLogScalarFieldEnum | Prisma.UserSessionLogScalarFieldEnum[]
+}
+
+/**
+ * User.role
+ */
+export type User$roleArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Role
+   */
+  select?: Prisma.RoleSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Role
+   */
+  omit?: Prisma.RoleOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RoleInclude<ExtArgs> | null
+  where?: Prisma.RoleWhereInput
 }
 
 /**

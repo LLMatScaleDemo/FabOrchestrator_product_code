@@ -1,7 +1,3 @@
-// Prisma schema for Admin Athena + Claude_ai_athena (shared database)
-// SOURCE OF TRUTH - run migrations from admin_athena, regenerate in both apps
-// Extended from Athena's original 7 models with RBAC + audit + usage models
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -11,116 +7,100 @@ datasource db {
   provider = "postgresql"
 }
 
-// ============================================================================
-// RBAC MODEL
-// ============================================================================
-
-// Role - defines permissions, model access, and limits for users
 model Role {
-  id                        String   @id @default(uuid())
-  name                      String   @unique
-  description               String?
-  isSystemRole              Boolean  @default(false) @map("is_system_role")
-  permissions               Json     @default("[]")                          // ["admin","chat","mcp","artifacts","file_upload","web_search"]
-  allowedModels             Json     @default("[]") @map("allowed_models")   // ["claude-opus-4-6", ...]
-  systemInstructions        String?  @map("system_instructions") @db.Text
-  customInstructionsEnabled Boolean  @default(true) @map("custom_instructions_enabled")
-  customInstructionsMaxLength Int    @default(1000) @map("custom_instructions_max_length")
-  personalMcpEnabled        Boolean  @default(false) @map("personal_mcp_enabled")
-  personalMcpMaxCount       Int      @default(3) @map("personal_mcp_max_count")
-  dailyRequestLimit         Int?     @map("daily_request_limit")             // null = unlimited
-  dailyTokenLimit           Int?     @map("daily_token_limit")               // null = unlimited
-  promptSuggestions         Json     @default("[]") @map("prompt_suggestions")
-  createdAt                 DateTime @default(now()) @map("created_at")
-  updatedAt                 DateTime @updatedAt @map("updated_at")
-
-  users          User[]
-  mcpConnections McpConnection[]
-  invitations    Invitation[]
+  id                          String          @id @default(uuid())
+  name                        String          @unique
+  description                 String?
+  isSystemRole                Boolean         @default(false) @map("is_system_role")
+  permissions                 Json            @default("[]")
+  allowedModels               Json            @default("[]") @map("allowed_models")
+  systemInstructions          String?         @map("system_instructions")
+  customInstructionsEnabled   Boolean         @default(true) @map("custom_instructions_enabled")
+  customInstructionsMaxLength Int             @default(1000) @map("custom_instructions_max_length")
+  personalMcpEnabled          Boolean         @default(false) @map("personal_mcp_enabled")
+  personalMcpMaxCount         Int             @default(3) @map("personal_mcp_max_count")
+  dailyRequestLimit           Int?            @map("daily_request_limit")
+  dailyTokenLimit             Int?            @map("daily_token_limit")
+  promptSuggestions           Json            @default("[]") @map("prompt_suggestions")
+  createdAt                   DateTime        @default(now()) @map("created_at")
+  updatedAt                   DateTime        @updatedAt @map("updated_at")
+  invitations                 Invitation[]
+  mcpConnections              McpConnection[]
+  users                       User[]
 
   @@map("roles")
 }
 
-// ============================================================================
-// CORE USER & SESSION MODELS
-// ============================================================================
-
-// Users table - authentication, preferences, and role assignment
 model User {
-  id                        String    @id @default(uuid())
-  email                     String    @unique
-  passwordHash              String    @map("password_hash")
-  name                      String?
-  avatarUrl                 String?   @map("avatar_url")
-  anthropicApiKeyEncrypted  String?   @map("anthropic_api_key_encrypted")
-  preferences               Json      @default("{\"theme\": \"system\", \"fontSize\": 16, \"codeTheme\": \"github-dark\", \"messageDensity\": \"comfortable\"}")
-  roleId                    String?   @map("role_id")
-  isAdmin                   Boolean   @default(false) @map("is_admin")
-  status                    String    @default("ACTIVE")                     // ACTIVE | SUSPENDED
-  forcePasswordChange       Boolean   @default(false) @map("force_password_change")
-  passwordChangedAt         DateTime? @map("password_changed_at")
-  createdAt                 DateTime  @default(now()) @map("created_at")
-  lastLogin                 DateTime? @map("last_login")
-  emailVerified             Boolean   @default(false) @map("email_verified")
-
-  role           Role?          @relation(fields: [roleId], references: [id])
-  conversations  Conversation[]
-  artifacts      Artifact[]
-  mcpConnections McpConnection[]
-  sessions       Session[]
-  memoryFiles    MemoryFile[]
-  auditLogs      AuditLog[]
-  usageRecords   UsageRecord[]
-  invitationsSent Invitation[] @relation("InvitedByUser")
-  sessionLogs    UserSessionLog[]
-  cmfPackages    Package[]
-  cmfRuns        Run[]
-  cmfStagedUploads StagedUpload[]
+  id                                                   String              @id @default(uuid())
+  email                                                String              @unique
+  passwordHash                                         String              @map("password_hash")
+  name                                                 String?
+  avatarUrl                                            String?             @map("avatar_url")
+  anthropicApiKeyEncrypted                             String?             @map("anthropic_api_key_encrypted")
+  preferences                                          Json                @default("{\"theme\": \"system\", \"fontSize\": 16, \"codeTheme\": \"github-dark\", \"messageDensity\": \"comfortable\"}")
+  createdAt                                            DateTime            @default(now()) @map("created_at")
+  lastLogin                                            DateTime?           @map("last_login")
+  emailVerified                                        Boolean             @default(false) @map("email_verified")
+  forcePasswordChange                                  Boolean             @default(false) @map("force_password_change")
+  isAdmin                                              Boolean             @default(false) @map("is_admin")
+  passwordChangedAt                                    DateTime?           @map("password_changed_at")
+  roleId                                               String?             @map("role_id")
+  status                                               String              @default("ACTIVE")
+  artifacts                                            Artifact[]
+  auditLogs                                            AuditLog[]
+  cmfPackages                                          Package[]
+  cmfRuns                                              Run[]
+  cmfStagedUploads                                     StagedUpload[]
+  conversations                                        Conversation[]
+  error_audit_logs_error_audit_logs_resolved_byTousers error_audit_logs[]  @relation("error_audit_logs_resolved_byTousers")
+  error_audit_logs_error_audit_logs_user_idTousers     error_audit_logs[]  @relation("error_audit_logs_user_idTousers")
+  invitationsSent                                      Invitation[]        @relation("InvitedByUser")
+  mcpConnections                                       McpConnection[]
+  memoryFiles                                          MemoryFile[]
+  pinned_dashboards                                    pinned_dashboards[]
+  prompt_audit_logs                                    prompt_audit_logs[]
+  sessions                                             Session[]
+  usageRecords                                         UsageRecord[]
+  sessionLogs                                          UserSessionLog[]
+  role                                                 Role?               @relation(fields: [roleId], references: [id])
 
   @@index([email])
   @@map("users")
 }
 
-// Sessions table - session management
 model Session {
-  id        String    @id @default(uuid())
-  userId    String    @map("user_id")
-  token     String    @unique
-  expiresAt DateTime  @map("expires_at")
-  createdAt DateTime  @default(now()) @map("created_at")
-  userAgent String?   @map("user_agent")
-  ipAddress String?   @map("ip_address")
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  token      String    @unique
+  expiresAt  DateTime  @map("expires_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  ipAddress  String?   @map("ip_address")
   lastUsedAt DateTime? @map("last_used_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent  String?   @map("user_agent")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])
   @@map("sessions")
 }
 
-// ============================================================================
-// CHAT DATA MODELS (unchanged from Athena)
-// ============================================================================
-
-// Conversations table - chat conversation metadata
 model Conversation {
-  id            String    @id @default(uuid())
-  userId        String    @map("user_id")
-  title         String    @default("New Conversation")
+  id            String     @id @default(uuid())
+  userId        String     @map("user_id")
+  title         String     @default("New Conversation")
   model         String
-  agent         String    @default("chat")                        // "chat" | "modeling" — separates Modeling Agent history
-  activeMcpIds  Json      @default("[]") @map("active_mcp_ids")
-  isPinned      Boolean   @default(false) @map("is_pinned")
-  isShared      Boolean   @default(false) @map("is_shared")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  lastMessageAt DateTime? @map("last_message_at")
-  deletedAt     DateTime? @map("deleted_at")
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  Message[]
-  artifacts Artifact[]
+  activeMcpIds  Json       @default("[]") @map("active_mcp_ids")
+  isPinned      Boolean    @default(false) @map("is_pinned")
+  isShared      Boolean    @default(false) @map("is_shared")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  lastMessageAt DateTime?  @map("last_message_at")
+  deletedAt     DateTime?  @map("deleted_at")
+  agent         String     @default("chat")
+  artifacts     Artifact[]
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      Message[]
 
   @@index([userId])
   @@index([userId, updatedAt(sort: Desc)])
@@ -128,73 +108,66 @@ model Conversation {
   @@map("conversations")
 }
 
-// Messages table - individual chat messages
 model Message {
-  id             String    @id @default(uuid())
-  conversationId String    @map("conversation_id")
-  role           String                                                      // 'user' | 'assistant' | 'tool'
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  role           String
   content        String
   parts          Json?
-  metadata       Json      @default("{}")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  editedAt       DateTime? @map("edited_at")
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  artifacts    Artifact[]
+  metadata       Json         @default("{}")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  editedAt       DateTime?    @map("edited_at")
+  artifacts      Artifact[]
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
   @@map("messages")
 }
 
-// Artifacts table - HTML artifacts generated by Claude
 model Artifact {
-  id             String   @id @default(uuid())
-  conversationId String   @map("conversation_id")
-  messageId      String   @map("message_id")
-  userId         String   @map("user_id")
-  type           String   @default("html")
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  messageId      String       @map("message_id")
+  userId         String       @map("user_id")
+  type           String       @default("html")
   title          String
   content        String
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message        Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([messageId])
   @@map("artifacts")
 }
 
-// MCP Connections table - Model Context Protocol server connections
 model McpConnection {
-  id                        String    @id @default(uuid())
-  userId                    String?   @map("user_id")
-  roleId                    String?   @map("role_id")                        // null = user-personal, set = role-scoped
-  name                      String
-  serverUrl                 String    @map("server_url")
-  authType                  String    @default("none") @map("auth_type")     // 'none' | 'api_key' | 'oauth'
-  authCredentialsEncrypted  String?   @map("auth_credentials_encrypted")
-  availableTools            Json      @default("[]") @map("available_tools")
-  isActive                  Boolean   @default(true) @map("is_active")
-  status                    String    @default("disconnected")               // 'connected' | 'disconnected' | 'error'
-  lastError                 String?   @map("last_error")
-  sessionId                 String?   @map("session_id")
-  registryId                String?   @map("registry_id")                     // links admin-assigned MCPs to mcp_registry for edit propagation
-  createdAt                 DateTime  @default(now()) @map("created_at")
-  updatedAt                 DateTime  @updatedAt @map("updated_at")
-  lastConnectedAt           DateTime? @map("last_connected_at")
-
-  user User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role Role?  @relation(fields: [roleId], references: [id])
+  id                       String    @id @default(uuid())
+  userId                   String?   @map("user_id")
+  name                     String
+  serverUrl                String    @map("server_url")
+  authType                 String    @default("none") @map("auth_type")
+  authCredentialsEncrypted String?   @map("auth_credentials_encrypted")
+  availableTools           Json      @default("[]") @map("available_tools")
+  isActive                 Boolean   @default(true) @map("is_active")
+  status                   String    @default("disconnected")
+  lastError                String?   @map("last_error")
+  sessionId                String?   @map("session_id")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+  lastConnectedAt          DateTime? @map("last_connected_at")
+  roleId                   String?   @map("role_id")
+  registryId               String?   @map("registry_id")
+  role                     Role?     @relation(fields: [roleId], references: [id])
+  user                     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([registryId])
   @@map("mcp_connections")
 }
 
-// Memory files - persistent AI memory
 model MemoryFile {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
@@ -203,8 +176,7 @@ model MemoryFile {
   scope     String   @default("user")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, path])
   @@unique([scope, path])
@@ -213,7 +185,6 @@ model MemoryFile {
   @@map("memory_files")
 }
 
-// Password reset tokens
 model PasswordResetToken {
   id        String    @id @default(uuid())
   email     String
@@ -227,45 +198,34 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
-// ============================================================================
-// INVITATION MODEL
-// ============================================================================
-
 model Invitation {
   id          String    @id @default(uuid())
   email       String
   roleId      String    @map("role_id")
   invitedById String    @map("invited_by_id")
   token       String    @unique
-  status      String    @default("PENDING") // PENDING | ACCEPTED | EXPIRED | REVOKED
+  status      String    @default("PENDING")
   expiresAt   DateTime  @map("expires_at")
   acceptedAt  DateTime? @map("accepted_at")
   createdAt   DateTime  @default(now()) @map("created_at")
-
-  role      Role @relation(fields: [roleId], references: [id])
-  invitedBy User @relation("InvitedByUser", fields: [invitedById], references: [id])
+  invitedBy   User      @relation("InvitedByUser", fields: [invitedById], references: [id])
+  role        Role      @relation(fields: [roleId], references: [id])
 
   @@index([token])
   @@index([email])
   @@map("invitations")
 }
 
-// ============================================================================
-// AUDIT & USAGE MODELS (new for admin)
-// ============================================================================
-
-// AuditLog - tracks admin actions
-// MCP Registry - available MCP servers that admin can assign to roles
 model McpRegistry {
   id                       String   @id @default(uuid())
   displayName              String   @map("display_name")
-  description              String?
   serverUrl                String   @unique @map("server_url")
   authType                 String   @default("none") @map("auth_type")
+  createdAt                DateTime @default(now()) @map("created_at")
+  description              String?
   authCredentialsEncrypted String?  @map("auth_credentials_encrypted")
   isActive                 Boolean  @default(true) @map("is_active")
-  createdAt                DateTime @default(now()) @map("created_at")
-  updatedAt                DateTime @updatedAt @map("updated_at")
+  updatedAt                DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("mcp_registry")
 }
@@ -273,14 +233,13 @@ model McpRegistry {
 model AuditLog {
   id         String   @id @default(uuid())
   userId     String?  @map("user_id")
-  action     String                                                          // "user.created", "role.updated", etc.
-  targetType String?  @map("target_type")                                    // "User", "Role"
+  action     String
+  targetType String?  @map("target_type")
   targetId   String?  @map("target_id")
   metadata   Json     @default("{}")
   ipAddress  String?  @map("ip_address")
   createdAt  DateTime @default(now()) @map("created_at")
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([action])
@@ -288,42 +247,22 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// UsageRecord - tracks AI model usage per user
-// ============================================================================
-// FabOrch Audit — REQ-02 User Session Audit
-// ============================================================================
-//
-// One row per Session lifecycle. Status transitions:
-//   ACTIVE -> CLOSED_LOGOUT     (explicit /api/auth/logout)
-//   ACTIVE -> CLOSED_IDLE       (>30 min no API activity)
-//   ACTIVE -> CLOSED_ADMIN      (admin force-logout)
-//   ACTIVE -> CLOSED_EXPIRED    (absolute Session.expiresAt reached)
-
-enum SessionStatus {
-  ACTIVE
-  CLOSED_LOGOUT
-  CLOSED_IDLE
-  CLOSED_ADMIN
-  CLOSED_EXPIRED
-
-  @@map("session_status")
-}
-
 model UserSessionLog {
-  id               String        @id @default(uuid())
-  userId           String        @map("user_id")
-  sessionTokenHash String?       @unique @map("session_token_hash")
-  loginTime        DateTime      @default(now()) @map("login_time")
-  logoutTime       DateTime?     @map("logout_time")
-  lastActivityAt   DateTime      @default(now()) @map("last_activity_at")
-  idleSeconds      Int           @default(0) @map("idle_seconds")
-  sessionStatus    SessionStatus @default(ACTIVE) @map("session_status")
-  closedReason     String?       @map("closed_reason")
-  loginIp          String?       @map("login_ip")
-  loginUserAgent   String?       @map("login_user_agent")
-  createdAt        DateTime      @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String        @id @default(uuid())
+  userId             String        @map("user_id")
+  sessionTokenHash   String?       @unique @map("session_token_hash")
+  loginTime          DateTime      @default(now()) @map("login_time") @db.Timestamptz(6)
+  logoutTime         DateTime?     @map("logout_time") @db.Timestamptz(6)
+  lastActivityAt     DateTime      @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  idleSeconds        Int           @default(0) @map("idle_seconds")
+  sessionStatus      SessionStatus @default(ACTIVE) @map("session_status")
+  closedReason       String?       @map("closed_reason")
+  loginIp            String?       @map("login_ip")
+  loginUserAgent     String?       @map("login_user_agent")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  idle_episodes      Json          @default("[]")
+  idle_episode_count Int           @default(0)
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, loginTime(sort: Desc)])
   @@index([sessionStatus])
@@ -343,8 +282,7 @@ model UsageRecord {
   conversationId      String?  @map("conversation_id")
   requestDurationMs   Int?     @map("request_duration_ms")
   createdAt           DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
@@ -353,55 +291,290 @@ model UsageRecord {
   @@map("usage_records")
 }
 
-// ============================================================================
-// PLATFORM SETTINGS — single global config row, admin-controlled.
-// Read by both apps to apply a platform-wide color theme.
-// ============================================================================
 model PlatformSettings {
-  id          String   @id @default("global") // singleton row
-  colorTheme  String   @default("fab-blue") @map("color_theme")
-  auditRetentionDays Int  @default(90) @map("audit_retention_days")
-  updatedById String?  @map("updated_by_id")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id                 String   @id
+  colorTheme         String   @default("fab-blue") @map("color_theme")
+  updatedById        String?  @map("updated_by_id")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+  auditRetentionDays Int      @default(90) @map("audit_retention_days")
 
   @@map("platform_settings")
 }
 
-// ============================================================================
-// MODEL REGISTRY — admin-configurable AI models + per-token pricing.
-// Managed by admin_athena; read by both apps for the model picker, RBAC gate,
-// and USD cost attribution (prompt_audit_logs / usage). Replaces the hardcoded
-// model lists + model-pricing map. Costs are USD per 1,000,000 tokens.
-// ============================================================================
 model ModelRegistry {
   id                  String   @id @default(uuid())
-  modelId             String   @unique @map("model_id")               // Anthropic API id, e.g. "claude-opus-4-8"
-  displayName         String   @map("display_name")                   // user-facing label, e.g. "FabOrchestrator 2.0"
+  modelId             String   @unique @map("model_id")
+  displayName         String   @map("display_name")
   description         String?
-  inputCostPer1M      Float    @default(0) @map("input_cost_per_1m")   // USD / 1M input tokens
-  outputCostPer1M     Float    @default(0) @map("output_cost_per_1m")  // USD / 1M output tokens
+  inputCostPer1M      Float    @default(0) @map("input_cost_per_1m")
+  outputCostPer1M     Float    @default(0) @map("output_cost_per_1m")
   cacheReadCostPer1M  Float    @default(0) @map("cache_read_cost_per_1m")
   cacheWriteCostPer1M Float    @default(0) @map("cache_write_cost_per_1m")
-  thinkingType        String   @default("adaptive") @map("thinking_type") // none | adaptive | manual
-  thinkingBudget      Int?     @map("thinking_budget")                 // token budget for manual thinking
-  isActive            Boolean  @default(true) @map("is_active")        // false = shown but not selectable ("coming soon")
-  isDefault           Boolean  @default(false) @map("is_default")      // the default selected model
+  thinkingType        String   @default("adaptive") @map("thinking_type")
+  thinkingBudget      Int?     @map("thinking_budget")
+  isActive            Boolean  @default(true) @map("is_active")
+  isDefault           Boolean  @default(false) @map("is_default")
   sortOrder           Int      @default(0) @map("sort_order")
   createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@index([isActive])
   @@index([sortOrder])
   @@map("model_registry")
 }
 
-// ============================================================================
-// CMF MASTER-DATA LOADER (Modeling Agent) — ported from the cmf-loader app.
-// End users build/validate/load CMF master-data packages via the Modeling
-// Agent (fab app); admin reads these tables for the Data Loader dashboard.
-// The audit trail reuses the shared AuditLog table (action = "cmf.*"), so
-// cmf-loader's own AuditEvent model is intentionally NOT ported.
-// ============================================================================
+model Package {
+  id                String             @id @default(cuid())
+  cmfId             String             @unique @map("cmf_id")
+  name              String
+  filename          String
+  checksum          String
+  sizeBytes         BigInt             @map("size_bytes")
+  contentType       String             @map("content_type")
+  createdByUserId   String             @map("created_by_user_id")
+  lastResult        Int?               @map("last_result")
+  lastOperation     Operation?         @map("last_operation")
+  lastRunAt         DateTime?          @map("last_run_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  file              PackageFile?
+  createdBy         User               @relation(fields: [createdByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  runs              Run[]
+  validationReports ValidationReport[]
+
+  @@index([createdAt])
+  @@map("cmf_packages")
+}
+
+model StagedUpload {
+  id                 String   @id @default(cuid())
+  userId             String   @map("user_id")
+  filename           String
+  s3Key              String   @map("s3_key")
+  status             String   @default("UPLOADED")
+  packageName        String?  @map("package_name")
+  packageCmfId       String?  @map("package_cmf_id")
+  selectedTypes      Json?    @map("selected_types")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+  package_cmf_db_key String?
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
+  @@index([status])
+  @@map("cmf_staged_uploads")
+}
+
+model PackageFile {
+  id        String   @id @default(cuid())
+  packageId String   @unique @map("package_id")
+  filename  String
+  s3Key     String   @map("s3_key")
+  createdAt DateTime @default(now()) @map("created_at")
+  package   Package  @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("cmf_package_files")
+}
+
+model ValidationReport {
+  id           String   @id @default(cuid())
+  packageId    String   @map("package_id")
+  ok           Boolean
+  errorCount   Int      @map("error_count")
+  warningCount Int      @map("warning_count")
+  report       Json
+  advisory     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  package      Package  @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([packageId])
+  @@map("cmf_validation_reports")
+}
+
+model Run {
+  id                 String    @id @default(cuid())
+  packageId          String    @map("package_id")
+  userId             String    @map("user_id")
+  operation          Operation
+  status             RunStatus @default(QUEUED)
+  cmfBaselineEndDate String?   @map("cmf_baseline_end_date")
+  selectedTypes      Json      @map("selected_types")
+  result             Int?
+  log                Json?
+  error              String?
+  startedAt          DateTime  @default(now()) @map("started_at")
+  endedAt            DateTime? @map("ended_at")
+  package            Package   @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user               User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([packageId])
+  @@index([startedAt])
+  @@map("cmf_runs")
+}
+
+model McpDataSource {
+  id                    String              @id @default(uuid())
+  name                  String
+  engine                String              @default("postgres")
+  status                McpDataSourceStatus @default(DRAFT)
+  host                  String?
+  port                  Int?
+  database              String?
+  schemasJson           Json                @default("[]") @map("schemas_json")
+  secretArn             String?             @map("secret_arn")
+  discoveredSchema      Json?               @map("discovered_schema")
+  manifest              Json?
+  staticCheck           Json?               @map("static_check")
+  runtimeVersion        String?             @map("runtime_version")
+  lambdaArn             String?             @map("lambda_arn")
+  endpointUrl           String?             @map("endpoint_url")
+  endpointAuthEncrypted String?             @map("endpoint_auth_encrypted")
+  registryId            String?             @map("registry_id")
+  lastError             String?             @map("last_error")
+  createdById           String              @map("created_by_id")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @default(now()) @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdById])
+  @@map("mcp_data_sources")
+}
+
+model error_audit_daily_counter {
+  counter_date DateTime @id @db.Date
+  last_seq     Int      @default(0)
+}
+
+model error_audit_logs {
+  id                                        String             @id
+  error_id                                  String             @unique
+  error_uuid                                String
+  error_type                                String
+  user_id                                   String?
+  datetime                                  DateTime           @default(now()) @db.Timestamptz(6)
+  user_message                              String
+  technical_message                         String?
+  priority                                  String
+  status                                    error_audit_status @default(OPEN)
+  resolved_by                               String?
+  resolved_at                               DateTime?          @db.Timestamptz(6)
+  resolution_note                           String?
+  route                                     String?
+  http_method                               String?
+  http_status                               Int?
+  stack_preview                             String?
+  request_context                           Json?
+  created_at                                DateTime           @default(now()) @db.Timestamptz(6)
+  users_error_audit_logs_resolved_byTousers User?              @relation("error_audit_logs_resolved_byTousers", fields: [resolved_by], references: [id], map: "error_audit_logs_resolver_fkey")
+  users_error_audit_logs_user_idTousers     User?              @relation("error_audit_logs_user_idTousers", fields: [user_id], references: [id], map: "error_audit_logs_user_fkey")
+
+  @@index([datetime(sort: Desc)])
+  @@index([error_id])
+  @@index([priority])
+  @@index([status])
+  @@index([error_type], map: "error_audit_logs_type_idx")
+  @@index([user_id, datetime(sort: Desc)], map: "error_audit_logs_user_datetime_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model error_catalog {
+  error_type   String   @id
+  user_message String
+  priority     String
+  http_status  Int
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_by   String   @default("system")
+
+  @@index([updated_at(sort: Desc)], map: "idx_error_catalog_updated_at")
+}
+
+model pinned_dashboards {
+  id             String    @id
+  title          String
+  dashboard_id   String
+  params         Json      @default("{}")
+  source_key     String    @default("lumentum")
+  cached_html    String?
+  cached_summary String?
+  refreshed_at   DateTime?
+  last_status    String?
+  created_by_id  String
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @default(now())
+  users          User      @relation(fields: [created_by_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at])
+}
+
+/// Per-dashboard refresh schedule for Recent Reports. Written by the admin app
+/// (chat tool), read by Fab Orch's cron tick. One row per (dashboard_id, source_key).
+/// Times are UTC. Admin tool uses raw SQL, so this model is for documentation/parity.
+model ReportSchedule {
+  id               String    @id @default(uuid())
+  dashboard_id     String
+  source_key       String    @default("lumentum")
+  frequency        String    @default("hourly")
+  interval_minutes Int?
+  at_time          String?
+  day_of_week      Int?
+  days_of_week     String?
+  day_of_month     Int?
+  enabled          Boolean   @default(true)
+  next_run_at      DateTime?
+  last_run_at      DateTime?
+  last_status      String?
+  updated_by_id    String?
+  updated_at       DateTime  @default(now()) @updatedAt
+
+  @@unique([dashboard_id, source_key])
+  @@index([enabled, next_run_at])
+  @@map("report_schedules")
+}
+
+model prompt_audit_daily_counter {
+  counter_date DateTime @id @db.Date
+  last_seq     Int      @default(0)
+}
+
+model prompt_audit_logs {
+  id               String              @id
+  prompt_id        String              @unique
+  datetime         DateTime            @default(now()) @db.Timestamptz(6)
+  user_prompt      String
+  topic_matched    String?
+  data_retrieved   String?
+  llm_response     String?
+  response_time_ms Int?
+  status           prompt_audit_status @default(PENDING)
+  user_name        String?
+  user_email       String?
+  query_executed   String?
+  tool_calls       Json?
+  user_id          String?
+  request_tokens   Int?
+  retrieval_tokens Int?
+  response_tokens  Int?
+  request_cost     Decimal?            @db.Decimal(12, 6)
+  retrieval_cost   Decimal?            @db.Decimal(12, 6)
+  response_cost    Decimal?            @db.Decimal(12, 6)
+  model            String?
+  users            User?               @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_prompt_audit_logs_user_id")
+  @@index([datetime(sort: Desc)])
+  @@index([prompt_id])
+  @@index([status])
+  @@index([topic_matched], map: "prompt_audit_logs_topic_idx")
+}
+
+enum SessionStatus {
+  ACTIVE
+  CLOSED_LOGOUT
+  CLOSED_IDLE
+  CLOSED_ADMIN
+  CLOSED_EXPIRED
+
+  @@map("session_status")
+}
 
 enum Operation {
   VALIDATE
@@ -420,144 +593,27 @@ enum RunStatus {
   @@map("cmf_run_status")
 }
 
-model Package {
-  id              String     @id @default(cuid())
-  cmfId           String     @unique @map("cmf_id")
-  name            String
-  filename        String
-  checksum        String
-  sizeBytes       BigInt     @map("size_bytes")
-  contentType     String     @map("content_type")
-  createdBy       User       @relation(fields: [createdByUserId], references: [id])
-  createdByUserId String     @map("created_by_user_id")
-  lastResult      Int?       @map("last_result")
-  lastOperation   Operation? @map("last_operation")
-  lastRunAt       DateTime?  @map("last_run_at")
-  createdAt       DateTime   @default(now()) @map("created_at")
-
-  runs              Run[]
-  file              PackageFile?
-  validationReports ValidationReport[]
-
-  @@index([createdAt])
-  @@map("cmf_packages")
-}
-
-// A file staged (in S3) BEFORE any CMF call so it can be template-validated
-// first. Also the persistent flow-draft: `status` tracks wizard progress
-// (UPLOADED -> VALIDATED -> REGISTERED -> LOADED) for resume.
-model StagedUpload {
-  id            String   @id @default(cuid())
-  userId        String   @map("user_id")
-  filename      String
-  s3Key         String   @map("s3_key")
-  status        String   @default("UPLOADED")
-  packageName   String?  @map("package_name")
-  packageCmfId  String?  @map("package_cmf_id")
-  selectedTypes Json?    @map("selected_types")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([status])
-  @@map("cmf_staged_uploads")
-}
-
-model PackageFile {
-  id        String   @id @default(cuid())
-  package   Package  @relation(fields: [packageId], references: [id])
-  packageId String   @unique @map("package_id")
-  filename  String
-  s3Key     String   @map("s3_key")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("cmf_package_files")
-}
-
-model ValidationReport {
-  id           String   @id @default(cuid())
-  package      Package  @relation(fields: [packageId], references: [id])
-  packageId    String   @map("package_id")
-  ok           Boolean
-  errorCount   Int      @map("error_count")
-  warningCount Int      @map("warning_count")
-  report       Json
-  advisory     Json?
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  @@index([packageId])
-  @@map("cmf_validation_reports")
-}
-
-model Run {
-  id                 String    @id @default(cuid())
-  package            Package   @relation(fields: [packageId], references: [id])
-  packageId          String    @map("package_id")
-  user               User      @relation(fields: [userId], references: [id])
-  userId             String    @map("user_id")
-  operation          Operation
-  status             RunStatus @default(QUEUED)
-  cmfBaselineEndDate String?   @map("cmf_baseline_end_date")
-  selectedTypes      Json      @map("selected_types")
-  result             Int?
-  log                Json?
-  error              String?
-  startedAt          DateTime  @default(now()) @map("started_at")
-  endedAt            DateTime? @map("ended_at")
-
-  @@index([packageId])
-  @@index([startedAt])
-  @@map("cmf_runs")
-}
-
-// ============================================================================
-// ON-THE-FLY MCP — control-plane lifecycle for admin-created MCP data sources.
-// See mcp-onthefly/ (runtime Lambda) + cloudformation/mcp-onthefly.yaml (substrate).
-// Consumption reuses the existing mcp_registry + mcp_connections; this table only
-// tracks the build pipeline (intake → connect → generate → deploy → register).
-// The target credential VALUE lives ONLY in AWS Secrets Manager; this table holds
-// the ARN + non-secret metadata. DDL is applied via create_mcp_data_sources.sql.
-// ============================================================================
-
 enum McpDataSourceStatus {
-  DRAFT       // created; params captured
-  CONNECTED   // reachable + schema discovered
-  GENERATED   // manifest generated + static-checked + approved
-  DEPLOYING   // lambda deploy in progress
-  ACTIVE      // deployed, validated, registered in mcp_registry
-  FAILED      // a step failed (see lastError)
-  RETIRED     // deprovisioned (lambda + secret + registry row removed)
+  DRAFT
+  CONNECTED
+  GENERATED
+  DEPLOYING
+  ACTIVE
+  FAILED
+  RETIRED
 
   @@map("mcp_data_source_status")
 }
 
-model McpDataSource {
-  id                    String              @id @default(uuid())
-  name                  String
-  engine                String              @default("postgres") // v1: postgres only
-  status                McpDataSourceStatus @default(DRAFT)
-  // --- non-secret target metadata (secret VALUE only in Secrets Manager) ---
-  host                  String?
-  port                  Int?
-  database              String?
-  schemasJson           Json                @default("[]") @map("schemas_json") // admin-selected schemas/tables
-  secretArn             String?             @map("secret_arn")                   // Secrets Manager ARN (never the secret)
-  discoveredSchema      Json?               @map("discovered_schema")            // redacted information_schema snapshot
-  manifest              Json?                                                    // generated tools (name+inputs+SELECT)
-  staticCheck           Json?               @map("static_check")                 // manifest validation result
-  runtimeVersion        String?             @map("runtime_version")
-  lambdaArn             String?             @map("lambda_arn")
-  endpointUrl           String?             @map("endpoint_url")
-  endpointAuthEncrypted String?             @map("endpoint_auth_encrypted")      // AES-256-GCM( per-server bearer )
-  registryId            String?             @map("registry_id")                  // → mcp_registry.id (bridge to consumption)
-  lastError             String?             @map("last_error")
-  createdById           String              @map("created_by_id")
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+enum error_audit_status {
+  OPEN
+  RESOLVED
+}
 
-  @@index([status])
-  @@index([createdById])
-  @@map("mcp_data_sources")
+enum prompt_audit_status {
+  PENDING
+  SUCCESS
+  FAILED
+  TIMEOUT
+  CANCELLED
 }

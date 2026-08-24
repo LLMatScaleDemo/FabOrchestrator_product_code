@@ -50,3 +50,22 @@ export const McpDataSourceStatus = {
 } as const
 
 export type McpDataSourceStatus = (typeof McpDataSourceStatus)[keyof typeof McpDataSourceStatus]
+
+
+export const error_audit_status = {
+  OPEN: 'OPEN',
+  RESOLVED: 'RESOLVED'
+} as const
+
+export type error_audit_status = (typeof error_audit_status)[keyof typeof error_audit_status]
+
+
+export const prompt_audit_status = {
+  PENDING: 'PENDING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+  TIMEOUT: 'TIMEOUT',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type prompt_audit_status = (typeof prompt_audit_status)[keyof typeof prompt_audit_status]

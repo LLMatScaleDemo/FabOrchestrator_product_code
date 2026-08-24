@@ -1,4 +1,5 @@
 import { cmfQuery } from "@/lib/cmf/cmf-sql";
+import { currentDbKey } from "@/lib/cmf/db-context";
 
 /**
  * Pre-flight validation rulesets sourced from CMF's OWN metadata, so the rules
@@ -23,7 +24,34 @@ export type PropertyRule = {
   validationRegex: string | null;
   /** Entity type this column references (parent), or null if not a reference. */
   referenceTargetType: string | null;
+  /** CMF-declared default for this property (`T_*Property.DefaultValue`), or
+   *  null when CMF declares none. Used to fill a mandatory field that came back
+   *  NULL from an existing record with the SAME value CMF would apply on load —
+   *  e.g. DataCollection.SPCPostMode defaults to "0". Smart tables carry no
+   *  DefaultValue column, so it is always null for them. */
+  defaultValue: string | null;
 };
+
+/**
+ * True when a property is a GENUINE foreign-key reference to another object —
+ * i.e. it is safe to validate its value against the target entity's records.
+ *
+ * CMF's `ReferencedObjectId` metadata is noisy: it decorates many plain SCALAR
+ * columns with a bogus reference target (e.g. Step.Type → "DataCollectionPoint",
+ * DataCollection.Type → "ShippingFacility", Parameter.Type → "SubRecipe"). Those
+ * columns store a literal value ("Standard"), NOT an FK, so validating them as
+ * references produces false "value not recognized" failures.
+ *
+ * The reliable discriminator: a real CMF FK column stores the target's numeric
+ * id, so its scalar type is `BigInt` (or unset). A reference target attached to
+ * a string/number/bit scalar (`NVarChar`, `Int`, `Bit`, …) is metadata noise.
+ */
+export function isFkReference(
+  prop: PropertyRule,
+): prop is PropertyRule & { referenceTargetType: string } {
+  if (!prop.referenceTargetType) return false;
+  return prop.scalarType == null || prop.scalarType === "BigInt";
+}
 
 export type EntityModel = "smart" | "generic" | "entity";
 
@@ -44,6 +72,7 @@ type RawProp = {
   ScalarSize: number | null;
   ValidationRegex: string | null;
   RefTarget: string | null;
+  DefaultValue: string | null;
 };
 
 // Bulk property queries — one per object-model family. Each returns rows for
@@ -52,7 +81,7 @@ type RawProp = {
 // the exact same PropertyRule sequence as the old per-type queries did.
 const SMART_BULK = (inList: string) => `
   select st.Name as ObjectType, p.Name, p.IsMandatory, p.IsKey, sc.Name as ScalarType, p.ScalarSize,
-         p.ValidationRegex, ref.Name as RefTarget
+         p.ValidationRegex, ref.Name as RefTarget, cast(null as nvarchar(max)) as DefaultValue
   from dbo.T_SmartTableProperty p
   join dbo.T_SmartTable st on st.SmartTableId = p.SmartTableId
   left join dbo.T_ScalarType sc on sc.ScalarTypeId = p.ScalarTypeId
@@ -61,7 +90,7 @@ const SMART_BULK = (inList: string) => `
 
 const GENERIC_BULK = (inList: string) => `
   select gt.Name as ObjectType, p.Name, p.IsMandatory, p.IsKey, sc.Name as ScalarType, p.ScalarSize,
-         p.ValidationRegex, ref.Name as RefTarget
+         p.ValidationRegex, ref.Name as RefTarget, p.DefaultValue
   from dbo.T_GenericTableProperty p
   join dbo.T_GenericTable gt on gt.GenericTableId = p.GenericTableId
   left join dbo.T_ScalarType sc on sc.ScalarTypeId = p.ScalarTypeId
@@ -70,7 +99,7 @@ const GENERIC_BULK = (inList: string) => `
 
 const ENTITY_BULK = (inList: string) => `
   select et.Name as ObjectType, p.Name, p.IsMandatory, cast(0 as bit) as IsKey, sc.Name as ScalarType, p.ScalarSize,
-         p.ValidationRegex, ref.Name as RefTarget
+         p.ValidationRegex, ref.Name as RefTarget, p.DefaultValue
   from dbo.T_EntityTypeProperty p
   join dbo.T_EntityType et on et.EntityTypeId = p.EntityTypeId
   left join dbo.T_ScalarType sc on sc.ScalarTypeId = p.ScalarTypeId
@@ -89,6 +118,7 @@ function mapProps(rows: RawProp[]): PropertyRule[] {
     scalarSize: r.ScalarSize,
     validationRegex: r.ValidationRegex && r.ValidationRegex.trim() ? r.ValidationRegex : null,
     referenceTargetType: r.RefTarget,
+    defaultValue: r.DefaultValue != null && String(r.DefaultValue).trim() !== "" ? String(r.DefaultValue) : null,
   }));
 }
 
@@ -160,7 +190,11 @@ async function resolveTablesBulk(
   return out;
 }
 
-const cache = new Map<string, EntityRuleset | null>(); // key: lowercased objectType
+// Persistent ruleset cache. Keyed by `${dbKey}::${lowercased objectType}` so
+// rulesets from the two CMF databases (source/target) never alias — the same
+// object type can have different physical tables per DB.
+const cache = new Map<string, EntityRuleset | null>();
+const ck = (lower: string): string => `${currentDbKey()}::${lower}`;
 
 /**
  * Resolve rulesets for MANY object types at once. Round-trip count is ~O(1) in
@@ -183,8 +217,8 @@ export async function loadRulesets(
   const wanted = new Map<string, string>();
   for (const t of types) {
     const lower = t.toLowerCase();
-    if (cache.has(lower)) {
-      result.set(lower, cache.get(lower) ?? null);
+    if (cache.has(ck(lower))) {
+      result.set(lower, cache.get(ck(lower)) ?? null);
     } else if (!wanted.has(lower)) {
       wanted.set(lower, t);
     }
@@ -226,7 +260,7 @@ export async function loadRulesets(
     const rs: EntityRuleset | null = r
       ? { objectType: orig, model: r.model, table: tables.get(lower) ?? null, properties: r.props }
       : null;
-    cache.set(lower, rs);
+    cache.set(ck(lower), rs);
     result.set(lower, rs);
   }
   return result;

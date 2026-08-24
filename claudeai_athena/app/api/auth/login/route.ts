@@ -78,6 +78,11 @@ export async function POST(req: Request) {
       data: { userId: user.id, action: 'user.login', targetType: 'User', targetId: user.id, metadata: { email: user.email } },
     }).catch(() => {});
 
+    // Returned so the chat UI can render the right prompt set on FIRST paint.
+    // Presentation only — every dashboard route re-checks this server-side.
+    const { isDashboardAdmin } = await import('@/lib/fabinsight/access');
+    const canCreateDashboards = await isDashboardAdmin(user.id).catch(() => false);
+
     return Response.json({
       user: {
         id: user.id,
@@ -85,6 +90,7 @@ export async function POST(req: Request) {
         name: user.name,
         avatarUrl: user.avatarUrl,
         preferences: user.preferences,
+        canCreateDashboards,
       },
       token,
       expiresAt: expiresAt.toISOString(),

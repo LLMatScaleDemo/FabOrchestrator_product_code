@@ -61,25 +61,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Initialize theme from localStorage
+    // The admin console renders in LIGHT mode and deliberately does NOT follow
+    // the OS/browser dark preference. Assistant/LLM text must always read as
+    // dark ink on the light message surface; the active palette (fab-blue) has
+    // no `.dark` variant, so applying `.dark` from the OS turned prose text
+    // near-white on a white bubble (invisible). Dark mode is opt-in ONLY via an
+    // explicit saved preference; with none set we force it OFF regardless of the
+    // system theme. (No `prefers-color-scheme` listener — the OS never toggles it.)
     const savedTheme = localStorage.getItem("admin_athena_theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      const saved = localStorage.getItem("admin_athena_theme");
-      if (!saved || saved === "system") {
-        document.documentElement.classList.toggle("dark", e.matches);
-      }
-    };
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
+    document.documentElement.classList.toggle("dark", savedTheme === "dark");
   }, []);
 
   return (

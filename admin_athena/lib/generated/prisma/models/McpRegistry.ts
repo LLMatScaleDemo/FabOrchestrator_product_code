@@ -27,36 +27,36 @@ export type AggregateMcpRegistry = {
 export type McpRegistryMinAggregateOutputType = {
   id: string | null
   displayName: string | null
-  description: string | null
   serverUrl: string | null
   authType: string | null
+  createdAt: Date | null
+  description: string | null
   authCredentialsEncrypted: string | null
   isActive: boolean | null
-  createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type McpRegistryMaxAggregateOutputType = {
   id: string | null
   displayName: string | null
-  description: string | null
   serverUrl: string | null
   authType: string | null
+  createdAt: Date | null
+  description: string | null
   authCredentialsEncrypted: string | null
   isActive: boolean | null
-  createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type McpRegistryCountAggregateOutputType = {
   id: number
   displayName: number
-  description: number
   serverUrl: number
   authType: number
+  createdAt: number
+  description: number
   authCredentialsEncrypted: number
   isActive: number
-  createdAt: number
   updatedAt: number
   _all: number
 }
@@ -65,36 +65,36 @@ export type McpRegistryCountAggregateOutputType = {
 export type McpRegistryMinAggregateInputType = {
   id?: true
   displayName?: true
-  description?: true
   serverUrl?: true
   authType?: true
+  createdAt?: true
+  description?: true
   authCredentialsEncrypted?: true
   isActive?: true
-  createdAt?: true
   updatedAt?: true
 }
 
 export type McpRegistryMaxAggregateInputType = {
   id?: true
   displayName?: true
-  description?: true
   serverUrl?: true
   authType?: true
+  createdAt?: true
+  description?: true
   authCredentialsEncrypted?: true
   isActive?: true
-  createdAt?: true
   updatedAt?: true
 }
 
 export type McpRegistryCountAggregateInputType = {
   id?: true
   displayName?: true
-  description?: true
   serverUrl?: true
   authType?: true
+  createdAt?: true
+  description?: true
   authCredentialsEncrypted?: true
   isActive?: true
-  createdAt?: true
   updatedAt?: true
   _all?: true
 }
@@ -174,12 +174,12 @@ export type McpRegistryGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 export type McpRegistryGroupByOutputType = {
   id: string
   displayName: string
-  description: string | null
   serverUrl: string
   authType: string
+  createdAt: Date
+  description: string | null
   authCredentialsEncrypted: string | null
   isActive: boolean
-  createdAt: Date
   updatedAt: Date
   _count: McpRegistryCountAggregateOutputType | null
   _min: McpRegistryMinAggregateOutputType | null
@@ -207,24 +207,24 @@ export type McpRegistryWhereInput = {
   NOT?: Prisma.McpRegistryWhereInput | Prisma.McpRegistryWhereInput[]
   id?: Prisma.StringFilter<"McpRegistry"> | string
   displayName?: Prisma.StringFilter<"McpRegistry"> | string
-  description?: Prisma.StringNullableFilter<"McpRegistry"> | string | null
   serverUrl?: Prisma.StringFilter<"McpRegistry"> | string
   authType?: Prisma.StringFilter<"McpRegistry"> | string
+  createdAt?: Prisma.DateTimeFilter<"McpRegistry"> | Date | string
+  description?: Prisma.StringNullableFilter<"McpRegistry"> | string | null
   authCredentialsEncrypted?: Prisma.StringNullableFilter<"McpRegistry"> | string | null
   isActive?: Prisma.BoolFilter<"McpRegistry"> | boolean
-  createdAt?: Prisma.DateTimeFilter<"McpRegistry"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"McpRegistry"> | Date | string
 }
 
 export type McpRegistryOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
-  description?: Prisma.SortOrderInput | Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  description?: Prisma.SortOrderInput | Prisma.SortOrder
   authCredentialsEncrypted?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -235,23 +235,23 @@ export type McpRegistryWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.McpRegistryWhereInput[]
   NOT?: Prisma.McpRegistryWhereInput | Prisma.McpRegistryWhereInput[]
   displayName?: Prisma.StringFilter<"McpRegistry"> | string
-  description?: Prisma.StringNullableFilter<"McpRegistry"> | string | null
   authType?: Prisma.StringFilter<"McpRegistry"> | string
+  createdAt?: Prisma.DateTimeFilter<"McpRegistry"> | Date | string
+  description?: Prisma.StringNullableFilter<"McpRegistry"> | string | null
   authCredentialsEncrypted?: Prisma.StringNullableFilter<"McpRegistry"> | string | null
   isActive?: Prisma.BoolFilter<"McpRegistry"> | boolean
-  createdAt?: Prisma.DateTimeFilter<"McpRegistry"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"McpRegistry"> | Date | string
 }, "id" | "serverUrl">
 
 export type McpRegistryOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
-  description?: Prisma.SortOrderInput | Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  description?: Prisma.SortOrderInput | Prisma.SortOrder
   authCredentialsEncrypted?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.McpRegistryCountOrderByAggregateInput
   _max?: Prisma.McpRegistryMaxOrderByAggregateInput
@@ -264,132 +264,132 @@ export type McpRegistryScalarWhereWithAggregatesInput = {
   NOT?: Prisma.McpRegistryScalarWhereWithAggregatesInput | Prisma.McpRegistryScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"McpRegistry"> | string
   displayName?: Prisma.StringWithAggregatesFilter<"McpRegistry"> | string
-  description?: Prisma.StringNullableWithAggregatesFilter<"McpRegistry"> | string | null
   serverUrl?: Prisma.StringWithAggregatesFilter<"McpRegistry"> | string
   authType?: Prisma.StringWithAggregatesFilter<"McpRegistry"> | string
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"McpRegistry"> | Date | string
+  description?: Prisma.StringNullableWithAggregatesFilter<"McpRegistry"> | string | null
   authCredentialsEncrypted?: Prisma.StringNullableWithAggregatesFilter<"McpRegistry"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"McpRegistry"> | boolean
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"McpRegistry"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"McpRegistry"> | Date | string
 }
 
 export type McpRegistryCreateInput = {
   id?: string
   displayName: string
-  description?: string | null
   serverUrl: string
   authType?: string
+  createdAt?: Date | string
+  description?: string | null
   authCredentialsEncrypted?: string | null
   isActive?: boolean
-  createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type McpRegistryUncheckedCreateInput = {
   id?: string
   displayName: string
-  description?: string | null
   serverUrl: string
   authType?: string
+  createdAt?: Date | string
+  description?: string | null
   authCredentialsEncrypted?: string | null
   isActive?: boolean
-  createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type McpRegistryUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serverUrl?: Prisma.StringFieldUpdateOperationsInput | string
   authType?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authCredentialsEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type McpRegistryUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serverUrl?: Prisma.StringFieldUpdateOperationsInput | string
   authType?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authCredentialsEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type McpRegistryCreateManyInput = {
   id?: string
   displayName: string
-  description?: string | null
   serverUrl: string
   authType?: string
+  createdAt?: Date | string
+  description?: string | null
   authCredentialsEncrypted?: string | null
   isActive?: boolean
-  createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type McpRegistryUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serverUrl?: Prisma.StringFieldUpdateOperationsInput | string
   authType?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authCredentialsEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type McpRegistryUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   serverUrl?: Prisma.StringFieldUpdateOperationsInput | string
   authType?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authCredentialsEncrypted?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type McpRegistryCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
-  description?: Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  description?: Prisma.SortOrder
   authCredentialsEncrypted?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type McpRegistryMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
-  description?: Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  description?: Prisma.SortOrder
   authCredentialsEncrypted?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type McpRegistryMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
-  description?: Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  description?: Prisma.SortOrder
   authCredentialsEncrypted?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -398,52 +398,52 @@ export type McpRegistryMinOrderByAggregateInput = {
 export type McpRegistrySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   displayName?: boolean
-  description?: boolean
   serverUrl?: boolean
   authType?: boolean
+  createdAt?: boolean
+  description?: boolean
   authCredentialsEncrypted?: boolean
   isActive?: boolean
-  createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["mcpRegistry"]>
 
 export type McpRegistrySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   displayName?: boolean
-  description?: boolean
   serverUrl?: boolean
   authType?: boolean
+  createdAt?: boolean
+  description?: boolean
   authCredentialsEncrypted?: boolean
   isActive?: boolean
-  createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["mcpRegistry"]>
 
 export type McpRegistrySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   displayName?: boolean
-  description?: boolean
   serverUrl?: boolean
   authType?: boolean
+  createdAt?: boolean
+  description?: boolean
   authCredentialsEncrypted?: boolean
   isActive?: boolean
-  createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["mcpRegistry"]>
 
 export type McpRegistrySelectScalar = {
   id?: boolean
   displayName?: boolean
-  description?: boolean
   serverUrl?: boolean
   authType?: boolean
+  createdAt?: boolean
+  description?: boolean
   authCredentialsEncrypted?: boolean
   isActive?: boolean
-  createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type McpRegistryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "displayName" | "description" | "serverUrl" | "authType" | "authCredentialsEncrypted" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["mcpRegistry"]>
+export type McpRegistryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "displayName" | "serverUrl" | "authType" | "createdAt" | "description" | "authCredentialsEncrypted" | "isActive" | "updatedAt", ExtArgs["result"]["mcpRegistry"]>
 
 export type $McpRegistryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "McpRegistry"
@@ -451,12 +451,12 @@ export type $McpRegistryPayload<ExtArgs extends runtime.Types.Extensions.Interna
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     displayName: string
-    description: string | null
     serverUrl: string
     authType: string
+    createdAt: Date
+    description: string | null
     authCredentialsEncrypted: string | null
     isActive: boolean
-    createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["mcpRegistry"]>
   composites: {}
@@ -883,12 +883,12 @@ export interface Prisma__McpRegistryClient<T, Null = never, ExtArgs extends runt
 export interface McpRegistryFieldRefs {
   readonly id: Prisma.FieldRef<"McpRegistry", 'String'>
   readonly displayName: Prisma.FieldRef<"McpRegistry", 'String'>
-  readonly description: Prisma.FieldRef<"McpRegistry", 'String'>
   readonly serverUrl: Prisma.FieldRef<"McpRegistry", 'String'>
   readonly authType: Prisma.FieldRef<"McpRegistry", 'String'>
+  readonly createdAt: Prisma.FieldRef<"McpRegistry", 'DateTime'>
+  readonly description: Prisma.FieldRef<"McpRegistry", 'String'>
   readonly authCredentialsEncrypted: Prisma.FieldRef<"McpRegistry", 'String'>
   readonly isActive: Prisma.FieldRef<"McpRegistry", 'Boolean'>
-  readonly createdAt: Prisma.FieldRef<"McpRegistry", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"McpRegistry", 'DateTime'>
 }
     

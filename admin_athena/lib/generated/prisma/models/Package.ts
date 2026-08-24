@@ -276,9 +276,9 @@ export type PackageWhereInput = {
   lastOperation?: Prisma.EnumOperationNullableFilter<"Package"> | $Enums.Operation | null
   lastRunAt?: Prisma.DateTimeNullableFilter<"Package"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Package"> | Date | string
+  file?: Prisma.XOR<Prisma.PackageFileNullableScalarRelationFilter, Prisma.PackageFileWhereInput> | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   runs?: Prisma.RunListRelationFilter
-  file?: Prisma.XOR<Prisma.PackageFileNullableScalarRelationFilter, Prisma.PackageFileWhereInput> | null
   validationReports?: Prisma.ValidationReportListRelationFilter
 }
 
@@ -295,9 +295,9 @@ export type PackageOrderByWithRelationInput = {
   lastOperation?: Prisma.SortOrderInput | Prisma.SortOrder
   lastRunAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  file?: Prisma.PackageFileOrderByWithRelationInput
   createdBy?: Prisma.UserOrderByWithRelationInput
   runs?: Prisma.RunOrderByRelationAggregateInput
-  file?: Prisma.PackageFileOrderByWithRelationInput
   validationReports?: Prisma.ValidationReportOrderByRelationAggregateInput
 }
 
@@ -317,9 +317,9 @@ export type PackageWhereUniqueInput = Prisma.AtLeast<{
   lastOperation?: Prisma.EnumOperationNullableFilter<"Package"> | $Enums.Operation | null
   lastRunAt?: Prisma.DateTimeNullableFilter<"Package"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Package"> | Date | string
+  file?: Prisma.XOR<Prisma.PackageFileNullableScalarRelationFilter, Prisma.PackageFileWhereInput> | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   runs?: Prisma.RunListRelationFilter
-  file?: Prisma.XOR<Prisma.PackageFileNullableScalarRelationFilter, Prisma.PackageFileWhereInput> | null
   validationReports?: Prisma.ValidationReportListRelationFilter
 }, "id" | "cmfId">
 
@@ -373,9 +373,9 @@ export type PackageCreateInput = {
   lastOperation?: $Enums.Operation | null
   lastRunAt?: Date | string | null
   createdAt?: Date | string
+  file?: Prisma.PackageFileCreateNestedOneWithoutPackageInput
   createdBy: Prisma.UserCreateNestedOneWithoutCmfPackagesInput
   runs?: Prisma.RunCreateNestedManyWithoutPackageInput
-  file?: Prisma.PackageFileCreateNestedOneWithoutPackageInput
   validationReports?: Prisma.ValidationReportCreateNestedManyWithoutPackageInput
 }
 
@@ -392,8 +392,8 @@ export type PackageUncheckedCreateInput = {
   lastOperation?: $Enums.Operation | null
   lastRunAt?: Date | string | null
   createdAt?: Date | string
-  runs?: Prisma.RunUncheckedCreateNestedManyWithoutPackageInput
   file?: Prisma.PackageFileUncheckedCreateNestedOneWithoutPackageInput
+  runs?: Prisma.RunUncheckedCreateNestedManyWithoutPackageInput
   validationReports?: Prisma.ValidationReportUncheckedCreateNestedManyWithoutPackageInput
 }
 
@@ -409,9 +409,9 @@ export type PackageUpdateInput = {
   lastOperation?: Prisma.NullableEnumOperationFieldUpdateOperationsInput | $Enums.Operation | null
   lastRunAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  file?: Prisma.PackageFileUpdateOneWithoutPackageNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCmfPackagesNestedInput
   runs?: Prisma.RunUpdateManyWithoutPackageNestedInput
-  file?: Prisma.PackageFileUpdateOneWithoutPackageNestedInput
   validationReports?: Prisma.ValidationReportUpdateManyWithoutPackageNestedInput
 }
 
@@ -428,8 +428,8 @@ export type PackageUncheckedUpdateInput = {
   lastOperation?: Prisma.NullableEnumOperationFieldUpdateOperationsInput | $Enums.Operation | null
   lastRunAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  runs?: Prisma.RunUncheckedUpdateManyWithoutPackageNestedInput
   file?: Prisma.PackageFileUncheckedUpdateOneWithoutPackageNestedInput
+  runs?: Prisma.RunUncheckedUpdateManyWithoutPackageNestedInput
   validationReports?: Prisma.ValidationReportUncheckedUpdateManyWithoutPackageNestedInput
 }
 
@@ -655,8 +655,8 @@ export type PackageCreateWithoutCreatedByInput = {
   lastOperation?: $Enums.Operation | null
   lastRunAt?: Date | string | null
   createdAt?: Date | string
-  runs?: Prisma.RunCreateNestedManyWithoutPackageInput
   file?: Prisma.PackageFileCreateNestedOneWithoutPackageInput
+  runs?: Prisma.RunCreateNestedManyWithoutPackageInput
   validationReports?: Prisma.ValidationReportCreateNestedManyWithoutPackageInput
 }
 
@@ -672,8 +672,8 @@ export type PackageUncheckedCreateWithoutCreatedByInput = {
   lastOperation?: $Enums.Operation | null
   lastRunAt?: Date | string | null
   createdAt?: Date | string
-  runs?: Prisma.RunUncheckedCreateNestedManyWithoutPackageInput
   file?: Prisma.PackageFileUncheckedCreateNestedOneWithoutPackageInput
+  runs?: Prisma.RunUncheckedCreateNestedManyWithoutPackageInput
   validationReports?: Prisma.ValidationReportUncheckedCreateNestedManyWithoutPackageInput
 }
 
@@ -817,9 +817,9 @@ export type PackageCreateWithoutValidationReportsInput = {
   lastOperation?: $Enums.Operation | null
   lastRunAt?: Date | string | null
   createdAt?: Date | string
+  file?: Prisma.PackageFileCreateNestedOneWithoutPackageInput
   createdBy: Prisma.UserCreateNestedOneWithoutCmfPackagesInput
   runs?: Prisma.RunCreateNestedManyWithoutPackageInput
-  file?: Prisma.PackageFileCreateNestedOneWithoutPackageInput
 }
 
 export type PackageUncheckedCreateWithoutValidationReportsInput = {
@@ -835,8 +835,8 @@ export type PackageUncheckedCreateWithoutValidationReportsInput = {
   lastOperation?: $Enums.Operation | null
   lastRunAt?: Date | string | null
   createdAt?: Date | string
-  runs?: Prisma.RunUncheckedCreateNestedManyWithoutPackageInput
   file?: Prisma.PackageFileUncheckedCreateNestedOneWithoutPackageInput
+  runs?: Prisma.RunUncheckedCreateNestedManyWithoutPackageInput
 }
 
 export type PackageCreateOrConnectWithoutValidationReportsInput = {
@@ -867,9 +867,9 @@ export type PackageUpdateWithoutValidationReportsInput = {
   lastOperation?: Prisma.NullableEnumOperationFieldUpdateOperationsInput | $Enums.Operation | null
   lastRunAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  file?: Prisma.PackageFileUpdateOneWithoutPackageNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCmfPackagesNestedInput
   runs?: Prisma.RunUpdateManyWithoutPackageNestedInput
-  file?: Prisma.PackageFileUpdateOneWithoutPackageNestedInput
 }
 
 export type PackageUncheckedUpdateWithoutValidationReportsInput = {
@@ -885,8 +885,8 @@ export type PackageUncheckedUpdateWithoutValidationReportsInput = {
   lastOperation?: Prisma.NullableEnumOperationFieldUpdateOperationsInput | $Enums.Operation | null
   lastRunAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  runs?: Prisma.RunUncheckedUpdateManyWithoutPackageNestedInput
   file?: Prisma.PackageFileUncheckedUpdateOneWithoutPackageNestedInput
+  runs?: Prisma.RunUncheckedUpdateManyWithoutPackageNestedInput
 }
 
 export type PackageCreateWithoutRunsInput = {
@@ -901,8 +901,8 @@ export type PackageCreateWithoutRunsInput = {
   lastOperation?: $Enums.Operation | null
   lastRunAt?: Date | string | null
   createdAt?: Date | string
-  createdBy: Prisma.UserCreateNestedOneWithoutCmfPackagesInput
   file?: Prisma.PackageFileCreateNestedOneWithoutPackageInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCmfPackagesInput
   validationReports?: Prisma.ValidationReportCreateNestedManyWithoutPackageInput
 }
 
@@ -951,8 +951,8 @@ export type PackageUpdateWithoutRunsInput = {
   lastOperation?: Prisma.NullableEnumOperationFieldUpdateOperationsInput | $Enums.Operation | null
   lastRunAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCmfPackagesNestedInput
   file?: Prisma.PackageFileUpdateOneWithoutPackageNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCmfPackagesNestedInput
   validationReports?: Prisma.ValidationReportUpdateManyWithoutPackageNestedInput
 }
 
@@ -999,8 +999,8 @@ export type PackageUpdateWithoutCreatedByInput = {
   lastOperation?: Prisma.NullableEnumOperationFieldUpdateOperationsInput | $Enums.Operation | null
   lastRunAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  runs?: Prisma.RunUpdateManyWithoutPackageNestedInput
   file?: Prisma.PackageFileUpdateOneWithoutPackageNestedInput
+  runs?: Prisma.RunUpdateManyWithoutPackageNestedInput
   validationReports?: Prisma.ValidationReportUpdateManyWithoutPackageNestedInput
 }
 
@@ -1016,8 +1016,8 @@ export type PackageUncheckedUpdateWithoutCreatedByInput = {
   lastOperation?: Prisma.NullableEnumOperationFieldUpdateOperationsInput | $Enums.Operation | null
   lastRunAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  runs?: Prisma.RunUncheckedUpdateManyWithoutPackageNestedInput
   file?: Prisma.PackageFileUncheckedUpdateOneWithoutPackageNestedInput
+  runs?: Prisma.RunUncheckedUpdateManyWithoutPackageNestedInput
   validationReports?: Prisma.ValidationReportUncheckedUpdateManyWithoutPackageNestedInput
 }
 
@@ -1088,9 +1088,9 @@ export type PackageSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   lastOperation?: boolean
   lastRunAt?: boolean
   createdAt?: boolean
+  file?: boolean | Prisma.Package$fileArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   runs?: boolean | Prisma.Package$runsArgs<ExtArgs>
-  file?: boolean | Prisma.Package$fileArgs<ExtArgs>
   validationReports?: boolean | Prisma.Package$validationReportsArgs<ExtArgs>
   _count?: boolean | Prisma.PackageCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["package"]>
@@ -1144,9 +1144,9 @@ export type PackageSelectScalar = {
 
 export type PackageOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "cmfId" | "name" | "filename" | "checksum" | "sizeBytes" | "contentType" | "createdByUserId" | "lastResult" | "lastOperation" | "lastRunAt" | "createdAt", ExtArgs["result"]["package"]>
 export type PackageInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  file?: boolean | Prisma.Package$fileArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   runs?: boolean | Prisma.Package$runsArgs<ExtArgs>
-  file?: boolean | Prisma.Package$fileArgs<ExtArgs>
   validationReports?: boolean | Prisma.Package$validationReportsArgs<ExtArgs>
   _count?: boolean | Prisma.PackageCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1160,9 +1160,9 @@ export type PackageIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
 export type $PackagePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Package"
   objects: {
+    file: Prisma.$PackageFilePayload<ExtArgs> | null
     createdBy: Prisma.$UserPayload<ExtArgs>
     runs: Prisma.$RunPayload<ExtArgs>[]
-    file: Prisma.$PackageFilePayload<ExtArgs> | null
     validationReports: Prisma.$ValidationReportPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1572,9 +1572,9 @@ readonly fields: PackageFieldRefs;
  */
 export interface Prisma__PackageClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  file<T extends Prisma.Package$fileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Package$fileArgs<ExtArgs>>): Prisma.Prisma__PackageFileClient<runtime.Types.Result.GetResult<Prisma.$PackageFilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   runs<T extends Prisma.Package$runsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Package$runsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  file<T extends Prisma.Package$fileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Package$fileArgs<ExtArgs>>): Prisma.Prisma__PackageFileClient<runtime.Types.Result.GetResult<Prisma.$PackageFilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   validationReports<T extends Prisma.Package$validationReportsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Package$validationReportsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ValidationReportPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2018,6 +2018,25 @@ export type PackageDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
 }
 
 /**
+ * Package.file
+ */
+export type Package$fileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PackageFile
+   */
+  select?: Prisma.PackageFileSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PackageFile
+   */
+  omit?: Prisma.PackageFileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PackageFileInclude<ExtArgs> | null
+  where?: Prisma.PackageFileWhereInput
+}
+
+/**
  * Package.runs
  */
 export type Package$runsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2039,25 +2058,6 @@ export type Package$runsArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.RunScalarFieldEnum | Prisma.RunScalarFieldEnum[]
-}
-
-/**
- * Package.file
- */
-export type Package$fileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the PackageFile
-   */
-  select?: Prisma.PackageFileSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the PackageFile
-   */
-  omit?: Prisma.PackageFileOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.PackageFileInclude<ExtArgs> | null
-  where?: Prisma.PackageFileWhereInput
 }
 
 /**

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-middleware';
-import { parseWorkbook } from '@/lib/validation/xlsx';
+import { readUploadSheets } from '@/lib/validation/template-check';
 import { createStagedUpload } from '@/lib/repo-cmf/validation';
 
 export const runtime = 'nodejs';
@@ -38,8 +38,20 @@ export async function POST(request: NextRequest) {
 
   try {
     const bytes = await file.arrayBuffer();
-    const parsed = await parseWorkbook(bytes);
-    const sheets = parsed.map((s) => ({ objectType: s.objectType, headers: s.headers, rows: s.rows }));
+    // Use the STREAMING reader (memory-safe on large workbooks), not the
+    // full-load ExcelJS parse — a multi-MB upload through wb.xlsx.load OOMs the
+    // instance. readUploadSheets streams rows and only falls back to the heavy
+    // parser for unusual files.
+    const parsed = await readUploadSheets(bytes);
+    // Cap the per-sheet rows we echo back to the model — the model only needs to
+    // SEE what's in the file, not every row. The full data is staged for load.
+    const MAX_ECHO_ROWS = 50;
+    const sheets = parsed.map((s) => ({
+      objectType: s.objectType,
+      headers: s.headers,
+      rows: s.rows.slice(0, MAX_ECHO_ROWS),
+      totalRows: s.rows.length,
+    }));
     const staged = await createStagedUpload({
       userId,
       filename: file.name,

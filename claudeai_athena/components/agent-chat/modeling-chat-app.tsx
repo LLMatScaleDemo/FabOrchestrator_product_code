@@ -80,7 +80,15 @@ import { ToolTimeline } from "@/components/prompt-kit/tool-timeline"
 import { FileCard } from "@/components/prompt-kit/file-card"
 import { ClaudeChatInput, type ClaudeChatInputHandle } from "@/components/ui/claude-style-chat-input"
 import { LoaderWizard } from "@/components/cmf/loader-wizard"
+import { CmfStatusIndicator } from "@/components/cmf/cmf-status-indicator"
+import { CmfDatabaseToggle, type CmfDbSelection } from "@/components/cmf/cmf-database-toggle"
 import { EntryForm, type FormSpec } from "@/components/cmf/entry-form"
+import {
+  LoadValidationCard,
+  LoadReceiptCard,
+  type ValidateForLoadResult,
+  type LoadToCmfResult,
+} from "@/components/cmf/load-cards"
 import { SettingsModal } from "@/components/settings-modal"
 // Image import removed - welcome state no longer uses logo
 
@@ -648,6 +656,7 @@ function ChatContent({
   userName,
   onOpenMcpSettings,
   allowedModels,
+  cmfSelection,
 }: {
   conversationId: string | null
   selectedModel: ClaudeModelId
@@ -656,6 +665,7 @@ function ChatContent({
   userName: string
   onOpenMcpSettings: () => void
   allowedModels: typeof CLAUDE_MODELS
+  cmfSelection: CmfDbSelection
 }) {
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [thinkingEnabled, setThinkingEnabled] = useState(false)
@@ -887,7 +897,10 @@ function ChatContent({
     enableReasoning: thinkingEnabled,
     conversationId,
     activeMcpIds,
-  }), [selectedModel, webSearchEnabled, thinkingEnabled, conversationId, activeMcpIds])
+    // Which CMF database this turn reads from / writes to (see CmfDatabaseToggle).
+    cmfDbs: cmfSelection.cmfDbs,
+    loadDbKey: cmfSelection.loadDbKey,
+  }), [selectedModel, webSearchEnabled, thinkingEnabled, conversationId, activeMcpIds, cmfSelection])
 
   // Create transport with memoized configuration - includes auth headers
   const transport = useMemo(() => new DefaultChatTransport({
@@ -1319,7 +1332,13 @@ function ChatContent({
           // code-execution downloads).
           const tp = toolParts[0]
           if (
-            ['generateExcel', 'generateTemplate'].includes(tp.type) &&
+            [
+              'generateExcel', 'tool-generateExcel',
+              'generateTemplate', 'tool-generateTemplate',
+              'fillFromExisting', 'tool-fillFromExisting',
+              'exportWithDependencies', 'tool-exportWithDependencies',
+              'removeFromLoader', 'tool-removeFromLoader',
+            ].includes(tp.type) &&
             tp.state === 'output-available'
           ) {
             const out = tp.output as
@@ -1348,8 +1367,21 @@ function ChatContent({
       segments.push({ type: 'text', content: currentText.trim() })
     }
 
-    // Move file segments to the end so FileCards appear after all text content
-    const fileSegments = segments.filter(s => s.type === 'file')
+    // Move file segments to the end so FileCards appear after all text content.
+    // Dedupe by filename, keeping only the LAST one: when the assistant
+    // regenerates a file within the same turn (e.g. generate → fix a field →
+    // regenerate), each generateExcel pushes its own download card, so two
+    // identically-named cards would stack. The newest file supersedes the
+    // earlier one, so we keep the last occurrence per filename.
+    const allFileSegments = segments.filter(s => s.type === 'file')
+    const seenNames = new Set<string>()
+    const fileSegments: MessageSegment[] = []
+    for (let i = allFileSegments.length - 1; i >= 0; i--) {
+      const name = (allFileSegments[i].content as { filename: string }).filename
+      if (seenNames.has(name)) continue
+      seenNames.add(name)
+      fileSegments.unshift(allFileSegments[i])
+    }
     const nonFileSegments = segments.filter(s => s.type !== 'file')
     return [...nonFileSegments, ...fileSegments]
   }
@@ -1446,6 +1478,35 @@ function ChatContent({
     })
   }, [])
 
+  // Excel (.xlsx) can't be sent to the model as a raw file attachment — the API
+  // rejects that media type. Instead we stage + parse it server-side and inject
+  // a TEXT reference (`Uploaded "…" (__upload_ref__: <id>)` + a compact sheet
+  // summary) the model understands (WORKFLOW B). Returns that text block, or an
+  // error line to show the user.
+  const stageXlsxUpload = useCallback(async (file: File): Promise<string> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) || "" : ""
+    const form = new FormData()
+    form.append('file', file)
+    try {
+      const res = await fetch('/api/modeling-agent/chat/parse-upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      })
+      const data = await res.json()
+      if (!res.ok) return `Upload of "${file.name}" failed: ${data?.error || `HTTP ${res.status}`}.`
+      const sheets = (data.sheets || []) as Array<{ objectType: string; headers: string[]; rows: Record<string, string>[]; totalRows?: number }>
+      const rowsOf = (s: { rows?: unknown[]; totalRows?: number }) => s.totalRows ?? s.rows?.length ?? 0
+      const withData = sheets.filter((s) => rowsOf(s) > 0)
+      const summary = withData.length
+        ? withData.map((s) => `- ${s.objectType}: ${rowsOf(s)} row${rowsOf(s) === 1 ? '' : 's'} (columns: ${(s.headers || []).slice(0, 12).join(', ')})`).join('\n')
+        : '(no data rows found in any sheet)'
+      return `Uploaded "${data.filename}" (__upload_ref__: ${data.uploadStagingId})\nParsed contents:\n${summary}`
+    } catch (err) {
+      return `Upload of "${file.name}" failed: ${err instanceof Error ? err.message : 'could not reach the server'}.`
+    }
+  }, [])
+
   // Core send logic - extracted so it can be called directly or after transition delay
   const executeSend = useCallback(async (data: {
     message: string;
@@ -1460,14 +1521,32 @@ function ChatContent({
       .filter(p => p.content)
       .map(p => p.content!)
     const userText = data.message.trim()
-    const text = pastedTexts.length > 0
+    const baseText = pastedTexts.length > 0
       ? [userText, ...pastedTexts].filter(Boolean).join('\n\n')
       : userText
 
-    // Convert attached files (images, documents) to FileUIPart format
+    // Convert attached files to FileUIPart format — EXCEPT Excel (.xlsx), which
+    // the model can't accept as a raw attachment. Those are staged + parsed
+    // server-side and injected into the message text as an __upload_ref__ block.
     const typedFiles = data.files as Array<{ id: string; file: File; type: string; preview: string | null }>
+    const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    const isXlsx = (file: File) => file.name.toLowerCase().endsWith('.xlsx') || file.type === XLSX_MIME
+
+    // Give immediate feedback BEFORE the (potentially slow, multi-MB) .xlsx
+    // staging/parse — otherwise the screen sits empty for ~30s and looks like the
+    // send was dropped / reset to a new chat.
+    setInput("")
+    setWaitingForResponse(true)
+    userClosedArtifactRef.current = false
+    isLoadedConversationRef.current = false
+
     const fileParts: Array<{ type: 'file'; mediaType: string; url: string; filename?: string }> = []
+    const uploadBlocks: string[] = []
     for (const f of typedFiles) {
+      if (isXlsx(f.file)) {
+        uploadBlocks.push(await stageXlsxUpload(f.file))
+        continue
+      }
       try {
         const dataUrl = await fileToDataUrl(f.file)
         fileParts.push({
@@ -1480,11 +1559,8 @@ function ChatContent({
         console.error('Failed to read file:', f.file.name, err)
       }
     }
+    const text = [baseText, ...uploadBlocks].filter(Boolean).join('\n\n')
 
-    setInput("")
-    setWaitingForResponse(true)
-    userClosedArtifactRef.current = false
-    isLoadedConversationRef.current = false
     const optimisticMessageId = createOptimisticUserMessage(text)
 
     const sendPayload: { text: string; files?: Array<{ type: 'file'; mediaType: string; url: string; filename?: string }>; messageId: string } = {
@@ -1528,7 +1604,7 @@ function ChatContent({
         setMessages((prev) => prev.filter((m) => m.id !== optimisticMessageId))
       })
     }
-  }, [conversationId, onConversationCreated, sendMessage, requestBody, setMessages, createOptimisticUserMessage, fileToDataUrl])
+  }, [conversationId, onConversationCreated, sendMessage, requestBody, setMessages, createOptimisticUserMessage, fileToDataUrl, stageXlsxUpload])
 
   // Bridge from ClaudeChatInput's onSendMessage to existing chat flow
   // When sending from welcome state, triggers transition animation first
@@ -1838,6 +1914,22 @@ function ChatContent({
                                                 t.state === 'output-available' &&
                                                 Array.isArray((t.output as { fields?: unknown } | undefined)?.fields)
                                             )
+                                            // validateForLoad → the two-stage validation card (with a
+                                            // Load button when both checks pass). loadToCmf → receipt.
+                                            const validateParts = tools.filter(
+                                              (t) =>
+                                                ['validateForLoad', 'tool-validateForLoad'].includes(t.type) &&
+                                                t.state === 'output-available' && t.output
+                                            )
+                                            const loadParts = tools.filter(
+                                              (t) =>
+                                                ['loadToCmf', 'tool-loadToCmf'].includes(t.type) &&
+                                                t.state === 'output-available' && t.output &&
+                                                !(t.output as { needsConfirmation?: boolean }).needsConfirmation
+                                            )
+                                            // The Load button is live only on the newest turn (no user
+                                            // reply after it) so a stale card can't re-trigger a load.
+                                            const cardInteractive = !messages.slice(index + 1).some((m) => m.role === 'user')
                                             return (
                                               <div key={`timeline-${segIndex}`}>
                                                 <ToolTimeline
@@ -1852,6 +1944,20 @@ function ChatContent({
                                                     key={tp.toolCallId || `form-${segIndex}-${i}`}
                                                     spec={tp.output as unknown as FormSpec}
                                                     onSubmit={(text) => { sendMessage({ text }, { body: requestBody }) }}
+                                                  />
+                                                ))}
+                                                {validateParts.map((tp, i) => (
+                                                  <LoadValidationCard
+                                                    key={tp.toolCallId || `val-${segIndex}-${i}`}
+                                                    result={tp.output as unknown as ValidateForLoadResult}
+                                                    interactive={cardInteractive}
+                                                    onConfirm={(text) => { sendMessage({ text }, { body: requestBody }) }}
+                                                  />
+                                                ))}
+                                                {loadParts.map((tp, i) => (
+                                                  <LoadReceiptCard
+                                                    key={tp.toolCallId || `rcpt-${segIndex}-${i}`}
+                                                    result={tp.output as unknown as LoadToCmfResult}
                                                   />
                                                 ))}
                                               </div>
@@ -2087,6 +2193,22 @@ function ChatContent({
                                       summary chip instead. */}
                                   {parseEntryFormSubmission(messageText) ? (
                                     <EntryFormSubmissionChip summary={parseEntryFormSubmission(messageText)!} />
+                                  ) : parseLoadConfirmSubmission(messageText) ? (
+                                    <LoadConfirmChip />
+                                  ) : parseUploadMessage(messageText) ? (
+                                    (() => {
+                                      const up = parseUploadMessage(messageText)!
+                                      return (
+                                        <>
+                                          <UploadedFileChip filename={up.filename} />
+                                          {up.userText && (
+                                            <MessageContent role="user" className="inline-block w-fit max-w-full">
+                                              {up.userText}
+                                            </MessageContent>
+                                          )}
+                                        </>
+                                      )
+                                    })()
                                   ) : (
                                     <MessageContent role="user" className="inline-block w-fit max-w-full">
                                       {messageText}
@@ -2269,6 +2391,46 @@ function EntryFormSubmissionChip({ summary }: { summary: EntryFormSummary }) {
   )
 }
 
+/** When a user uploads an .xlsx we append a machine block to their message —
+ *  `Uploaded "<name>" (__upload_ref__: <id>)\nParsed contents:\n…` — so the model
+ *  can see the file. That block is real (sent + stored) but shouldn't clutter the
+ *  user's bubble. Split it out: return the user's actual text + the filename. */
+function parseUploadMessage(text: string): { userText: string; filename: string } | null {
+  if (!text) return null
+  const idx = text.indexOf('Uploaded "')
+  if (idx < 0 || !text.includes('__upload_ref__:')) return null
+  const m = /Uploaded "([^"]+)" \(__upload_ref__:/.exec(text.slice(idx))
+  if (!m) return null
+  return { userText: text.slice(0, idx).trim(), filename: m[1] }
+}
+
+/** The "Load" button on the validation card sends `__load_confirm__:<json>` as
+ *  the user message (explicit consent the system prompt routes to loadToCmf).
+ *  Render it as a compact chip rather than the raw payload. */
+function parseLoadConfirmSubmission(text: string): boolean {
+  return !!text && text.startsWith("__load_confirm__:")
+}
+
+function UploadedFileChip({ filename }: { filename: string }) {
+  return (
+    <div className="mb-2 flex justify-end">
+      <div className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-border bg-muted/50 px-3.5 py-2 text-sm">
+        <FileIcon className="size-4 shrink-0 text-muted-foreground" />
+        <span className="truncate font-medium">{filename}</span>
+      </div>
+    </div>
+  )
+}
+
+function LoadConfirmChip() {
+  return (
+    <div className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-emerald-600/30 bg-emerald-600/5 px-3.5 py-2 text-sm">
+      <NavSvg><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></NavSvg>
+      <span className="font-medium">Confirmed — load into CMF</span>
+    </div>
+  )
+}
+
 function ModelingChatApp({
   initialView = "chat",
   loaderPackageId,
@@ -2291,6 +2453,12 @@ function ModelingChatApp({
   const [userEmail, setUserEmail] = useState<string>("")
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<"general" | "appearance" | "api-keys" | "mcp" | "instructions" | "advanced">("general")
+  // Which CMF database(s) the agent uses (export/load). Managed + persisted by
+  // <CmfDatabaseToggle>; sent up with each chat request via ChatContent.
+  const [cmfSelection, setCmfSelection] = useState<CmfDbSelection>({
+    cmfDbs: { source: true, target: false },
+    loadDbKey: "source",
+  })
   // Track the chat key separately - stays stable during new conversation creation
   // Only changes when user explicitly selects an existing conversation
   const [chatKey, setChatKey] = useState<string>('new-chat')
@@ -2469,16 +2637,27 @@ function ModelingChatApp({
               </div>
             </div>
           ) : (
-            <ChatContent
-              key={chatKey}
-              conversationId={selectedConversationId}
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-              onConversationCreated={handleConversationCreated}
-              userName={userName}
-              onOpenMcpSettings={() => { setSettingsTab("mcp"); setSettingsOpen(true) }}
-              allowedModels={allowedModels}
-            />
+            <div className="flex h-full min-h-0 flex-col">
+              {/* Slim top strip — CMF connectivity (the chat also reaches CMF via
+                  browse / lookup / fill-from-existing / metadata). */}
+              <div className="flex shrink-0 items-center justify-end gap-2 px-4 pt-3 pb-1">
+                <CmfDatabaseToggle onChange={setCmfSelection} />
+                <CmfStatusIndicator />
+              </div>
+              <div className="min-h-0 flex-1">
+                <ChatContent
+                  key={chatKey}
+                  conversationId={selectedConversationId}
+                  selectedModel={selectedModel}
+                  setSelectedModel={setSelectedModel}
+                  onConversationCreated={handleConversationCreated}
+                  userName={userName}
+                  onOpenMcpSettings={() => { setSettingsTab("mcp"); setSettingsOpen(true) }}
+                  allowedModels={allowedModels}
+                  cmfSelection={cmfSelection}
+                />
+              </div>
+            </div>
           )}
         </SidebarInset>
       </SidebarProvider>

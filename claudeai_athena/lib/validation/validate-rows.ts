@@ -1,5 +1,5 @@
 import { cmfQuery } from "@/lib/cmf/cmf-sql";
-import { loadRuleset, type EntityRuleset } from "@/lib/validation/metadata";
+import { loadRuleset, isFkReference, type EntityRuleset } from "@/lib/validation/metadata";
 import { buildParentIndex } from "@/lib/validation/referential";
 import { runRules } from "@/lib/validation/rule-engine";
 import type { ParsedSheet, ValidationError } from "@/lib/validation/types";
@@ -59,13 +59,13 @@ function fileKeyIndex(
 function collectRefs(ruleset: EntityRuleset, rows: Record<string, string>[]) {
   const byColumn: { column: string; targetType: string; values: Set<string> }[] = [];
   for (const p of ruleset.properties) {
-    if (!p.referenceTargetType) continue;
+    if (!isFkReference(p)) continue; // skip CMF's noisy scalar "references"
     const values = new Set<string>();
     for (const row of rows) {
       const v = (row[p.name] ?? "").trim();
       if (v) values.add(v);
     }
-    if (values.size) byColumn.push({ column: p.name, targetType: p.referenceTargetType, values });
+    if (values.size) byColumn.push({ column: p.name, targetType: p.referenceTargetType!, values });
   }
   return byColumn;
 }

@@ -26,6 +26,7 @@ import {
   MessageSquare,
   Wrench,
   Boxes,
+  Database,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -63,6 +64,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Models", href: "/admin/models", icon: Boxes },
       { label: "MCP Connections", href: "/admin/mcp", icon: Wrench },
+      { label: "Database Connections", href: "/admin/database-connections", icon: Database },
     ],
   },
   {

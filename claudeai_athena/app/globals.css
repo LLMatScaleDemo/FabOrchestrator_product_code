@@ -2455,3 +2455,85 @@ pre[class*="language-"] span.linenumber {
   .validate-track > span,
   .validate-eq > i { animation-duration: 0.001ms; animation-iteration-count: 1; }
 }
+
+/* ==========================================================================
+   FabInsight data-visualisation palette
+   --------------------------------------------------------------------------
+   Slots below are the validated categorical order — the ordering itself is the
+   colourblind-safety mechanism, so DO NOT reorder or cycle it. Verified with
+   the palette validator against this app's own surfaces:
+     light (#ffffff): worst adjacent CVD dE 9.1, normal-vision dE 19.6
+     dark  (#171719): same eight hues re-stepped for the dark band
+   Three light slots sit under 3:1 on white, so every chart ships visible direct
+   labels ("relief rule") and never leans on colour alone.
+   ========================================================================== */
+.fabviz {
+  color-scheme: light;
+
+  /* Categorical — fixed order, never cycled */
+  --fabviz-s1: #2a78d6;  /* blue    */
+  --fabviz-s2: #eb6834;  /* orange  */
+  --fabviz-s3: #1baf7a;  /* aqua    */
+  --fabviz-s4: #eda100;  /* yellow  */
+  --fabviz-s5: #e87ba4;  /* magenta */
+  --fabviz-s6: #008300;  /* green   */
+  --fabviz-s7: #4a3aa7;  /* violet  */
+  --fabviz-s8: #e34948;  /* red     */
+
+  /* Sequential — ONE hue, light to dark, for magnitude (heat map) */
+  --fabviz-seq-100: #cde2fb;
+  --fabviz-seq-200: #9ec5f4;
+  --fabviz-seq-300: #6da7ec;
+  --fabviz-seq-400: #3987e5;
+  --fabviz-seq-500: #256abf;
+  --fabviz-seq-600: #184f95;
+  --fabviz-seq-700: #0d366b;
+
+  /* Status — reserved, never reused as a series colour; always with a label */
+  --fabviz-good: #0ca30c;
+  --fabviz-warning: #fab219;
+  --fabviz-serious: #ec835a;
+  --fabviz-critical: #d03b3b;
+
+  /* Chrome & ink */
+  --fabviz-surface: #ffffff;
+  --fabviz-plane: #f7f8fc;
+  --fabviz-ink: #16192e;
+  --fabviz-secondary: #4b5270;
+  --fabviz-muted: #838aa6;
+  --fabviz-grid: #eceef6;
+  --fabviz-axis: #c9cddd;
+  --fabviz-border: #e6e9f4;
+  --fabviz-track: #f0f2f9;
+}
+
+.dark .fabviz {
+  color-scheme: dark;
+
+  --fabviz-s1: #3987e5;
+  --fabviz-s2: #d95926;
+  --fabviz-s3: #199e70;
+  --fabviz-s4: #c98500;
+  --fabviz-s5: #d55181;
+  --fabviz-s6: #008300;
+  --fabviz-s7: #9085e9;
+  --fabviz-s8: #e66767;
+
+  --fabviz-seq-100: #0d366b;
+  --fabviz-seq-200: #104281;
+  --fabviz-seq-300: #184f95;
+  --fabviz-seq-400: #256abf;
+  --fabviz-seq-500: #2a78d6;
+  --fabviz-seq-600: #3987e5;
+  --fabviz-seq-700: #6da7ec;
+
+  --fabviz-surface: #1c1d21;
+  --fabviz-plane: #141416;
+  --fabviz-ink: #f4f5fa;
+  --fabviz-secondary: #b9bdcc;
+  --fabviz-muted: #8b90a3;
+  --fabviz-grid: #2b2c31;
+  --fabviz-axis: #3a3c43;
+  --fabviz-border: #2e3036;
+  --fabviz-track: #26272c;
+}

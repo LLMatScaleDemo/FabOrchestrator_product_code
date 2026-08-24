@@ -1,5 +1,24 @@
-import type { EntityRuleset } from "@/lib/validation/metadata";
+import { isFkReference, type EntityRuleset } from "@/lib/validation/metadata";
 import type { ParsedSheet, ValidationError } from "@/lib/validation/types";
+import templateSchema from "@/lib/validation/template-schema.json";
+
+const TEMPLATE_SCHEMA = templateSchema as unknown as Record<string, { columns?: string[] }>;
+
+/**
+ * The loadable template columns for an object type (case-insensitive set), or
+ * null when the type isn't in the template. A mandatory metadata property that
+ * is NOT one of these columns is not something a preparer can supply — CMF fills
+ * or DERIVES it on load (e.g. ResourceService.Name = `{Source}To{Target}`, a
+ * NOT-NULL column the template deliberately omits). Enforcing it would be a false
+ * positive, so the required-value check is gated on template membership.
+ */
+function templateColumnSet(objectType: string): Set<string> | null {
+  const entry = Object.entries(TEMPLATE_SCHEMA).find(
+    ([k]) => k.toLowerCase() === objectType.toLowerCase(),
+  );
+  const cols = entry?.[1]?.columns;
+  return cols ? new Set(cols.map((c) => c.toLowerCase())) : null;
+}
 
 /**
  * Deterministic rule engine — the blocking gate. Pure: given a parsed sheet, a
@@ -96,9 +115,14 @@ export function runRules(
   parentExists: ParentExists,
 ): ValidationError[] {
   const errors: ValidationError[] = [];
-  // Count only USER-fillable mandatories — system columns are auto-filled.
+  // Only fields that are actual template columns can be user-supplied; a
+  // mandatory metadata property outside the template is CMF-derived on load.
+  const tplCols = templateColumnSet(sheet.objectType);
+  const isTemplateColumn = (name: string) => !tplCols || tplCols.has(name.toLowerCase());
+  // Count only USER-fillable mandatories — system columns are auto-filled, and
+  // non-template columns are CMF-derived.
   const userMandatoryNames = ruleset.properties
-    .filter((p) => p.mandatory && !isSystemManaged(p.name))
+    .filter((p) => p.mandatory && !isSystemManaged(p.name) && isTemplateColumn(p.name))
     .map((p) => p.name);
 
   sheet.rows.forEach((row, i) => {
@@ -110,8 +134,10 @@ export function runRules(
       const sysCol = isSystemManaged(p.name);
 
       if (!val) {
-        // Required-value check skips system-managed columns (CMF auto-fills).
-        if (p.mandatory && !sysCol) {
+        // Required-value check skips system-managed columns (CMF auto-fills) and
+        // non-template columns (CMF derives them on load — e.g. the NOT-NULL
+        // ResourceService.Name, absent from the template on purpose).
+        if (p.mandatory && !sysCol && isTemplateColumn(p.name)) {
           missingMandatory.push(p.name);
           // CMF defaults numeric / boolean columns on insert, and the
           // referenceTargetType from `metadata.ts` is unreliable for some
@@ -188,7 +214,9 @@ export function runRules(
       // does the authoritative per-target lookup; here we surface as a
       // warning so the preparer sees the hint without being gated by a
       // potentially wrong metadata join.
-      if (p.referenceTargetType && !parentExists(p.referenceTargetType, val)) {
+      // Only genuine FK references (BigInt id columns) — CMF tags many scalar
+      // columns (e.g. Step.Type = "Standard") with a bogus reference target.
+      if (isFkReference(p) && !parentExists(p.referenceTargetType!, val)) {
         errors.push({
           ...mkWarn(
             sheet.objectType,

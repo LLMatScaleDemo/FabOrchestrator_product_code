@@ -18,8 +18,11 @@ import {
   ListChecks,
   RotateCw,
   FileText,
+  MinusCircle,
 } from "lucide-react";
 import { StepProgress, type WizardStep } from "@/components/cmf/step-progress";
+import { CmfStatusIndicator } from "@/components/cmf/cmf-status-indicator";
+import { CmfDatabaseToggle } from "@/components/cmf/cmf-database-toggle";
 import { FileDropZone } from "@/components/cmf/file-drop-zone";
 import { ObjectTypeSelector } from "@/components/cmf/object-type-selector";
 import { ExecutionLogViewer } from "@/components/cmf/execution-log-viewer";
@@ -33,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import type { ExecutionLogEntry, ExecutionResult, MasterDataPackage, UserFriendlyObjectType } from "@/lib/cmf/types";
@@ -149,6 +153,14 @@ export function LoaderWizard({
   const [validation, setValidation] = useState<ValidationData | null>(null);
   const [validating, setValidating] = useState(false);
   const [registering, setRegistering] = useState(false);
+  // The local template check is optional (user can skip it on the Validate step).
+  // CMF's own dry-run validation below always runs — it is never skippable — so a
+  // file is never loaded unverified. Default: template check ON.
+  const [skipTemplate, setSkipTemplate] = useState(false);
+  // Validation is manual: nothing runs until the user clicks "Start validation"
+  // on the Validate step (the CMF dry-run is a slow, VPN-dependent call, so we
+  // don't fire it automatically on arrival).
+  const [validationStarted, setValidationStarted] = useState(false);
   // CMF's own validation (op=1, no write) — runs after register, before Select.
   const [cmfValidating, setCmfValidating] = useState(false);
   const [cmfErrors, setCmfErrors] = useState<{ name: string; message: string }[] | null>(null);
@@ -276,11 +288,14 @@ export function LoaderWizard({
     }
   }, [stagingId]);
 
-  // Auto-run the template check on entering the Validate step.
+  // Run the template check once the user starts validation — unless they chose to
+  // skip it (then we go straight to CMF's compulsory dry-run). Nothing runs until
+  // `validationStarted` is set by the Start button.
   useEffect(() => {
-    if (step === 1 && stagingId && !validation && !validating) void runValidate();
+    if (step === 1 && validationStarted && stagingId && !skipTemplate && !validation && !validating)
+      void runValidate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, stagingId]);
+  }, [step, stagingId, skipTemplate, validationStarted]);
 
   // Poll CMF for a given package until its execution completes; classify the
   // result. Shared by the initial register-and-validate and the "Check again"
@@ -394,7 +409,9 @@ export function LoaderWizard({
   // CMF's OWN dry-run validation. If already registered, skip straight to the
   // validation poll so retries never create a duplicate package.
   const registerAndValidate = useCallback(async () => {
-    if (!validation?.ok) return;
+    // Gate to proceed to CMF: either the template check passed, or the user chose
+    // to skip it. CMF's dry-run (below) is compulsory either way.
+    if (!skipTemplate && !validation?.ok) return;
     if (cmfInFlightRef.current) return;
     cmfInFlightRef.current = true;
     try {
@@ -412,7 +429,7 @@ export function LoaderWizard({
           const res = await cmfFetch(`/api/cmf/packages/stage/${encodeURIComponent(stagingId)}/register`, {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ name: pkgName }),
+            body: JSON.stringify({ name: pkgName, skipTemplateCheck: skipTemplate }),
           });
           const data = (await res.json().catch(() => ({}))) as {
             packageId?: string;
@@ -440,7 +457,7 @@ export function LoaderWizard({
     } finally {
       cmfInFlightRef.current = false;
     }
-  }, [validation, packageId, stagingId, pkgName, objectTypes, pollCmfValidation]);
+  }, [skipTemplate, validation, packageId, stagingId, pkgName, objectTypes, pollCmfValidation]);
 
   // Chain the two checks automatically: as soon as the template check passes,
   // register + run CMF's dry-run without waiting for a button. Warnings no
@@ -449,7 +466,8 @@ export function LoaderWizard({
   useEffect(() => {
     if (
       step === 1 &&
-      validation?.ok &&
+      validationStarted &&
+      (validation?.ok || skipTemplate) &&
       stagingId &&
       !packageId &&
       autoCmfRef.current !== stagingId
@@ -457,7 +475,7 @@ export function LoaderWizard({
       autoCmfRef.current = stagingId;
       void registerAndValidate();
     }
-  }, [step, validation, stagingId, packageId, registerAndValidate]);
+  }, [step, validationStarted, validation, skipTemplate, stagingId, packageId, registerAndValidate]);
 
   const doLoad = useCallback(() => {
     setLoadDialogOpen(false);
@@ -483,7 +501,17 @@ export function LoaderWizard({
               choose object types, then load them into the MES.
             </p>
           </div>
-          {currentStatus}
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              {/* Same CMF database toggle as the chat — chooses which CMF the
+                  loader validates against and loads into (via the x-cmf-db-key
+                  header cmfFetch sends). onChange is unused here; the routes read
+                  the header/preference server-side. */}
+              <CmfDatabaseToggle onChange={() => {}} />
+              <CmfStatusIndicator />
+            </div>
+            {currentStatus}
+          </div>
         </div>
         <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm">
           {/* Display-only: steps don't navigate. Forward is via each step's
@@ -520,6 +548,7 @@ export function LoaderWizard({
                 setFileName(fName);
                 setFileSize(fSize);
                 setValidation(null);
+                setValidationStarted(false);
                 advanceTo(1);
               }}
             />
@@ -538,6 +567,11 @@ export function LoaderWizard({
               cmfExplanations={cmfExplanations}
               cmfTimedOut={cmfTimedOut}
               onCheckAgain={() => packageId && void pollCmfValidation(packageId, objectTypes)}
+              skipTemplate={skipTemplate}
+              onToggleSkip={setSkipTemplate}
+              skipToggleLocked={validationStarted || !!packageId || registering || cmfValidating}
+              validationStarted={validationStarted}
+              onStart={() => setValidationStarted(true)}
             />
           )}
 
@@ -734,14 +768,16 @@ function CheckRow({
   okText,
   runningText,
   failText,
+  skippedText = "Skipped — not run.",
   trailing,
   runKind = "slide",
 }: {
   label: string;
-  state: "pending" | "running" | "ok" | "fail";
+  state: "pending" | "running" | "ok" | "fail" | "skipped";
   okText: string;
   runningText: string;
   failText: string;
+  skippedText?: string;
   trailing?: React.ReactNode;
   runKind?: "slide" | "eq";
 }) {
@@ -752,6 +788,7 @@ function CheckRow({
         <span className="flex size-5 shrink-0 items-center justify-center">
           {state === "ok" && <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden />}
           {state === "fail" && <XCircle className="size-5 text-destructive" aria-hidden />}
+          {state === "skipped" && <MinusCircle className="size-5 text-muted-foreground" aria-hidden />}
           {running && runKind === "eq" && <EqBars />}
           {running && runKind === "slide" && <Spinner className="size-5 text-primary" />}
           {state === "pending" && (
@@ -765,11 +802,12 @@ function CheckRow({
               "text-xs",
               state === "ok" && "text-emerald-700 dark:text-emerald-400",
               state === "fail" && "text-destructive",
-              (running || state === "pending") && "text-muted-foreground",
+              (running || state === "pending" || state === "skipped") && "text-muted-foreground",
             )}
           >
             {state === "ok" && okText}
             {state === "fail" && failText}
+            {state === "skipped" && skippedText}
             {running && runningText}
             {state === "pending" && "Waiting…"}
           </p>
@@ -797,6 +835,11 @@ function ValidateStep({
   cmfExplanations,
   cmfTimedOut,
   onCheckAgain,
+  skipTemplate,
+  onToggleSkip,
+  skipToggleLocked,
+  validationStarted,
+  onStart,
 }: {
   loading: boolean;
   data: ValidationData | null;
@@ -809,27 +852,39 @@ function ValidateStep({
   cmfExplanations: ErrorExplanation[];
   cmfTimedOut: boolean;
   onCheckAgain: () => void;
+  skipTemplate: boolean;
+  onToggleSkip: (v: boolean) => void;
+  skipToggleLocked: boolean;
+  validationStarted: boolean;
+  onStart: () => void;
 }) {
   // --- Derived validation state (single source of truth for the gate). ---
   const templateOk = !!data?.ok;
-  const hasTemplateErrors = !!data && !data.ok;
+  // When the template check is skipped its errors are ignored entirely; only
+  // CMF's compulsory dry-run gates the load.
+  const hasTemplateErrors = !skipTemplate && !!data && !data.ok;
   const hasCmfErrors = !!(cmfErrors && cmfErrors.length > 0);
   const hasAnyError = hasTemplateErrors || hasCmfErrors;
   const busy = loading || nextBusy || cmfValidating || registering;
-  // Continue is allowed only when BOTH checks are clean and nothing is in flight.
-  const canContinue = templateOk && !hasAnyError && !busy;
+  // The template gate passes when the check passed OR the user skipped it.
+  const templateGateOk = skipTemplate || templateOk;
+  // Continue is allowed only when the (optional) template gate is satisfied, CMF
+  // has no errors, and nothing is in flight.
+  const canContinue = templateGateOk && !hasAnyError && !busy;
 
   const cmfActive = cmfValidating || registering;
   const elapsed = useElapsed(cmfActive);
 
-  const templateState: "pending" | "running" | "ok" | "fail" = loading
-    ? "running"
-    : !data
-      ? "pending"
-      : data.ok
-        ? "ok"
-        : "fail";
-  const cmfState: "pending" | "running" | "ok" | "fail" = !templateOk
+  const templateState: "pending" | "running" | "ok" | "fail" | "skipped" = skipTemplate
+    ? "skipped"
+    : loading
+      ? "running"
+      : !data
+        ? "pending"
+        : data.ok
+          ? "ok"
+          : "fail";
+  const cmfState: "pending" | "running" | "ok" | "fail" = !templateGateOk
     ? "pending"
     : cmfActive
       ? "running"
@@ -856,24 +911,57 @@ function ValidateStep({
         <div>
           <h2 className="font-heading text-base font-medium">Validation</h2>
           <p className="mt-0.5 max-w-prose text-xs text-muted-foreground">
-            Two checks run before anything is written: a template check (sheets &amp; columns), then
-            CMF&apos;s own dry-run validation. Both must pass to continue.
+            A local mandatory-field check (every object&apos;s required <span className="font-mono">Name</span>) —
+            optional — then CMF&apos;s own dry-run validation, which is always required. The load is
+            gated on CMF passing.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={onRerun} disabled={loading || nextBusy}>
-          {loading ? <Spinner data-icon="inline-start" /> : <ShieldCheck data-icon="inline-start" aria-hidden />}
-          {loading ? "Validating…" : "Re-validate"}
-        </Button>
+        {!validationStarted ? (
+          <Button size="sm" onClick={onStart}>
+            <ShieldCheck data-icon="inline-start" aria-hidden />
+            Start validation
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" onClick={onRerun} disabled={loading || nextBusy || skipTemplate}>
+            {loading ? <Spinner data-icon="inline-start" /> : <ShieldCheck data-icon="inline-start" aria-hidden />}
+            {loading ? "Validating…" : "Re-validate"}
+          </Button>
+        )}
       </div>
+
+      {/* Skip the (optional) local template check. CMF's dry-run below is never
+          skippable, so a file is never loaded unverified. */}
+      <label
+        htmlFor="skip-template-check"
+        className={cn(
+          "flex items-start gap-2.5 rounded-lg border border-border bg-muted/20 px-3 py-2.5",
+          skipToggleLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+        )}
+      >
+        <Checkbox
+          id="skip-template-check"
+          checked={skipTemplate}
+          onCheckedChange={(v) => onToggleSkip(v === true)}
+          disabled={skipToggleLocked}
+          className="mt-0.5"
+        />
+        <span className="flex flex-col gap-0.5 text-xs">
+          <span className="text-sm font-medium">Skip the mandatory-field check</span>
+          <span className="text-muted-foreground">
+            Bypass the local mandatory-field (Name) check and go straight to CMF&apos;s validation.
+            CMF&apos;s dry-run still runs and must pass — nothing is loaded unverified.
+          </span>
+        </span>
+      </label>
 
       {/* Two-stage check summary */}
       <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-background">
         <CheckRow
-          label="1 · Template check"
+          label="1 · Mandatory fields (Name)"
           state={templateState}
           runKind="slide"
-          runningText="Checking sheets and columns…"
-          okText="The file matches the master-data template."
+          runningText="Checking mandatory Name fields…"
+          okText="All required Name fields are filled."
           failText={
             data
               ? `${data.errorCount} error${data.errorCount === 1 ? "" : "s"} found — see details below.`
@@ -903,15 +991,24 @@ function ValidateStep({
         />
       </div>
 
+      {!validationStarted && (
+        <p className="text-xs text-muted-foreground">
+          Click <span className="font-medium text-foreground">Start validation</span> to begin.
+          {skipTemplate
+            ? " The template check is skipped; CMF's dry-run will run — this needs the corporate VPN."
+            : " Both checks will run — the CMF step needs the corporate VPN."}
+        </p>
+      )}
+
       {loading && <Skeleton className="h-20 w-full" />}
 
-      {!loading && data && (
+      {validationStarted && !loading && (data || skipTemplate) && (
         <>
           {hasTemplateErrors && (
-            <ExplanationsPanel explanations={data.explanations ?? []} heading="How to fix these errors" />
+            <ExplanationsPanel explanations={data?.explanations ?? []} heading="How to fix these errors" />
           )}
 
-          {Object.entries(data.errorsByType).map(([type, errs]) => {
+          {!skipTemplate && data && Object.entries(data.errorsByType).map(([type, errs]) => {
             const errorCount = errs.filter((e) => e.severity === "error").length;
             const warnCount = errs.filter((e) => e.severity === "warning").length;
             const infoCount = errs.filter((e) => e.severity === "info").length;
@@ -952,7 +1049,7 @@ function ValidateStep({
             );
           })}
 
-          {templateOk && cmfExplanations.length > 0 && (
+          {templateGateOk && cmfExplanations.length > 0 && (
             <ExplanationsPanel explanations={cmfExplanations} heading="How to fix the CMF error" />
           )}
 

@@ -5,21 +5,39 @@ import { randomUUID } from "node:crypto";
 import ExcelJS from "exceljs";
 import templateSchema from "@/lib/validation/template-schema.json";
 import { parseWorkbook } from "@/lib/validation/xlsx";
-import { checkStructure, type TemplateSchema } from "@/lib/validation/structure-check";
+import { loadRuleset } from "@/lib/validation/metadata";
+import { isSystemManaged } from "@/lib/validation/system-columns";
+import requiredFieldsData from "@/lib/validation/required-fields.json";
+
+/**
+ * Precomputed required user-fillable fields per object type (CMF-mandatory minus
+ * system-managed, template columns only). Built from CMF SQL metadata by
+ * scripts/_buildreq. When an object isn't listed here the validator falls back
+ * to a LIVE CMF metadata lookup, then to Name — so this file is a fast/offline
+ * cache, never the sole source of truth.
+ */
+const REQUIRED_BY_LOWER = new Map<string, string[]>(
+  Object.entries(requiredFieldsData as Record<string, unknown>)
+    .filter(([k, v]) => !k.startsWith("$") && Array.isArray(v))
+    .map(([k, v]) => [k.toLowerCase(), (v as string[]).slice()]),
+);
 import type { ParsedSheet, ValidationError, ValidationResult } from "@/lib/validation/types";
 
 /**
- * Template-conformance + structure validation: compare an uploaded master-data
- * Excel file against the reference MasterDataTemplate.xlsx (precomputed into
- * template-schema.json), so we get 100% structural conformance BEFORE any CMF
- * object API is called.
+ * Master-data "template check" — a Name-only MANDATORY-field gate.
  *
- * Two parts, merged into one result:
- *   • Conformance (here): sheets must be in the template; no EXTRA columns.
- *     Missing optional columns are allowed (subset uploads are normal); missing
- *     MANDATORY columns are the deeper CMF-metadata layer's job.
- *   • Structure (structure-check.ts): sheet order, column-header order, and
- *     parent → child relationships (order + in-file referential).
+ * The reference template (templates/KSP_DL_AI.xlsx, precomputed into
+ * template-schema.json) marks exactly one field mandatory for every object —
+ * its `Name` (Assumptions sheet: "Name Field is Mandatory"). This check enforces
+ * only that, offline, before any CMF call:
+ *   • a recognized object whose template defines a Name column must supply a
+ *     Name column and fill it on every data row;
+ *   • an unrecognized sheet is NOT rejected (leniency lets valid newer objects
+ *     reach CMF) — we only require Name if the sheet happens to carry one.
+ *
+ * Everything else — unknown sheets, extra/missing non-key columns, sheet and
+ * column order, parent/child referential — is deliberately NOT checked here;
+ * CMF's own dry-run validation (op=1) is the authority on those.
  *
  * The workbook is read with ExcelJS in STREAMING mode (which only emits rows
  * that actually exist) — never `wb.xlsx.load` + getRow, which materializes every
@@ -27,37 +45,28 @@ import type { ParsedSheet, ValidationError, ValidationResult } from "@/lib/valid
  * on the 200+ sheet master-data files.
  */
 
-// template-schema.json holds per-type column definitions plus reserved keys:
-// `$order` (canonical sheet order = physical tab order) and `$ambiguous` (object
-// types backed by more than one template sheet — column ORDER isn't checked).
+// template-schema.json holds per-type column definitions (built from the
+// reference template) plus reserved keys. For the Name-only check we only need
+// each type's column list — to know whether a recognized object is expected to
+// carry a (mandatory) Name field.
+type TemplateEntry = { raw: string; columns: string[] };
 const RAW = templateSchema as Record<string, unknown>;
 const RESERVED = new Set(["$order", "$ambiguous"]);
-const ORDER = (RAW.$order as string[] | undefined) ?? [];
-const AMBIGUOUS = new Set((RAW.$ambiguous as string[] | undefined) ?? []);
-const SCHEMA: TemplateSchema = Object.fromEntries(
-  Object.entries(RAW).filter(([k]) => !RESERVED.has(k)),
-) as TemplateSchema;
 const SCHEMA_BY_LOWER = new Map(
-  Object.entries(SCHEMA).map(([k, v]) => [k.toLowerCase(), v]),
+  Object.entries(RAW)
+    .filter(([k]) => !RESERVED.has(k))
+    .map(([k, v]) => [k.toLowerCase(), v as TemplateEntry]),
 );
 
-/**
- * For an unrecognized sheet name, suggest the closest template object type — a
- * truncated/typo'd tab name (e.g. "DataColl" → "DataCollection") is the most
- * common cause. Returns the shortest template type the name is a prefix of, or
- * one that is a prefix of the name; null if nothing is close.
- */
-function suggestObjectType(name: string): string | null {
-  const n = name.toLowerCase();
-  if (!n) return null;
-  let best: string | null = null;
-  for (const key of SCHEMA_BY_LOWER.keys()) {
-    if (key === n) continue;
-    if (key.startsWith(n) || n.startsWith(key)) {
-      if (best === null || key.length < best.length) best = key;
-    }
-  }
-  return best ? SCHEMA_BY_LOWER.get(best)?.raw ?? best : null;
+/** True when the type is a recognized template object at all. */
+function isKnownType(objectType: string): boolean {
+  return SCHEMA_BY_LOWER.has(objectType.toLowerCase());
+}
+
+/** True when the reference template defines a `Name` column for this type. */
+function templateHasName(objectType: string): boolean {
+  const e = SCHEMA_BY_LOWER.get(objectType.toLowerCase());
+  return !!e && e.columns.some((c) => c.toLowerCase() === "name");
 }
 
 const META = new Set([
@@ -163,6 +172,115 @@ async function readUpload(bytes: ArrayBuffer | Buffer): Promise<ParsedSheet[]> {
   }
 }
 
+/**
+ * Comprehensive required-field check — ONE pass that collects EVERY issue (every
+ * sheet, every required field, every row) so the user sees all problems at once
+ * instead of fixing them one at a time. For each sheet with data it loads the
+ * object's CMF field metadata to learn ALL mandatory fields; when metadata is
+ * unavailable it falls back to the Name field. Messages name the exact column,
+ * sheet and row, e.g. `"Name" is required and cannot be empty (row 2).`
+ */
+async function checkRequiredFields(sheets: ParsedSheet[]): Promise<ValidationError[]> {
+  const out: ValidationError[] = [];
+  for (const s of sheets) {
+    if (s.rows.length === 0) continue;
+
+    // The required fields for this object. Prefer the precomputed cache (fast,
+    // offline); else look them up LIVE from CMF metadata; else fall back to Name.
+    let mandatory: string[] = [];
+    const precomputed = REQUIRED_BY_LOWER.get(s.objectType.toLowerCase());
+    if (precomputed) {
+      mandatory = precomputed;
+    } else {
+      let ruleset: Awaited<ReturnType<typeof loadRuleset>> = null;
+      try {
+        ruleset = await loadRuleset(s.objectType);
+      } catch {
+        ruleset = null;
+      }
+      if (ruleset) {
+        // Only require fields that are (a) mandatory, (b) NOT system-managed
+        // (CreatedBy/Id/Version/UniversalState/… — CMF auto-fills these; humans
+        // never do), and (c) actually part of this object's template columns.
+        const schemaCols = SCHEMA_BY_LOWER.get(s.objectType.toLowerCase())?.columns;
+        const inTemplate = schemaCols ? new Set(schemaCols.map((c) => c.toLowerCase())) : null;
+        mandatory = ruleset.properties
+          .filter((p) => p.mandatory && !isSystemManaged(p.name) && (!inTemplate || inTemplate.has(p.name.toLowerCase())))
+          .map((p) => p.name);
+      } else if (isKnownType(s.objectType) && templateHasName(s.objectType)) {
+        mandatory = ["Name"];
+      }
+    }
+    if (mandatory.length === 0) continue;
+
+    const headerByLower = new Map(s.headers.map((h) => [h.toLowerCase(), h] as const));
+    for (const field of mandatory) {
+      const header = headerByLower.get(field.toLowerCase());
+      // Required column entirely absent → one error for the sheet.
+      if (!header) {
+        out.push({
+          objectType: s.objectType,
+          row: null,
+          column: field,
+          severity: "error",
+          message: `The "${field}" column is required but is missing from the ${s.objectType} sheet.`,
+        });
+        continue;
+      }
+      // Column present → flag every row where the required value is blank.
+      const emptyRows: number[] = [];
+      s.rows.forEach((row, i) => {
+        if (!(row[header] ?? "").trim()) emptyRows.push(i + 1);
+      });
+      if (emptyRows.length === 0) continue;
+      if (emptyRows.length === s.rows.length) {
+        out.push({
+          objectType: s.objectType,
+          row: null,
+          column: field,
+          severity: "error",
+          message: `"${field}" is required and cannot be empty — it is blank in every row. Please fill it in.`,
+        });
+      } else {
+        for (const r of emptyRows) {
+          out.push({
+            objectType: s.objectType,
+            row: r,
+            column: field,
+            severity: "error",
+            message: `"${field}" is required and cannot be empty (row ${r}).`,
+          });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Run every conformance check over already-parsed sheets in ONE pass and return
+ * all findings together: empty-file, no-data, and required-field (all fields /
+ * rows). Shared by validateAgainstTemplate and the loader's validate route so a
+ * caller that already read the workbook doesn't parse it twice.
+ */
+export async function validateSheetsComprehensive(sheets: ParsedSheet[]): Promise<ValidationResult> {
+  const errorsByType: Record<string, ValidationError[]> = {};
+  const add = (e: ValidationError) => (errorsByType[e.objectType] ??= []).push(e);
+
+  if (sheets.length === 0) {
+    add({ objectType: "File", row: null, column: null, severity: "error", message: "The file has no data sheets to validate." });
+  }
+  const totalDataRows = sheets.reduce((n, s) => n + s.rows.length, 0);
+  if (sheets.length > 0 && totalDataRows === 0) {
+    add({ objectType: "File", row: null, column: null, severity: "error", message: "This file has no data rows to load. Fill in at least one row before loading." });
+  } else {
+    for (const e of await checkRequiredFields(sheets)) add(e);
+  }
+
+  const errorCount = Object.values(errorsByType).reduce((n, l) => n + l.length, 0);
+  return { ok: errorCount === 0, errorsByType, errorCount, warningCount: 0, infoCount: 0 };
+}
+
 export async function validateAgainstTemplate(
   bytes: ArrayBuffer | Buffer,
 ): Promise<ValidationResult> {
@@ -189,7 +307,7 @@ export async function validateAgainstTemplate(
       infoCount: 0,
     };
   }
-  return validateParsedSheets(sheets);
+  return validateSheetsComprehensive(sheets);
 }
 
 /** Read an uploaded workbook into sheets using the fast streaming path. */
@@ -208,41 +326,6 @@ export function validateParsedSheets(sheets: ParsedSheet[]): ValidationResult {
     (errorsByType[e.objectType] ??= []).push(e);
   };
 
-  let recognized = 0;
-  for (const s of sheets) {
-    const tpl = SCHEMA_BY_LOWER.get(s.objectType.toLowerCase());
-    if (!tpl) {
-      const suggestion = suggestObjectType(s.objectType);
-      add({
-        objectType: s.objectType,
-        row: null,
-        column: null,
-        severity: "error",
-        message: suggestion
-          ? `Sheet "${s.objectType}" is not a valid master-data sheet name. Did you mean "${suggestion}"? (a tab name was renamed or truncated).`
-          : `Sheet "${s.objectType}" is not part of the master-data template.`,
-      });
-      continue;
-    }
-    recognized++;
-
-    // Extra columns (in the upload but not in our template snapshot) are
-    // intentionally NOT flagged. CMF matches by header name and ignores
-    // unknown headers; fresh CMF exports routinely include columns added to
-    // a newer template version than our snapshot. Surfacing these only
-    // generated noise — every Resource export added 15+ such warnings.
-  }
-
-  if (sheets.length > 0 && recognized === 0) {
-    add({
-      objectType: "File",
-      row: null,
-      column: null,
-      severity: "error",
-      message:
-        "No sheets in this file match the master-data template. Check you uploaded the correct template.",
-    });
-  }
   if (sheets.length === 0) {
     add({
       objectType: "File",
@@ -253,10 +336,44 @@ export function validateParsedSheets(sheets: ParsedSheet[]): ValidationResult {
     });
   }
 
-  // Structural checks (sheet order, column order, parent/child) — only worth
-  // running when at least one sheet was recognized.
-  if (recognized > 0) {
-    for (const e of checkStructure(sheets, SCHEMA, ORDER, AMBIGUOUS)) add(e);
+  for (const s of sheets) {
+    // Empty sheets (headers only) load nothing — a master-data package routinely
+    // ships 200+ blank template tabs. Nothing mandatory to check on them.
+    if (s.rows.length === 0) continue;
+
+    const nameHeader = s.headers.find((h) => h.toLowerCase() === "name");
+    const expectsName = isKnownType(s.objectType) && templateHasName(s.objectType);
+
+    // A recognized object that HAS data but omitted its mandatory Name column.
+    if (expectsName && !nameHeader) {
+      add({
+        objectType: s.objectType,
+        row: null,
+        column: "Name",
+        severity: "error",
+        message: `"${s.objectType}" requires a mandatory "Name" column, which is missing from this sheet.`,
+      });
+      continue;
+    }
+
+    // No Name column present and none expected (e.g. a sub-sheet keyed
+    // differently, or a newer object we don't recognize) → nothing mandatory
+    // to check here.
+    if (!nameHeader) continue;
+
+    // Every data row must fill Name.
+    s.rows.forEach((row, i) => {
+      const v = (row[nameHeader] ?? "").trim();
+      if (!v) {
+        add({
+          objectType: s.objectType,
+          row: i + 1,
+          column: nameHeader,
+          severity: "error",
+          message: `Row ${i + 1} is missing the mandatory "Name" value.`,
+        });
+      }
+    });
   }
 
   let errorCount = 0;

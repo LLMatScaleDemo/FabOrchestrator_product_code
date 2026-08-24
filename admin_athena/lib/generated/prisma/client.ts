@@ -151,3 +151,40 @@ export type Run = Prisma.RunModel
  * 
  */
 export type McpDataSource = Prisma.McpDataSourceModel
+/**
+ * Model error_audit_daily_counter
+ * 
+ */
+export type error_audit_daily_counter = Prisma.error_audit_daily_counterModel
+/**
+ * Model error_audit_logs
+ * 
+ */
+export type error_audit_logs = Prisma.error_audit_logsModel
+/**
+ * Model error_catalog
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ */
+export type error_catalog = Prisma.error_catalogModel
+/**
+ * Model pinned_dashboards
+ * 
+ */
+export type pinned_dashboards = Prisma.pinned_dashboardsModel
+/**
+ * Model ReportSchedule
+ * Per-dashboard refresh schedule for Recent Reports. Written by the admin app
+ * (chat tool), read by Fab Orch's cron tick. One row per (dashboard_id, source_key).
+ * Times are UTC. Admin tool uses raw SQL, so this model is for documentation/parity.
+ */
+export type ReportSchedule = Prisma.ReportScheduleModel
+/**
+ * Model prompt_audit_daily_counter
+ * 
+ */
+export type prompt_audit_daily_counter = Prisma.prompt_audit_daily_counterModel
+/**
+ * Model prompt_audit_logs
+ * 
+ */
+export type prompt_audit_logs = Prisma.prompt_audit_logsModel

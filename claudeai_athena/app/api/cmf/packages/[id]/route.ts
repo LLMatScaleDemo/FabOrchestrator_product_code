@@ -4,6 +4,8 @@ import { getObjectById, getObjectTypes } from "@/lib/cmf/cmf-client";
 import { friendlyErrorPayload } from "@/lib/cmf/cmf-errors";
 import { reconcileRunFromCmf } from "@/lib/repo-cmf/reconcile";
 import { requireAuth } from "@/lib/auth-middleware";
+import { runWithCmfDb } from "@/lib/cmf/db-context";
+import { resolveCmfDbKey } from "@/lib/cmf/request-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,12 +22,15 @@ export async function GET(
 ) {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
+  const dbKey = await resolveCmfDbKey(request, auth.user.id);
   try {
+    return await runWithCmfDb(dbKey, async () => {
     const { id } = await params;
     const instance = await getObjectById(id);
     await reconcileRunFromCmf(instance);
     const objectTypes = await getObjectTypes(instance);
     return NextResponse.json({ instance, objectTypes });
+    });
   } catch (err) {
     console.error("[api/cmf/packages/:id] failed", err);
     const { status, body } = friendlyErrorPayload(err);

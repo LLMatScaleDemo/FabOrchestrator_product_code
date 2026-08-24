@@ -1,6 +1,7 @@
 import { cmfQuery } from "@/lib/cmf/cmf-sql";
 import {
   getDiffableColumns,
+  isFkReference,
   loadRuleset,
   type EntityRuleset,
 } from "@/lib/validation/metadata";
@@ -306,8 +307,8 @@ async function checkParentsInCmfInfo(
     const ruleset = await loadRuleset(s.objectType);
     if (!ruleset) continue;
     for (const p of ruleset.properties) {
-      if (!p.referenceTargetType) continue;
-      const targetKey = p.referenceTargetType.toLowerCase();
+      if (!isFkReference(p)) continue; // skip CMF's noisy scalar "references" (e.g. Step.Type)
+      const targetKey = p.referenceTargetType!.toLowerCase();
       const fileKeys = fileKeysByType.get(targetKey) ?? new Set<string>();
       const refs = new Set<string>();
       for (const row of s.rows) {

@@ -44,6 +44,7 @@ export async function getStagedMeta(id: string, userId: string) {
     status: row.status as FlowStatus,
     packageName: row.packageName,
     packageCmfId: row.packageCmfId,
+    packageCmfDbKey: row.packageCmfDbKey,
     selectedTypes: (row.selectedTypes as string[] | null) ?? [],
   };
 }
@@ -56,6 +57,7 @@ export async function updateStagedUpload(
     status?: FlowStatus;
     packageName?: string;
     packageCmfId?: string;
+    packageCmfDbKey?: string;
     selectedTypes?: string[];
   },
 ): Promise<void> {
@@ -65,6 +67,7 @@ export async function updateStagedUpload(
       ...(patch.status ? { status: patch.status } : {}),
       ...(patch.packageName !== undefined ? { packageName: patch.packageName } : {}),
       ...(patch.packageCmfId !== undefined ? { packageCmfId: patch.packageCmfId } : {}),
+      ...(patch.packageCmfDbKey !== undefined ? { packageCmfDbKey: patch.packageCmfDbKey } : {}),
       ...(patch.selectedTypes !== undefined
         ? { selectedTypes: patch.selectedTypes as unknown as Prisma.InputJsonValue }
         : {}),

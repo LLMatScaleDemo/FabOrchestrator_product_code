@@ -34,13 +34,29 @@ export function isObjectRemoved(objectType: string): boolean {
   return removedObjectSet.has(objectType.toLowerCase());
 }
 
-/** True when a specific column on an object has been removed. */
-export function isColumnRemoved(objectType: string, columnName: string): boolean {
-  const set = removedColumnsByObject.get(objectType.toLowerCase());
-  return set ? set.has(columnName.toLowerCase()) : false;
+/**
+ * COLUMN REMOVAL DISABLED (Danish, 2026-08-03).
+ *
+ * The `removedColumns` overrides were extracted from the client's catalog
+ * (red-font columns) and applied when generating from `KSP_DL_client_final.xlsx`.
+ * They strip columns CMF actually requires — e.g. `Config.ValueType` — so a
+ * generated file fails CMF's dry-run with
+ * "The given key 'ValueType' was not present in the dictionary" (verified live
+ * 2026-08-03). Now that generation uses the pristine `KSP_DL_AI.xlsx` (which CMF
+ * accepts with ALL columns present), removing columns is both unnecessary and
+ * harmful, so `isColumnRemoved`/`getRemovedColumns` are forced empty.
+ *
+ * `removedColumnsByObject` (the parsed data) is kept intact for reference.
+ * To RE-ENABLE, restore the original one-line bodies below.
+ */
+
+/** Column removal is disabled — always false. (see note above) */
+export function isColumnRemoved(_objectType: string, _columnName: string): boolean {
+  void removedColumnsByObject; // data retained for reference; intentionally unused
+  return false;
 }
 
-/** Lowercase set of removed columns for an object, for batch filtering. */
-export function getRemovedColumns(objectType: string): Set<string> {
-  return removedColumnsByObject.get(objectType.toLowerCase()) ?? new Set();
+/** Column removal is disabled — always empty. (see note above) */
+export function getRemovedColumns(_objectType: string): Set<string> {
+  return new Set();
 }

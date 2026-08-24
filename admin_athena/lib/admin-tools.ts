@@ -21,6 +21,78 @@ import {
 } from './mcp-onthefly/service';
 import prisma from './db';
 
+// ── Recent Reports refresh scheduling ───────────────────────────────────────
+// The 7 curated FabInsight dashboards (kept in sync with Fab Orch's
+// lib/fabinsight/catalog.ts DASHBOARD_ORDER). All schedule times are UTC. The
+// admin app writes report_schedules (raw SQL below); Fab Orch's cron tick reads
+// it and refreshes each dashboard's pinned reports.
+const REPORT_DASHBOARDS: { id: string; label: string }[] = [
+  { id: 'factory-operations', label: 'Factory Operations' },
+  { id: 'lot-history', label: 'Lot History' },
+  { id: 'process-analytics', label: 'Process Analytics' },
+  { id: 'maintenance-prediction', label: 'Maintenance' },
+  { id: 'bottleneck-prediction', label: 'Bottleneck Risk' },
+  { id: 'analytics-dashboard', label: 'Product Analytics' },
+  { id: 'executive-overview', label: 'Executive Overview' },
+];
+
+type ReportFrequency = 'hourly' | 'daily' | 'weekly' | 'monthly';
+
+function normalizeName(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/** Resolve a user-supplied dashboard name/id to a canonical dashboard id. */
+function resolveDashboardId(input: string): string | null {
+  const n = normalizeName(input);
+  for (const d of REPORT_DASHBOARDS) {
+    if (normalizeName(d.id) === n || normalizeName(d.label) === n) return d.id;
+  }
+  const hit = REPORT_DASHBOARDS.find(
+    (d) => normalizeName(d.label).includes(n) || n.includes(normalizeName(d.id)),
+  );
+  return hit ? hit.id : null;
+}
+
+/** Next run (UTC), strictly after `from`. Mirrors Fab Orch lib/fabinsight/schedule.ts. */
+function computeReportNextRun(
+  freq: ReportFrequency,
+  opts: { intervalMinutes?: number | null; atTime?: string | null; dayOfWeek?: number | null; dayOfMonth?: number | null },
+  from: Date,
+): Date {
+  const m = opts.atTime ? /^(\d{1,2}):(\d{2})$/.exec(opts.atTime.trim()) : null;
+  const hh = m ? Math.min(23, Math.max(0, parseInt(m[1], 10))) : 0;
+  const mm = m ? Math.min(59, Math.max(0, parseInt(m[2], 10))) : 0;
+
+  if (freq === 'hourly') {
+    const mins = opts.intervalMinutes && opts.intervalMinutes > 0 ? opts.intervalMinutes : 60;
+    return new Date(from.getTime() + mins * 60_000);
+  }
+  if (freq === 'daily') {
+    const next = new Date(from); next.setUTCHours(hh, mm, 0, 0);
+    if (next <= from) next.setUTCDate(next.getUTCDate() + 1);
+    return next;
+  }
+  if (freq === 'weekly') {
+    const dow = opts.dayOfWeek ?? 1;
+    const next = new Date(from); next.setUTCHours(hh, mm, 0, 0);
+    let delta = (dow - next.getUTCDay() + 7) % 7;
+    if (delta === 0 && next <= from) delta = 7;
+    next.setUTCDate(next.getUTCDate() + delta);
+    return next;
+  }
+  // monthly
+  const dom = opts.dayOfMonth ?? 1;
+  const next = new Date(from); next.setUTCHours(hh, mm, 0, 0); next.setUTCDate(1);
+  const clamp = (d: Date) => {
+    const dim = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+    d.setUTCDate(Math.min(dom, dim));
+  };
+  clamp(next);
+  if (next <= from) { next.setUTCMonth(next.getUTCMonth() + 1, 1); clamp(next); }
+  return next;
+}
+
 async function resolveUserId(userId?: string, userEmail?: string): Promise<string | null> {
   if (userId) return userId;
   if (userEmail) {
@@ -1688,6 +1760,157 @@ export function getAdminTools(adminUserId: string) {
           success: true,
           message: 'Updated. The chat app will show the new message within ~60 seconds (cache TTL).',
           entry: updated[0],
+        };
+      },
+    },
+
+    set_report_schedule: {
+      description:
+        'Set or change the automatic refresh schedule for the Recent Reports — the 7 curated FabInsight dashboards (Factory Operations, Lot History, Process Analytics, Maintenance, Bottleneck Risk, Product Analytics, Executive Overview). Use when the admin asks to schedule/reschedule how often reports refresh, e.g. "refresh all reports every hour", "Product Analytics daily at 6am", "run the Maintenance report weekly on Monday", "disable the Lot History schedule". All times are UTC. Pass ["all"] to apply to every dashboard, or specific dashboard names to give each its own timing. Fab Orch picks up the change on its next tick (~5 min).',
+      inputSchema: z.object({
+        dashboards: z.array(z.string()).describe('Dashboard names/ids, or ["all"] for every dashboard'),
+        frequency: z.enum(['hourly', 'daily', 'weekly', 'monthly']).describe('Refresh cadence'),
+        intervalMinutes: z.number().int().positive().optional().describe('For hourly: minutes between refreshes (default 60)'),
+        atTime: z.string().optional().describe('For daily/weekly/monthly: time of day "HH:MM" in UTC (24h)'),
+        dayOfWeek: z.number().int().min(0).max(6).optional().describe('For weekly: 0=Sunday … 6=Saturday'),
+        dayOfMonth: z.number().int().min(1).max(31).optional().describe('For monthly: day of month 1-31'),
+        enabled: z.boolean().optional().describe('Set false to pause the schedule (default true)'),
+        sourceKey: z.string().optional().describe('Data source key (default "lumentum")'),
+      }),
+      execute: async (args: {
+        dashboards: string[];
+        frequency: ReportFrequency;
+        intervalMinutes?: number;
+        atTime?: string;
+        dayOfWeek?: number;
+        dayOfMonth?: number;
+        enabled?: boolean;
+        sourceKey?: string;
+      }) => {
+        const sourceKey = (args.sourceKey || 'lumentum').trim();
+        const enabled = args.enabled ?? true;
+
+        const wantAll = args.dashboards.some((d) => normalizeName(d) === 'all');
+        const ids: string[] = [];
+        const unknown: string[] = [];
+        if (wantAll) {
+          ids.push(...REPORT_DASHBOARDS.map((d) => d.id));
+        } else {
+          for (const d of args.dashboards) {
+            const id = resolveDashboardId(d);
+            if (id) { if (!ids.includes(id)) ids.push(id); }
+            else unknown.push(d);
+          }
+        }
+        if (ids.length === 0) {
+          return {
+            error: `No known dashboards matched. Valid dashboards: ${REPORT_DASHBOARDS.map((d) => d.label).join(', ')}.`,
+            unknown,
+          };
+        }
+
+        const nextRun = computeReportNextRun(args.frequency, args, new Date());
+        for (const id of ids) {
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO report_schedules
+               (id, dashboard_id, source_key, frequency, interval_minutes, at_time, day_of_week, day_of_month, enabled, next_run_at, updated_by_id, updated_at)
+             VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
+             ON CONFLICT (dashboard_id, source_key) DO UPDATE SET
+               frequency = EXCLUDED.frequency,
+               interval_minutes = EXCLUDED.interval_minutes,
+               at_time = EXCLUDED.at_time,
+               day_of_week = EXCLUDED.day_of_week,
+               day_of_month = EXCLUDED.day_of_month,
+               enabled = EXCLUDED.enabled,
+               next_run_at = EXCLUDED.next_run_at,
+               updated_by_id = EXCLUDED.updated_by_id,
+               updated_at = now()`,
+            id,
+            sourceKey,
+            args.frequency,
+            args.intervalMinutes ?? null,
+            args.atTime ?? null,
+            args.dayOfWeek ?? null,
+            args.dayOfMonth ?? null,
+            enabled,
+            nextRun,
+            adminUserId,
+          );
+        }
+
+        prisma.auditLog
+          .create({
+            data: {
+              userId: adminUserId,
+              action: 'report.schedule_set',
+              targetType: 'ReportSchedule',
+              targetId: sourceKey,
+              metadata: {
+                dashboards: ids,
+                frequency: args.frequency,
+                intervalMinutes: args.intervalMinutes ?? null,
+                atTime: args.atTime ?? null,
+                dayOfWeek: args.dayOfWeek ?? null,
+                dayOfMonth: args.dayOfMonth ?? null,
+                enabled,
+                sourceKey,
+              },
+            },
+          })
+          .catch(() => {});
+
+        return {
+          success: true,
+          updated: ids.map((id) => REPORT_DASHBOARDS.find((d) => d.id === id)?.label ?? id),
+          frequency: args.frequency,
+          enabled,
+          sourceKey,
+          nextRunAtUtc: nextRun.toISOString(),
+          note: 'Fab Orch applies this on its next scheduled tick (within ~5 minutes). All times are UTC.',
+          ...(unknown.length ? { ignored: unknown } : {}),
+        };
+      },
+    },
+
+    get_report_schedules: {
+      description:
+        'Show the current automatic refresh schedules for the Recent Reports (the 7 dashboards): cadence, next run, last run/status, and whether each is enabled. Use when the admin asks what the report refresh schedule is or to confirm a change.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        const rows = await prisma.$queryRawUnsafe<
+          Array<{
+            dashboard_id: string;
+            source_key: string;
+            frequency: string;
+            interval_minutes: number | null;
+            at_time: string | null;
+            day_of_week: number | null;
+            day_of_month: number | null;
+            enabled: boolean;
+            next_run_at: Date | null;
+            last_run_at: Date | null;
+            last_status: string | null;
+          }>
+        >(
+          `SELECT dashboard_id, source_key, frequency, interval_minutes, at_time, day_of_week, day_of_month, enabled, next_run_at, last_run_at, last_status
+           FROM report_schedules ORDER BY dashboard_id`,
+        );
+        return {
+          total: rows.length,
+          schedules: rows.map((r) => ({
+            dashboard: REPORT_DASHBOARDS.find((d) => d.id === r.dashboard_id)?.label ?? r.dashboard_id,
+            dashboardId: r.dashboard_id,
+            sourceKey: r.source_key,
+            frequency: r.frequency,
+            intervalMinutes: r.interval_minutes,
+            atTimeUtc: r.at_time,
+            dayOfWeek: r.day_of_week,
+            dayOfMonth: r.day_of_month,
+            enabled: r.enabled,
+            nextRunUtc: r.next_run_at ? new Date(r.next_run_at).toISOString() : null,
+            lastRunUtc: r.last_run_at ? new Date(r.last_run_at).toISOString() : null,
+            lastStatus: r.last_status,
+          })),
         };
       },
     },

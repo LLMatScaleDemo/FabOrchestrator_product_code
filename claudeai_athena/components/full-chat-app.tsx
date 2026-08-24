@@ -60,6 +60,8 @@ import { useRouter } from "next/navigation"
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useKeyboardShortcuts, CHAT_SHORTCUTS } from "@/hooks/use-keyboard-shortcuts"
 import { motion, AnimatePresence } from "motion/react"
+import { PromptBubbles } from "@/components/fabinsight/prompt-bubbles"
+import { FAB_BUBBLES } from "@/lib/fabinsight/catalog"
 import { createFileArtifact, type Artifact } from "@/lib/artifacts"
 import { extractTagArtifacts, segmentMessageText } from "@/lib/artifact-parser"
 import { ArtifactTile } from "@/components/prompt-kit/artifact-tile"
@@ -128,6 +130,24 @@ interface Conversation {
 
 const AUTH_SESSION_KEY = "llmatscale_auth_session"
 const AUTH_TOKEN_KEY = "llmatscale_auth_token"
+
+/** Caches the dashboard-admin check so the correct prompt set renders on first paint. */
+const DASHBOARD_ACCESS_KEY = "fabinsight_can_create_dashboards"
+
+function SampleIcon({ d }: { d: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  )
+}
+
+const SAMPLE_PROMPTS = [
+  { label: "Run a workflow", icon: <SampleIcon d="M6 6h.01M6 18h.01M18 12h.01M8.4 6H13a3 3 0 0 1 3 3v.6M8.4 18H13a3 3 0 0 0 3-3v-.6" /> },
+  { label: "Build an agent", icon: <SampleIcon d="M12 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM5.5 20a6.5 6.5 0 0 1 13 0" /> },
+  { label: "Query a site", icon: <SampleIcon d="M4 21V8l7-4 7 4v13M9 21v-5h6v5M8 11h.01M12 11h.01M16 11h.01" /> },
+  { label: "Compliance check", icon: <SampleIcon d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z M9.2 12l2 2 3.6-3.6" /> },
+]
 
 // Helper function to get auth headers for API calls
 function getAuthHeaders(): Record<string, string> {
@@ -456,9 +476,9 @@ function ChatSidebar({
           </SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Dashboard" onClick={() => router.push("/home")}>
+              <SidebarMenuButton tooltip="FO Overview" onClick={() => router.push("/home")}>
                 <NavSvg><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></NavSvg>
-                <span>Dashboard</span>
+                <span>FO Overview</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -474,9 +494,9 @@ function ChatSidebar({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Reports">
+              <SidebarMenuButton tooltip="Dashboard" onClick={() => router.push("/reports")}>
                 <NavSvg><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="8"/><line x1="18" y1="20" x2="18" y2="11"/></NavSvg>
-                <span>Reports</span>
+                <span>Dashboard</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -750,6 +770,39 @@ function ChatContent({
   const [waitingForResponse, setWaitingForResponse] = useState(false)
   const [input, setInput] = useState("")
   const chatInputRef = useRef<ClaudeChatInputHandle>(null)
+
+  // ── FabInsight: who may create dashboards (which prompt set shows) ────────
+  // The login response carries this flag, so the correct prompt set is known
+  // before the first paint — no fetch, no flash. The cached key is the fallback
+  // for sessions created before this shipped.
+  const [canCreateDashboards, setCanCreateDashboards] = useState<boolean | null>(() => {
+    if (typeof window === "undefined") return null
+    try {
+      const raw = window.localStorage.getItem(AUTH_SESSION_KEY)
+      const flag = raw ? JSON.parse(raw)?.user?.canCreateDashboards : undefined
+      if (typeof flag === "boolean") return flag
+    } catch { /* fall through to the cached key */ }
+    const cached = window.localStorage.getItem(DASHBOARD_ACCESS_KEY)
+    return cached === "true" ? true : cached === "false" ? false : null
+  })
+  // Warm the manufacturing data link on mount so the first bubble click lands
+  // on a warm link. Fire-and-forget: a failure changes nothing.
+  useEffect(() => {
+    void fetch("/api/fabinsight/warm", { headers: getAuthHeaders() }).catch(() => {})
+  }, [])
+  useEffect(() => {
+    let cancelled = false
+    fetch("/api/fabinsight/access", { headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j) return
+        const allowed = !!j.canCreateDashboards
+        setCanCreateDashboards(allowed)
+        try { window.localStorage.setItem(DASHBOARD_ACCESS_KEY, String(allowed)) } catch { /* ignore */ }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
   const pendingMessageRef = useRef<{ text: string; messageId: string; files?: Array<{ type: 'file'; mediaType: string; url: string; filename?: string }> } | null>(null)
   const currentConversationRef = useRef<string | null>(null)
   const isNewConversationRef = useRef(false) // Track if we just created a new conversation
@@ -1385,27 +1438,45 @@ function ChatContent({
   }
 
   // Group consecutive tool segments into tool-group segments for compact rendering
+  /**
+   * Collapse tool segments into a SINGLE group per message.
+   *
+   * Previously this grouped only *consecutive* tools, so anything landing
+   * between two tool parts (a step-start boundary, a stray empty text part)
+   * split them into two groups — and each group renders its own
+   * "Generating Response..." status line, which is how the duplicate appeared.
+   * One response is one status line, so all tools fold into the first group's
+   * position and later ones are absorbed rather than starting a new timeline.
+   */
   const groupConsecutiveTools = (segments: MessageSegment[]): MessageSegment[] => {
-    const result: MessageSegment[] = []
-    let toolBuffer: ToolPart[] = []
-
-    const flushTools = () => {
-      if (toolBuffer.length > 0) {
-        result.push({ type: 'tool-group', content: [...toolBuffer] })
-      }
-      toolBuffer = []
+    const tools: ToolPart[] = []
+    for (const segment of segments) {
+      if (segment.type === 'tool') tools.push(segment.content as ToolPart)
     }
+    if (tools.length === 0) return segments
 
+    // De-dupe by toolCallId — a manually written input/output pair can surface
+    // as two entries for what is really one invocation.
+    const seen = new Set<string>()
+    const unique = tools.filter((t) => {
+      const id = t.toolCallId || `${t.type}`
+      if (seen.has(id)) return false
+      seen.add(id)
+      return true
+    })
+
+    const result: MessageSegment[] = []
+    let placed = false
     for (const segment of segments) {
       if (segment.type === 'tool') {
-        toolBuffer.push(segment.content as ToolPart)
-      } else {
-        flushTools()
-        result.push(segment)
+        if (!placed) {
+          result.push({ type: 'tool-group', content: unique })
+          placed = true
+        }
+        continue
       }
+      result.push(segment)
     }
-
-    flushTools()
     return result
   }
 
@@ -1682,6 +1753,50 @@ function ChatContent({
                           </p>
                         </motion.div>
 
+                        {/* FabInsight: dashboard bubbles (admins) / sample prompts (others), above the composer.
+                            canCreateDashboards === null means not-yet-known and renders NOTHING, so the
+                            wrong set never flashes. */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.22, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                          className="mb-7 w-full"
+                        >
+                          {canCreateDashboards === null ? null : canCreateDashboards ? (
+                            <PromptBubbles
+                              items={FAB_BUBBLES}
+                              // Load the prompt into the composer rather than sending it — these are
+                              // starting points the user may want to edit (a different lot, product or
+                              // period) before running. `setMessage` also focuses the textarea.
+                              onSelect={(item) => chatInputRef.current?.setMessage(item.prompt)}
+                            />
+                          ) : (
+                            <div className="flex flex-wrap items-center justify-center gap-2.5">
+                              {SAMPLE_PROMPTS.map((s, i) => (
+                                <motion.button
+                                  key={s.label}
+                                  type="button"
+                                  initial={{ opacity: 0, y: 6 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.04 * i, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                                  onClick={() => chatInputRef.current?.setMessage(s.label)}
+                                  className="login-chip group inline-flex h-auto items-center gap-2 rounded-[22px] bg-white px-4 py-[9px] text-[13.5px] font-bold transition-all hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                  style={{
+                                    color: "var(--chat-ink)",
+                                    border: "1px solid var(--chat-chip-border)",
+                                    boxShadow: "0 2px 10px rgba(26,34,64,.05)",
+                                  }}
+                                >
+                                  <span className="flex transition-colors" style={{ color: "var(--brand-indigo)" }}>
+                                    {s.icon}
+                                  </span>
+                                  {s.label}
+                                </motion.button>
+                              ))}
+                            </div>
+                          )}
+                        </motion.div>
+
                         {/* Centered input */}
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
@@ -1714,32 +1829,7 @@ function ChatContent({
                           />
                         </motion.div>
 
-                        {/* Domain quick-action chips (V2) */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.25, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                          className="mt-[34px] flex flex-wrap justify-center gap-2.5"
-                        >
-                          {[
-                            { label: "Run a workflow", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M8.2 6H13a3 3 0 0 1 3 3v.4"/><path d="M8.2 18H13a3 3 0 0 0 3-3v-.4"/></svg> },
-                            { label: "Build an agent", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg> },
-                            { label: "Query a site", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 21V6a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v15"/><path d="M15 9h4a1 1 0 0 1 1 1v11"/><line x1="7.5" y1="9" x2="11" y2="9"/><line x1="7.5" y1="13" x2="11" y2="13"/></svg> },
-                            { label: "Compliance check", svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9.2 12l2 2 3.6-3.6"/></svg> },
-                          ].map((chip) => (
-                            <Button
-                              key={chip.label}
-                              type="button"
-                              variant="ghost"
-                              onClick={() => chatInputRef.current?.setMessage(chip.label)}
-                              className="login-chip flex h-auto items-center gap-2 rounded-[22px] border-0 bg-white px-4 py-[9px] text-[13.5px] font-bold transition-all hover:-translate-y-px hover:bg-white active:scale-100 dark:hover:bg-white"
-                              style={{ color: "var(--chat-ink)", border: "1px solid var(--chat-chip-border)", boxShadow: "0 2px 10px rgba(26,34,64,.05)" }}
-                            >
-                              <span className="flex" style={{ color: "var(--chat-indigo)" }}>{chip.svg}</span>
-                              {chip.label}
-                            </Button>
-                          ))}
-                        </motion.div>
+                        {/* Quick-action chips moved ABOVE the composer (FabInsight bubbles/sample prompts). */}
 
                       </div>
 
@@ -2314,7 +2404,10 @@ function FullChatApp() {
 
   const handleNewChat = useCallback(() => {
     setSelectedConversationId(null)
-    setChatKey('new-chat')
+    // A fresh key every time. Reusing the constant 'new-chat' meant starting a
+    // new chat from an unsaved one produced no key change, so React kept the
+    // same instance and its messages survived.
+    setChatKey('new-chat-' + Date.now())
   }, [])
 
   // Keyboard shortcuts for main app

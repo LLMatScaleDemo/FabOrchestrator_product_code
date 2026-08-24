@@ -1,0 +1,142 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+import { requireAuth } from '@/lib/auth-middleware';
+import { prisma } from '@/lib/db';
+import { isDashboardAdmin } from '@/lib/fabinsight/access';
+import { getDashboard } from '@/lib/fabinsight/dashboards';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET — every pinned dashboard, readable by EVERY role.
+ *
+ * This is the "viewable to all roles" half of the requirement. Only the recipe
+ * comes back; the HTML is produced on demand by `/api/fabinsight/render` so the
+ * list itself stays cheap and nothing is ever served from a stale snapshot.
+ */
+export async function GET(request: NextRequest) {
+  const auth = await requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
+  const rows = await prisma.pinnedDashboard.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      title: true,
+      dashboardId: true,
+      params: true,
+      createdAt: true,
+      refreshedAt: true,
+      cachedHtml: true,
+      createdBy: { select: { name: true, email: true } },
+    },
+  });
+
+  return NextResponse.json({
+    dashboards: rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      dashboardId: r.dashboardId,
+      params: r.params,
+      createdAt: r.createdAt.toISOString(),
+      // Scheduled-snapshot metadata — the HTML itself is fetched per report
+      // from GET /api/fabinsight/pinned/[id]. `refreshedAt` is when the last
+      // scheduled (or manual) snapshot was cached; null = never cached yet.
+      refreshedAt: r.refreshedAt ? r.refreshedAt.toISOString() : null,
+      hasCache: !!r.cachedHtml,
+      createdBy: r.createdBy?.name || r.createdBy?.email || 'Unknown',
+    })),
+    canManage: await isDashboardAdmin(auth.user.id),
+  });
+}
+
+/** POST — pin a dashboard. Admin only. */
+export async function POST(request: NextRequest) {
+  const auth = await requireAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
+  if (!(await isDashboardAdmin(auth.user.id))) {
+    return NextResponse.json(
+      { error: 'Only an administrator can pin a dashboard.' },
+      { status: 403 },
+    );
+  }
+
+  const body = (await request.json().catch(() => ({}))) as {
+    title?: string;
+    dashboardId?: string;
+    params?: Record<string, string>;
+    replace?: boolean;
+  };
+
+  const title = (body.title ?? '').trim();
+  if (!title) return NextResponse.json({ error: 'A name is required.' }, { status: 400 });
+  if (title.length > 120) {
+    return NextResponse.json({ error: 'Name is too long (120 characters max).' }, { status: 400 });
+  }
+  if (!body.dashboardId || !getDashboard(body.dashboardId)) {
+    return NextResponse.json({ error: 'Unknown dashboard.' }, { status: 400 });
+  }
+
+  const params = {
+    ...(typeof body.params?.lot === 'string' ? { lot: body.params.lot } : {}),
+    ...(typeof body.params?.product === 'string' ? { product: body.params.product } : {}),
+  };
+
+  // A duplicate name would make the list ambiguous. On the first attempt we
+  // ask the caller to confirm a replace (needsReplace) rather than silently
+  // creating a second card; with `replace: true` we overwrite the existing
+  // pin's recipe and clear its cached snapshot so it re-renders fresh.
+  const clash = await prisma.pinnedDashboard.findFirst({
+    where: { title: { equals: title, mode: 'insensitive' } },
+    select: { id: true, title: true },
+  });
+  if (clash && !body.replace) {
+    return NextResponse.json(
+      {
+        error: `A report named “${clash.title}” already exists. Replacing it will overwrite the existing report.`,
+        needsReplace: true,
+        existingId: clash.id,
+      },
+      { status: 409 },
+    );
+  }
+
+  if (clash && body.replace) {
+    const updated = await prisma.pinnedDashboard.update({
+      where: { id: clash.id },
+      data: {
+        title,
+        dashboardId: body.dashboardId,
+        params,
+        // New recipe → the old snapshot is stale; clear it so it re-renders on
+        // the next scheduled tick (or via Refresh) instead of showing wrong data.
+        cachedHtml: null,
+        cachedSummary: null,
+        refreshedAt: null,
+        lastStatus: null,
+      },
+      select: { id: true, title: true, dashboardId: true, params: true, createdAt: true },
+    });
+    return NextResponse.json(
+      { dashboard: { ...updated, createdAt: updated.createdAt.toISOString() }, replaced: true },
+      { status: 200 },
+    );
+  }
+
+  const created = await prisma.pinnedDashboard.create({
+    data: {
+      title,
+      dashboardId: body.dashboardId,
+      params,
+      createdById: auth.user.id,
+    },
+    select: { id: true, title: true, dashboardId: true, params: true, createdAt: true },
+  });
+
+  return NextResponse.json(
+    { dashboard: { ...created, createdAt: created.createdAt.toISOString() } },
+    { status: 201 },
+  );
+}

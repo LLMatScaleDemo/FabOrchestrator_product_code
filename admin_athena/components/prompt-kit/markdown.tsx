@@ -127,7 +127,10 @@ const Markdown = React.forwardRef<HTMLDivElement, MarkdownProps>(
       <div
         ref={ref}
         className={cn(
-          "prose prose-sm max-w-none break-words dark:prose-invert prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-pre:my-4 prose-headings:mb-3 prose-headings:mt-5 prose-blockquote:my-3",
+          // No `dark:prose-invert`: assistant text must always render as dark ink
+          // on the light message surface (the console is light-only). Inverting
+          // prose here turned text near-white on the white bubble under OS dark.
+          "prose prose-sm max-w-none break-words prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-pre:my-4 prose-headings:mb-3 prose-headings:mt-5 prose-blockquote:my-3",
           // GFM task-list (consent checkboxes): no bullet, checkbox inline with its label.
           "[&_ul.contains-task-list]:list-none [&_ul.contains-task-list]:pl-0 [&_li.task-list-item]:flex [&_li.task-list-item]:items-start [&_li.task-list-item]:gap-2 [&_li.task-list-item]:my-1.5 [&_li.task-list-item]:pl-0",
           className

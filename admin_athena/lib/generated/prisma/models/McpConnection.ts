@@ -27,7 +27,6 @@ export type AggregateMcpConnection = {
 export type McpConnectionMinAggregateOutputType = {
   id: string | null
   userId: string | null
-  roleId: string | null
   name: string | null
   serverUrl: string | null
   authType: string | null
@@ -36,16 +35,16 @@ export type McpConnectionMinAggregateOutputType = {
   status: string | null
   lastError: string | null
   sessionId: string | null
-  registryId: string | null
   createdAt: Date | null
   updatedAt: Date | null
   lastConnectedAt: Date | null
+  roleId: string | null
+  registryId: string | null
 }
 
 export type McpConnectionMaxAggregateOutputType = {
   id: string | null
   userId: string | null
-  roleId: string | null
   name: string | null
   serverUrl: string | null
   authType: string | null
@@ -54,16 +53,16 @@ export type McpConnectionMaxAggregateOutputType = {
   status: string | null
   lastError: string | null
   sessionId: string | null
-  registryId: string | null
   createdAt: Date | null
   updatedAt: Date | null
   lastConnectedAt: Date | null
+  roleId: string | null
+  registryId: string | null
 }
 
 export type McpConnectionCountAggregateOutputType = {
   id: number
   userId: number
-  roleId: number
   name: number
   serverUrl: number
   authType: number
@@ -73,10 +72,11 @@ export type McpConnectionCountAggregateOutputType = {
   status: number
   lastError: number
   sessionId: number
-  registryId: number
   createdAt: number
   updatedAt: number
   lastConnectedAt: number
+  roleId: number
+  registryId: number
   _all: number
 }
 
@@ -84,7 +84,6 @@ export type McpConnectionCountAggregateOutputType = {
 export type McpConnectionMinAggregateInputType = {
   id?: true
   userId?: true
-  roleId?: true
   name?: true
   serverUrl?: true
   authType?: true
@@ -93,16 +92,16 @@ export type McpConnectionMinAggregateInputType = {
   status?: true
   lastError?: true
   sessionId?: true
-  registryId?: true
   createdAt?: true
   updatedAt?: true
   lastConnectedAt?: true
+  roleId?: true
+  registryId?: true
 }
 
 export type McpConnectionMaxAggregateInputType = {
   id?: true
   userId?: true
-  roleId?: true
   name?: true
   serverUrl?: true
   authType?: true
@@ -111,16 +110,16 @@ export type McpConnectionMaxAggregateInputType = {
   status?: true
   lastError?: true
   sessionId?: true
-  registryId?: true
   createdAt?: true
   updatedAt?: true
   lastConnectedAt?: true
+  roleId?: true
+  registryId?: true
 }
 
 export type McpConnectionCountAggregateInputType = {
   id?: true
   userId?: true
-  roleId?: true
   name?: true
   serverUrl?: true
   authType?: true
@@ -130,10 +129,11 @@ export type McpConnectionCountAggregateInputType = {
   status?: true
   lastError?: true
   sessionId?: true
-  registryId?: true
   createdAt?: true
   updatedAt?: true
   lastConnectedAt?: true
+  roleId?: true
+  registryId?: true
   _all?: true
 }
 
@@ -212,7 +212,6 @@ export type McpConnectionGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
 export type McpConnectionGroupByOutputType = {
   id: string
   userId: string | null
-  roleId: string | null
   name: string
   serverUrl: string
   authType: string
@@ -222,10 +221,11 @@ export type McpConnectionGroupByOutputType = {
   status: string
   lastError: string | null
   sessionId: string | null
-  registryId: string | null
   createdAt: Date
   updatedAt: Date
   lastConnectedAt: Date | null
+  roleId: string | null
+  registryId: string | null
   _count: McpConnectionCountAggregateOutputType | null
   _min: McpConnectionMinAggregateOutputType | null
   _max: McpConnectionMaxAggregateOutputType | null
@@ -252,7 +252,6 @@ export type McpConnectionWhereInput = {
   NOT?: Prisma.McpConnectionWhereInput | Prisma.McpConnectionWhereInput[]
   id?: Prisma.StringFilter<"McpConnection"> | string
   userId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
-  roleId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   name?: Prisma.StringFilter<"McpConnection"> | string
   serverUrl?: Prisma.StringFilter<"McpConnection"> | string
   authType?: Prisma.StringFilter<"McpConnection"> | string
@@ -262,18 +261,18 @@ export type McpConnectionWhereInput = {
   status?: Prisma.StringFilter<"McpConnection"> | string
   lastError?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   sessionId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
-  registryId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   createdAt?: Prisma.DateTimeFilter<"McpConnection"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"McpConnection"> | Date | string
   lastConnectedAt?: Prisma.DateTimeNullableFilter<"McpConnection"> | Date | string | null
-  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  roleId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
+  registryId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
 export type McpConnectionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
-  roleId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
@@ -283,12 +282,13 @@ export type McpConnectionOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   lastError?: Prisma.SortOrderInput | Prisma.SortOrder
   sessionId?: Prisma.SortOrderInput | Prisma.SortOrder
-  registryId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   lastConnectedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  user?: Prisma.UserOrderByWithRelationInput
+  roleId?: Prisma.SortOrderInput | Prisma.SortOrder
+  registryId?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.RoleOrderByWithRelationInput
+  user?: Prisma.UserOrderByWithRelationInput
 }
 
 export type McpConnectionWhereUniqueInput = Prisma.AtLeast<{
@@ -297,7 +297,6 @@ export type McpConnectionWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.McpConnectionWhereInput[]
   NOT?: Prisma.McpConnectionWhereInput | Prisma.McpConnectionWhereInput[]
   userId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
-  roleId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   name?: Prisma.StringFilter<"McpConnection"> | string
   serverUrl?: Prisma.StringFilter<"McpConnection"> | string
   authType?: Prisma.StringFilter<"McpConnection"> | string
@@ -307,18 +306,18 @@ export type McpConnectionWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.StringFilter<"McpConnection"> | string
   lastError?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   sessionId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
-  registryId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   createdAt?: Prisma.DateTimeFilter<"McpConnection"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"McpConnection"> | Date | string
   lastConnectedAt?: Prisma.DateTimeNullableFilter<"McpConnection"> | Date | string | null
-  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  roleId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
+  registryId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }, "id">
 
 export type McpConnectionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
-  roleId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
@@ -328,10 +327,11 @@ export type McpConnectionOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   lastError?: Prisma.SortOrderInput | Prisma.SortOrder
   sessionId?: Prisma.SortOrderInput | Prisma.SortOrder
-  registryId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   lastConnectedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  roleId?: Prisma.SortOrderInput | Prisma.SortOrder
+  registryId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.McpConnectionCountOrderByAggregateInput
   _max?: Prisma.McpConnectionMaxOrderByAggregateInput
   _min?: Prisma.McpConnectionMinOrderByAggregateInput
@@ -343,7 +343,6 @@ export type McpConnectionScalarWhereWithAggregatesInput = {
   NOT?: Prisma.McpConnectionScalarWhereWithAggregatesInput | Prisma.McpConnectionScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"McpConnection"> | string
   userId?: Prisma.StringNullableWithAggregatesFilter<"McpConnection"> | string | null
-  roleId?: Prisma.StringNullableWithAggregatesFilter<"McpConnection"> | string | null
   name?: Prisma.StringWithAggregatesFilter<"McpConnection"> | string
   serverUrl?: Prisma.StringWithAggregatesFilter<"McpConnection"> | string
   authType?: Prisma.StringWithAggregatesFilter<"McpConnection"> | string
@@ -353,10 +352,11 @@ export type McpConnectionScalarWhereWithAggregatesInput = {
   status?: Prisma.StringWithAggregatesFilter<"McpConnection"> | string
   lastError?: Prisma.StringNullableWithAggregatesFilter<"McpConnection"> | string | null
   sessionId?: Prisma.StringNullableWithAggregatesFilter<"McpConnection"> | string | null
-  registryId?: Prisma.StringNullableWithAggregatesFilter<"McpConnection"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"McpConnection"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"McpConnection"> | Date | string
   lastConnectedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"McpConnection"> | Date | string | null
+  roleId?: Prisma.StringNullableWithAggregatesFilter<"McpConnection"> | string | null
+  registryId?: Prisma.StringNullableWithAggregatesFilter<"McpConnection"> | string | null
 }
 
 export type McpConnectionCreateInput = {
@@ -370,18 +370,17 @@ export type McpConnectionCreateInput = {
   status?: string
   lastError?: string | null
   sessionId?: string | null
-  registryId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   lastConnectedAt?: Date | string | null
-  user?: Prisma.UserCreateNestedOneWithoutMcpConnectionsInput
+  registryId?: string | null
   role?: Prisma.RoleCreateNestedOneWithoutMcpConnectionsInput
+  user?: Prisma.UserCreateNestedOneWithoutMcpConnectionsInput
 }
 
 export type McpConnectionUncheckedCreateInput = {
   id?: string
   userId?: string | null
-  roleId?: string | null
   name: string
   serverUrl: string
   authType?: string
@@ -391,10 +390,11 @@ export type McpConnectionUncheckedCreateInput = {
   status?: string
   lastError?: string | null
   sessionId?: string | null
-  registryId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   lastConnectedAt?: Date | string | null
+  roleId?: string | null
+  registryId?: string | null
 }
 
 export type McpConnectionUpdateInput = {
@@ -408,18 +408,17 @@ export type McpConnectionUpdateInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  user?: Prisma.UserUpdateOneWithoutMcpConnectionsNestedInput
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.RoleUpdateOneWithoutMcpConnectionsNestedInput
+  user?: Prisma.UserUpdateOneWithoutMcpConnectionsNestedInput
 }
 
 export type McpConnectionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   serverUrl?: Prisma.StringFieldUpdateOperationsInput | string
   authType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -429,16 +428,16 @@ export type McpConnectionUncheckedUpdateInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type McpConnectionCreateManyInput = {
   id?: string
   userId?: string | null
-  roleId?: string | null
   name: string
   serverUrl: string
   authType?: string
@@ -448,10 +447,11 @@ export type McpConnectionCreateManyInput = {
   status?: string
   lastError?: string | null
   sessionId?: string | null
-  registryId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   lastConnectedAt?: Date | string | null
+  roleId?: string | null
+  registryId?: string | null
 }
 
 export type McpConnectionUpdateManyMutationInput = {
@@ -465,16 +465,15 @@ export type McpConnectionUpdateManyMutationInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type McpConnectionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   serverUrl?: Prisma.StringFieldUpdateOperationsInput | string
   authType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -484,10 +483,11 @@ export type McpConnectionUncheckedUpdateManyInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type McpConnectionListRelationFilter = {
@@ -503,7 +503,6 @@ export type McpConnectionOrderByRelationAggregateInput = {
 export type McpConnectionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  roleId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
@@ -513,16 +512,16 @@ export type McpConnectionCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   lastError?: Prisma.SortOrder
   sessionId?: Prisma.SortOrder
-  registryId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   lastConnectedAt?: Prisma.SortOrder
+  roleId?: Prisma.SortOrder
+  registryId?: Prisma.SortOrder
 }
 
 export type McpConnectionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  roleId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
@@ -531,16 +530,16 @@ export type McpConnectionMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   lastError?: Prisma.SortOrder
   sessionId?: Prisma.SortOrder
-  registryId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   lastConnectedAt?: Prisma.SortOrder
+  roleId?: Prisma.SortOrder
+  registryId?: Prisma.SortOrder
 }
 
 export type McpConnectionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  roleId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   serverUrl?: Prisma.SortOrder
   authType?: Prisma.SortOrder
@@ -549,10 +548,11 @@ export type McpConnectionMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   lastError?: Prisma.SortOrder
   sessionId?: Prisma.SortOrder
-  registryId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   lastConnectedAt?: Prisma.SortOrder
+  roleId?: Prisma.SortOrder
+  registryId?: Prisma.SortOrder
 }
 
 export type McpConnectionCreateNestedManyWithoutRoleInput = {
@@ -650,10 +650,10 @@ export type McpConnectionCreateWithoutRoleInput = {
   status?: string
   lastError?: string | null
   sessionId?: string | null
-  registryId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   lastConnectedAt?: Date | string | null
+  registryId?: string | null
   user?: Prisma.UserCreateNestedOneWithoutMcpConnectionsInput
 }
 
@@ -669,10 +669,10 @@ export type McpConnectionUncheckedCreateWithoutRoleInput = {
   status?: string
   lastError?: string | null
   sessionId?: string | null
-  registryId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   lastConnectedAt?: Date | string | null
+  registryId?: string | null
 }
 
 export type McpConnectionCreateOrConnectWithoutRoleInput = {
@@ -707,7 +707,6 @@ export type McpConnectionScalarWhereInput = {
   NOT?: Prisma.McpConnectionScalarWhereInput | Prisma.McpConnectionScalarWhereInput[]
   id?: Prisma.StringFilter<"McpConnection"> | string
   userId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
-  roleId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   name?: Prisma.StringFilter<"McpConnection"> | string
   serverUrl?: Prisma.StringFilter<"McpConnection"> | string
   authType?: Prisma.StringFilter<"McpConnection"> | string
@@ -717,10 +716,11 @@ export type McpConnectionScalarWhereInput = {
   status?: Prisma.StringFilter<"McpConnection"> | string
   lastError?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   sessionId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
-  registryId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
   createdAt?: Prisma.DateTimeFilter<"McpConnection"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"McpConnection"> | Date | string
   lastConnectedAt?: Prisma.DateTimeNullableFilter<"McpConnection"> | Date | string | null
+  roleId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
+  registryId?: Prisma.StringNullableFilter<"McpConnection"> | string | null
 }
 
 export type McpConnectionCreateWithoutUserInput = {
@@ -734,16 +734,15 @@ export type McpConnectionCreateWithoutUserInput = {
   status?: string
   lastError?: string | null
   sessionId?: string | null
-  registryId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   lastConnectedAt?: Date | string | null
+  registryId?: string | null
   role?: Prisma.RoleCreateNestedOneWithoutMcpConnectionsInput
 }
 
 export type McpConnectionUncheckedCreateWithoutUserInput = {
   id?: string
-  roleId?: string | null
   name: string
   serverUrl: string
   authType?: string
@@ -753,10 +752,11 @@ export type McpConnectionUncheckedCreateWithoutUserInput = {
   status?: string
   lastError?: string | null
   sessionId?: string | null
-  registryId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   lastConnectedAt?: Date | string | null
+  roleId?: string | null
+  registryId?: string | null
 }
 
 export type McpConnectionCreateOrConnectWithoutUserInput = {
@@ -797,10 +797,10 @@ export type McpConnectionCreateManyRoleInput = {
   status?: string
   lastError?: string | null
   sessionId?: string | null
-  registryId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   lastConnectedAt?: Date | string | null
+  registryId?: string | null
 }
 
 export type McpConnectionUpdateWithoutRoleInput = {
@@ -814,10 +814,10 @@ export type McpConnectionUpdateWithoutRoleInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   user?: Prisma.UserUpdateOneWithoutMcpConnectionsNestedInput
 }
 
@@ -833,10 +833,10 @@ export type McpConnectionUncheckedUpdateWithoutRoleInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type McpConnectionUncheckedUpdateManyWithoutRoleInput = {
@@ -851,15 +851,14 @@ export type McpConnectionUncheckedUpdateManyWithoutRoleInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type McpConnectionCreateManyUserInput = {
   id?: string
-  roleId?: string | null
   name: string
   serverUrl: string
   authType?: string
@@ -869,10 +868,11 @@ export type McpConnectionCreateManyUserInput = {
   status?: string
   lastError?: string | null
   sessionId?: string | null
-  registryId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   lastConnectedAt?: Date | string | null
+  roleId?: string | null
+  registryId?: string | null
 }
 
 export type McpConnectionUpdateWithoutUserInput = {
@@ -886,16 +886,15 @@ export type McpConnectionUpdateWithoutUserInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.RoleUpdateOneWithoutMcpConnectionsNestedInput
 }
 
 export type McpConnectionUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   serverUrl?: Prisma.StringFieldUpdateOperationsInput | string
   authType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -905,15 +904,15 @@ export type McpConnectionUncheckedUpdateWithoutUserInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type McpConnectionUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   serverUrl?: Prisma.StringFieldUpdateOperationsInput | string
   authType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -923,10 +922,11 @@ export type McpConnectionUncheckedUpdateManyWithoutUserInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   lastConnectedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  registryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -934,7 +934,6 @@ export type McpConnectionUncheckedUpdateManyWithoutUserInput = {
 export type McpConnectionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
-  roleId?: boolean
   name?: boolean
   serverUrl?: boolean
   authType?: boolean
@@ -944,18 +943,18 @@ export type McpConnectionSelect<ExtArgs extends runtime.Types.Extensions.Interna
   status?: boolean
   lastError?: boolean
   sessionId?: boolean
-  registryId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   lastConnectedAt?: boolean
-  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
+  roleId?: boolean
+  registryId?: boolean
   role?: boolean | Prisma.McpConnection$roleArgs<ExtArgs>
+  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
 }, ExtArgs["result"]["mcpConnection"]>
 
 export type McpConnectionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
-  roleId?: boolean
   name?: boolean
   serverUrl?: boolean
   authType?: boolean
@@ -965,18 +964,18 @@ export type McpConnectionSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   status?: boolean
   lastError?: boolean
   sessionId?: boolean
-  registryId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   lastConnectedAt?: boolean
-  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
+  roleId?: boolean
+  registryId?: boolean
   role?: boolean | Prisma.McpConnection$roleArgs<ExtArgs>
+  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
 }, ExtArgs["result"]["mcpConnection"]>
 
 export type McpConnectionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
-  roleId?: boolean
   name?: boolean
   serverUrl?: boolean
   authType?: boolean
@@ -986,18 +985,18 @@ export type McpConnectionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   status?: boolean
   lastError?: boolean
   sessionId?: boolean
-  registryId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   lastConnectedAt?: boolean
-  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
+  roleId?: boolean
+  registryId?: boolean
   role?: boolean | Prisma.McpConnection$roleArgs<ExtArgs>
+  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
 }, ExtArgs["result"]["mcpConnection"]>
 
 export type McpConnectionSelectScalar = {
   id?: boolean
   userId?: boolean
-  roleId?: boolean
   name?: boolean
   serverUrl?: boolean
   authType?: boolean
@@ -1007,36 +1006,36 @@ export type McpConnectionSelectScalar = {
   status?: boolean
   lastError?: boolean
   sessionId?: boolean
-  registryId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   lastConnectedAt?: boolean
+  roleId?: boolean
+  registryId?: boolean
 }
 
-export type McpConnectionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "roleId" | "name" | "serverUrl" | "authType" | "authCredentialsEncrypted" | "availableTools" | "isActive" | "status" | "lastError" | "sessionId" | "registryId" | "createdAt" | "updatedAt" | "lastConnectedAt", ExtArgs["result"]["mcpConnection"]>
+export type McpConnectionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "name" | "serverUrl" | "authType" | "authCredentialsEncrypted" | "availableTools" | "isActive" | "status" | "lastError" | "sessionId" | "createdAt" | "updatedAt" | "lastConnectedAt" | "roleId" | "registryId", ExtArgs["result"]["mcpConnection"]>
 export type McpConnectionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
   role?: boolean | Prisma.McpConnection$roleArgs<ExtArgs>
+  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
 }
 export type McpConnectionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
   role?: boolean | Prisma.McpConnection$roleArgs<ExtArgs>
+  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
 }
 export type McpConnectionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
   role?: boolean | Prisma.McpConnection$roleArgs<ExtArgs>
+  user?: boolean | Prisma.McpConnection$userArgs<ExtArgs>
 }
 
 export type $McpConnectionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "McpConnection"
   objects: {
-    user: Prisma.$UserPayload<ExtArgs> | null
     role: Prisma.$RolePayload<ExtArgs> | null
+    user: Prisma.$UserPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     userId: string | null
-    roleId: string | null
     name: string
     serverUrl: string
     authType: string
@@ -1046,10 +1045,11 @@ export type $McpConnectionPayload<ExtArgs extends runtime.Types.Extensions.Inter
     status: string
     lastError: string | null
     sessionId: string | null
-    registryId: string | null
     createdAt: Date
     updatedAt: Date
     lastConnectedAt: Date | null
+    roleId: string | null
+    registryId: string | null
   }, ExtArgs["result"]["mcpConnection"]>
   composites: {}
 }
@@ -1444,8 +1444,8 @@ readonly fields: McpConnectionFieldRefs;
  */
 export interface Prisma__McpConnectionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  user<T extends Prisma.McpConnection$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.McpConnection$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   role<T extends Prisma.McpConnection$roleArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.McpConnection$roleArgs<ExtArgs>>): Prisma.Prisma__RoleClient<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  user<T extends Prisma.McpConnection$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.McpConnection$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1477,7 +1477,6 @@ export interface Prisma__McpConnectionClient<T, Null = never, ExtArgs extends ru
 export interface McpConnectionFieldRefs {
   readonly id: Prisma.FieldRef<"McpConnection", 'String'>
   readonly userId: Prisma.FieldRef<"McpConnection", 'String'>
-  readonly roleId: Prisma.FieldRef<"McpConnection", 'String'>
   readonly name: Prisma.FieldRef<"McpConnection", 'String'>
   readonly serverUrl: Prisma.FieldRef<"McpConnection", 'String'>
   readonly authType: Prisma.FieldRef<"McpConnection", 'String'>
@@ -1487,10 +1486,11 @@ export interface McpConnectionFieldRefs {
   readonly status: Prisma.FieldRef<"McpConnection", 'String'>
   readonly lastError: Prisma.FieldRef<"McpConnection", 'String'>
   readonly sessionId: Prisma.FieldRef<"McpConnection", 'String'>
-  readonly registryId: Prisma.FieldRef<"McpConnection", 'String'>
   readonly createdAt: Prisma.FieldRef<"McpConnection", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"McpConnection", 'DateTime'>
   readonly lastConnectedAt: Prisma.FieldRef<"McpConnection", 'DateTime'>
+  readonly roleId: Prisma.FieldRef<"McpConnection", 'String'>
+  readonly registryId: Prisma.FieldRef<"McpConnection", 'String'>
 }
     
 
@@ -1892,25 +1892,6 @@ export type McpConnectionDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
 }
 
 /**
- * McpConnection.user
- */
-export type McpConnection$userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the User
-   */
-  select?: Prisma.UserSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the User
-   */
-  omit?: Prisma.UserOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.UserInclude<ExtArgs> | null
-  where?: Prisma.UserWhereInput
-}
-
-/**
  * McpConnection.role
  */
 export type McpConnection$roleArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1927,6 +1908,25 @@ export type McpConnection$roleArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   include?: Prisma.RoleInclude<ExtArgs> | null
   where?: Prisma.RoleWhereInput
+}
+
+/**
+ * McpConnection.user
+ */
+export type McpConnection$userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
 }
 
 /**

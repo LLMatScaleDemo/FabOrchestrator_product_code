@@ -28,10 +28,12 @@ export type AggregateUserSessionLog = {
 
 export type UserSessionLogAvgAggregateOutputType = {
   idleSeconds: number | null
+  idle_episode_count: number | null
 }
 
 export type UserSessionLogSumAggregateOutputType = {
   idleSeconds: number | null
+  idle_episode_count: number | null
 }
 
 export type UserSessionLogMinAggregateOutputType = {
@@ -47,6 +49,7 @@ export type UserSessionLogMinAggregateOutputType = {
   loginIp: string | null
   loginUserAgent: string | null
   createdAt: Date | null
+  idle_episode_count: number | null
 }
 
 export type UserSessionLogMaxAggregateOutputType = {
@@ -62,6 +65,7 @@ export type UserSessionLogMaxAggregateOutputType = {
   loginIp: string | null
   loginUserAgent: string | null
   createdAt: Date | null
+  idle_episode_count: number | null
 }
 
 export type UserSessionLogCountAggregateOutputType = {
@@ -77,16 +81,20 @@ export type UserSessionLogCountAggregateOutputType = {
   loginIp: number
   loginUserAgent: number
   createdAt: number
+  idle_episodes: number
+  idle_episode_count: number
   _all: number
 }
 
 
 export type UserSessionLogAvgAggregateInputType = {
   idleSeconds?: true
+  idle_episode_count?: true
 }
 
 export type UserSessionLogSumAggregateInputType = {
   idleSeconds?: true
+  idle_episode_count?: true
 }
 
 export type UserSessionLogMinAggregateInputType = {
@@ -102,6 +110,7 @@ export type UserSessionLogMinAggregateInputType = {
   loginIp?: true
   loginUserAgent?: true
   createdAt?: true
+  idle_episode_count?: true
 }
 
 export type UserSessionLogMaxAggregateInputType = {
@@ -117,6 +126,7 @@ export type UserSessionLogMaxAggregateInputType = {
   loginIp?: true
   loginUserAgent?: true
   createdAt?: true
+  idle_episode_count?: true
 }
 
 export type UserSessionLogCountAggregateInputType = {
@@ -132,6 +142,8 @@ export type UserSessionLogCountAggregateInputType = {
   loginIp?: true
   loginUserAgent?: true
   createdAt?: true
+  idle_episodes?: true
+  idle_episode_count?: true
   _all?: true
 }
 
@@ -234,6 +246,8 @@ export type UserSessionLogGroupByOutputType = {
   loginIp: string | null
   loginUserAgent: string | null
   createdAt: Date
+  idle_episodes: runtime.JsonValue
+  idle_episode_count: number
   _count: UserSessionLogCountAggregateOutputType | null
   _avg: UserSessionLogAvgAggregateOutputType | null
   _sum: UserSessionLogSumAggregateOutputType | null
@@ -272,6 +286,8 @@ export type UserSessionLogWhereInput = {
   loginIp?: Prisma.StringNullableFilter<"UserSessionLog"> | string | null
   loginUserAgent?: Prisma.StringNullableFilter<"UserSessionLog"> | string | null
   createdAt?: Prisma.DateTimeFilter<"UserSessionLog"> | Date | string
+  idle_episodes?: Prisma.JsonFilter<"UserSessionLog">
+  idle_episode_count?: Prisma.IntFilter<"UserSessionLog"> | number
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
@@ -288,6 +304,8 @@ export type UserSessionLogOrderByWithRelationInput = {
   loginIp?: Prisma.SortOrderInput | Prisma.SortOrder
   loginUserAgent?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  idle_episodes?: Prisma.SortOrder
+  idle_episode_count?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
 }
 
@@ -307,6 +325,8 @@ export type UserSessionLogWhereUniqueInput = Prisma.AtLeast<{
   loginIp?: Prisma.StringNullableFilter<"UserSessionLog"> | string | null
   loginUserAgent?: Prisma.StringNullableFilter<"UserSessionLog"> | string | null
   createdAt?: Prisma.DateTimeFilter<"UserSessionLog"> | Date | string
+  idle_episodes?: Prisma.JsonFilter<"UserSessionLog">
+  idle_episode_count?: Prisma.IntFilter<"UserSessionLog"> | number
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "sessionTokenHash">
 
@@ -323,6 +343,8 @@ export type UserSessionLogOrderByWithAggregationInput = {
   loginIp?: Prisma.SortOrderInput | Prisma.SortOrder
   loginUserAgent?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  idle_episodes?: Prisma.SortOrder
+  idle_episode_count?: Prisma.SortOrder
   _count?: Prisma.UserSessionLogCountOrderByAggregateInput
   _avg?: Prisma.UserSessionLogAvgOrderByAggregateInput
   _max?: Prisma.UserSessionLogMaxOrderByAggregateInput
@@ -346,6 +368,8 @@ export type UserSessionLogScalarWhereWithAggregatesInput = {
   loginIp?: Prisma.StringNullableWithAggregatesFilter<"UserSessionLog"> | string | null
   loginUserAgent?: Prisma.StringNullableWithAggregatesFilter<"UserSessionLog"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"UserSessionLog"> | Date | string
+  idle_episodes?: Prisma.JsonWithAggregatesFilter<"UserSessionLog">
+  idle_episode_count?: Prisma.IntWithAggregatesFilter<"UserSessionLog"> | number
 }
 
 export type UserSessionLogCreateInput = {
@@ -360,6 +384,8 @@ export type UserSessionLogCreateInput = {
   loginIp?: string | null
   loginUserAgent?: string | null
   createdAt?: Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: number
   user: Prisma.UserCreateNestedOneWithoutSessionLogsInput
 }
 
@@ -376,6 +402,8 @@ export type UserSessionLogUncheckedCreateInput = {
   loginIp?: string | null
   loginUserAgent?: string | null
   createdAt?: Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: number
 }
 
 export type UserSessionLogUpdateInput = {
@@ -390,6 +418,8 @@ export type UserSessionLogUpdateInput = {
   loginIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loginUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: Prisma.IntFieldUpdateOperationsInput | number
   user?: Prisma.UserUpdateOneRequiredWithoutSessionLogsNestedInput
 }
 
@@ -406,6 +436,8 @@ export type UserSessionLogUncheckedUpdateInput = {
   loginIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loginUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type UserSessionLogCreateManyInput = {
@@ -421,6 +453,8 @@ export type UserSessionLogCreateManyInput = {
   loginIp?: string | null
   loginUserAgent?: string | null
   createdAt?: Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: number
 }
 
 export type UserSessionLogUpdateManyMutationInput = {
@@ -435,6 +469,8 @@ export type UserSessionLogUpdateManyMutationInput = {
   loginIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loginUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type UserSessionLogUncheckedUpdateManyInput = {
@@ -450,6 +486,8 @@ export type UserSessionLogUncheckedUpdateManyInput = {
   loginIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loginUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type UserSessionLogListRelationFilter = {
@@ -475,10 +513,13 @@ export type UserSessionLogCountOrderByAggregateInput = {
   loginIp?: Prisma.SortOrder
   loginUserAgent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  idle_episodes?: Prisma.SortOrder
+  idle_episode_count?: Prisma.SortOrder
 }
 
 export type UserSessionLogAvgOrderByAggregateInput = {
   idleSeconds?: Prisma.SortOrder
+  idle_episode_count?: Prisma.SortOrder
 }
 
 export type UserSessionLogMaxOrderByAggregateInput = {
@@ -494,6 +535,7 @@ export type UserSessionLogMaxOrderByAggregateInput = {
   loginIp?: Prisma.SortOrder
   loginUserAgent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  idle_episode_count?: Prisma.SortOrder
 }
 
 export type UserSessionLogMinOrderByAggregateInput = {
@@ -509,10 +551,12 @@ export type UserSessionLogMinOrderByAggregateInput = {
   loginIp?: Prisma.SortOrder
   loginUserAgent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  idle_episode_count?: Prisma.SortOrder
 }
 
 export type UserSessionLogSumOrderByAggregateInput = {
   idleSeconds?: Prisma.SortOrder
+  idle_episode_count?: Prisma.SortOrder
 }
 
 export type UserSessionLogCreateNestedManyWithoutUserInput = {
@@ -573,6 +617,8 @@ export type UserSessionLogCreateWithoutUserInput = {
   loginIp?: string | null
   loginUserAgent?: string | null
   createdAt?: Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: number
 }
 
 export type UserSessionLogUncheckedCreateWithoutUserInput = {
@@ -587,6 +633,8 @@ export type UserSessionLogUncheckedCreateWithoutUserInput = {
   loginIp?: string | null
   loginUserAgent?: string | null
   createdAt?: Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: number
 }
 
 export type UserSessionLogCreateOrConnectWithoutUserInput = {
@@ -631,6 +679,8 @@ export type UserSessionLogScalarWhereInput = {
   loginIp?: Prisma.StringNullableFilter<"UserSessionLog"> | string | null
   loginUserAgent?: Prisma.StringNullableFilter<"UserSessionLog"> | string | null
   createdAt?: Prisma.DateTimeFilter<"UserSessionLog"> | Date | string
+  idle_episodes?: Prisma.JsonFilter<"UserSessionLog">
+  idle_episode_count?: Prisma.IntFilter<"UserSessionLog"> | number
 }
 
 export type UserSessionLogCreateManyUserInput = {
@@ -645,6 +695,8 @@ export type UserSessionLogCreateManyUserInput = {
   loginIp?: string | null
   loginUserAgent?: string | null
   createdAt?: Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: number
 }
 
 export type UserSessionLogUpdateWithoutUserInput = {
@@ -659,6 +711,8 @@ export type UserSessionLogUpdateWithoutUserInput = {
   loginIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loginUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type UserSessionLogUncheckedUpdateWithoutUserInput = {
@@ -673,6 +727,8 @@ export type UserSessionLogUncheckedUpdateWithoutUserInput = {
   loginIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loginUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type UserSessionLogUncheckedUpdateManyWithoutUserInput = {
@@ -687,6 +743,8 @@ export type UserSessionLogUncheckedUpdateManyWithoutUserInput = {
   loginIp?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   loginUserAgent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  idle_episodes?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  idle_episode_count?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 
@@ -704,6 +762,8 @@ export type UserSessionLogSelect<ExtArgs extends runtime.Types.Extensions.Intern
   loginIp?: boolean
   loginUserAgent?: boolean
   createdAt?: boolean
+  idle_episodes?: boolean
+  idle_episode_count?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userSessionLog"]>
 
@@ -720,6 +780,8 @@ export type UserSessionLogSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   loginIp?: boolean
   loginUserAgent?: boolean
   createdAt?: boolean
+  idle_episodes?: boolean
+  idle_episode_count?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userSessionLog"]>
 
@@ -736,6 +798,8 @@ export type UserSessionLogSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   loginIp?: boolean
   loginUserAgent?: boolean
   createdAt?: boolean
+  idle_episodes?: boolean
+  idle_episode_count?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userSessionLog"]>
 
@@ -752,9 +816,11 @@ export type UserSessionLogSelectScalar = {
   loginIp?: boolean
   loginUserAgent?: boolean
   createdAt?: boolean
+  idle_episodes?: boolean
+  idle_episode_count?: boolean
 }
 
-export type UserSessionLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "sessionTokenHash" | "loginTime" | "logoutTime" | "lastActivityAt" | "idleSeconds" | "sessionStatus" | "closedReason" | "loginIp" | "loginUserAgent" | "createdAt", ExtArgs["result"]["userSessionLog"]>
+export type UserSessionLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "sessionTokenHash" | "loginTime" | "logoutTime" | "lastActivityAt" | "idleSeconds" | "sessionStatus" | "closedReason" | "loginIp" | "loginUserAgent" | "createdAt" | "idle_episodes" | "idle_episode_count", ExtArgs["result"]["userSessionLog"]>
 export type UserSessionLogInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -783,6 +849,8 @@ export type $UserSessionLogPayload<ExtArgs extends runtime.Types.Extensions.Inte
     loginIp: string | null
     loginUserAgent: string | null
     createdAt: Date
+    idle_episodes: runtime.JsonValue
+    idle_episode_count: number
   }, ExtArgs["result"]["userSessionLog"]>
   composites: {}
 }
@@ -1219,6 +1287,8 @@ export interface UserSessionLogFieldRefs {
   readonly loginIp: Prisma.FieldRef<"UserSessionLog", 'String'>
   readonly loginUserAgent: Prisma.FieldRef<"UserSessionLog", 'String'>
   readonly createdAt: Prisma.FieldRef<"UserSessionLog", 'DateTime'>
+  readonly idle_episodes: Prisma.FieldRef<"UserSessionLog", 'Json'>
+  readonly idle_episode_count: Prisma.FieldRef<"UserSessionLog", 'Int'>
 }
     
 

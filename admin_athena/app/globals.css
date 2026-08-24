@@ -13,6 +13,11 @@
    ============================================================================ */
 
 :root {
+  /* Force light UA rendering (form controls, scrollbars, inputs) regardless of
+     the viewer's OS theme — the admin console is light-only, so the browser must
+     never apply system dark styling to native elements. */
+  color-scheme: light;
+
   /* Core Colors */
   --background: #FAF9F5;
   --foreground: oklch(0.3438 0.0269 95.7226);

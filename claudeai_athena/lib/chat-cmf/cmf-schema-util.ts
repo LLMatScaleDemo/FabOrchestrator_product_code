@@ -50,6 +50,7 @@ export async function resolveRefJoins(
   ruleset: EntityRuleset,
   realLower: Map<string, string>,
   removedCols: Set<string>,
+  opts: { trustAll?: boolean } = {},
 ): Promise<RefJoin[]> {
   const out: RefJoin[] = [];
   const seenTargets = new Map<string, { schema: string; table: string; pk: string } | null>();
@@ -58,7 +59,13 @@ export async function resolveRefJoins(
     const target = p.referenceTargetType;
     if (!target) continue;
     if (removedCols.has(p.name.toLowerCase())) continue;
-    if (!nameMatches(p.name, target)) continue;
+    // By default only trust references whose property name overlaps the target
+    // type — CMF's reference metadata is noisy. `trustAll` keeps EVERY declared
+    // reference (used by the dependency export, where a name-mismatched FK like
+    // Flow.Type→Area or FlowStructures.Target→Step is exactly the link to
+    // follow; without it those columns come back blank and the walk finds
+    // nothing). The FK column must still physically exist.
+    if (!opts.trustAll && !nameMatches(p.name, target)) continue;
     const fkCol = realLower.get(`${p.name.toLowerCase()}id`);
     if (!fkCol) continue;
 

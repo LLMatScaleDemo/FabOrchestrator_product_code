@@ -443,6 +443,67 @@ export type EnumMcpDataSourceStatusWithAggregatesFilter<$PrismaModel = never> = 
   _max?: Prisma.NestedEnumMcpDataSourceStatusFilter<$PrismaModel>
 }
 
+export type Enumerror_audit_statusFilter<$PrismaModel = never> = {
+  equals?: $Enums.error_audit_status | Prisma.Enumerror_audit_statusFieldRefInput<$PrismaModel>
+  in?: $Enums.error_audit_status[] | Prisma.ListEnumerror_audit_statusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.error_audit_status[] | Prisma.ListEnumerror_audit_statusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumerror_audit_statusFilter<$PrismaModel> | $Enums.error_audit_status
+}
+
+export type Enumerror_audit_statusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.error_audit_status | Prisma.Enumerror_audit_statusFieldRefInput<$PrismaModel>
+  in?: $Enums.error_audit_status[] | Prisma.ListEnumerror_audit_statusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.error_audit_status[] | Prisma.ListEnumerror_audit_statusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumerror_audit_statusWithAggregatesFilter<$PrismaModel> | $Enums.error_audit_status
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumerror_audit_statusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumerror_audit_statusFilter<$PrismaModel>
+}
+
+export type Enumprompt_audit_statusFilter<$PrismaModel = never> = {
+  equals?: $Enums.prompt_audit_status | Prisma.Enumprompt_audit_statusFieldRefInput<$PrismaModel>
+  in?: $Enums.prompt_audit_status[] | Prisma.ListEnumprompt_audit_statusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.prompt_audit_status[] | Prisma.ListEnumprompt_audit_statusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumprompt_audit_statusFilter<$PrismaModel> | $Enums.prompt_audit_status
+}
+
+export type DecimalNullableFilter<$PrismaModel = never> = {
+  equals?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel> | null
+  in?: runtime.Decimal[] | runtime.DecimalJsLike[] | number[] | string[] | Prisma.ListDecimalFieldRefInput<$PrismaModel> | null
+  notIn?: runtime.Decimal[] | runtime.DecimalJsLike[] | number[] | string[] | Prisma.ListDecimalFieldRefInput<$PrismaModel> | null
+  lt?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  lte?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  gt?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  gte?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedDecimalNullableFilter<$PrismaModel> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+}
+
+export type Enumprompt_audit_statusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.prompt_audit_status | Prisma.Enumprompt_audit_statusFieldRefInput<$PrismaModel>
+  in?: $Enums.prompt_audit_status[] | Prisma.ListEnumprompt_audit_statusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.prompt_audit_status[] | Prisma.ListEnumprompt_audit_statusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumprompt_audit_statusWithAggregatesFilter<$PrismaModel> | $Enums.prompt_audit_status
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumprompt_audit_statusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumprompt_audit_statusFilter<$PrismaModel>
+}
+
+export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel> | null
+  in?: runtime.Decimal[] | runtime.DecimalJsLike[] | number[] | string[] | Prisma.ListDecimalFieldRefInput<$PrismaModel> | null
+  notIn?: runtime.Decimal[] | runtime.DecimalJsLike[] | number[] | string[] | Prisma.ListDecimalFieldRefInput<$PrismaModel> | null
+  lt?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  lte?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  gt?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  gte?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _avg?: Prisma.NestedDecimalNullableFilter<$PrismaModel>
+  _sum?: Prisma.NestedDecimalNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedDecimalNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedDecimalNullableFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -818,6 +879,67 @@ export type NestedEnumMcpDataSourceStatusWithAggregatesFilter<$PrismaModel = nev
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumMcpDataSourceStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumMcpDataSourceStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumerror_audit_statusFilter<$PrismaModel = never> = {
+  equals?: $Enums.error_audit_status | Prisma.Enumerror_audit_statusFieldRefInput<$PrismaModel>
+  in?: $Enums.error_audit_status[] | Prisma.ListEnumerror_audit_statusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.error_audit_status[] | Prisma.ListEnumerror_audit_statusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumerror_audit_statusFilter<$PrismaModel> | $Enums.error_audit_status
+}
+
+export type NestedEnumerror_audit_statusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.error_audit_status | Prisma.Enumerror_audit_statusFieldRefInput<$PrismaModel>
+  in?: $Enums.error_audit_status[] | Prisma.ListEnumerror_audit_statusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.error_audit_status[] | Prisma.ListEnumerror_audit_statusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumerror_audit_statusWithAggregatesFilter<$PrismaModel> | $Enums.error_audit_status
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumerror_audit_statusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumerror_audit_statusFilter<$PrismaModel>
+}
+
+export type NestedEnumprompt_audit_statusFilter<$PrismaModel = never> = {
+  equals?: $Enums.prompt_audit_status | Prisma.Enumprompt_audit_statusFieldRefInput<$PrismaModel>
+  in?: $Enums.prompt_audit_status[] | Prisma.ListEnumprompt_audit_statusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.prompt_audit_status[] | Prisma.ListEnumprompt_audit_statusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumprompt_audit_statusFilter<$PrismaModel> | $Enums.prompt_audit_status
+}
+
+export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+  equals?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel> | null
+  in?: runtime.Decimal[] | runtime.DecimalJsLike[] | number[] | string[] | Prisma.ListDecimalFieldRefInput<$PrismaModel> | null
+  notIn?: runtime.Decimal[] | runtime.DecimalJsLike[] | number[] | string[] | Prisma.ListDecimalFieldRefInput<$PrismaModel> | null
+  lt?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  lte?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  gt?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  gte?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedDecimalNullableFilter<$PrismaModel> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+}
+
+export type NestedEnumprompt_audit_statusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.prompt_audit_status | Prisma.Enumprompt_audit_statusFieldRefInput<$PrismaModel>
+  in?: $Enums.prompt_audit_status[] | Prisma.ListEnumprompt_audit_statusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.prompt_audit_status[] | Prisma.ListEnumprompt_audit_statusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumprompt_audit_statusWithAggregatesFilter<$PrismaModel> | $Enums.prompt_audit_status
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumprompt_audit_statusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumprompt_audit_statusFilter<$PrismaModel>
+}
+
+export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel> | null
+  in?: runtime.Decimal[] | runtime.DecimalJsLike[] | number[] | string[] | Prisma.ListDecimalFieldRefInput<$PrismaModel> | null
+  notIn?: runtime.Decimal[] | runtime.DecimalJsLike[] | number[] | string[] | Prisma.ListDecimalFieldRefInput<$PrismaModel> | null
+  lt?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  lte?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  gt?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  gte?: runtime.Decimal | runtime.DecimalJsLike | number | string | Prisma.DecimalFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _avg?: Prisma.NestedDecimalNullableFilter<$PrismaModel>
+  _sum?: Prisma.NestedDecimalNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedDecimalNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedDecimalNullableFilter<$PrismaModel>
 }
 
 

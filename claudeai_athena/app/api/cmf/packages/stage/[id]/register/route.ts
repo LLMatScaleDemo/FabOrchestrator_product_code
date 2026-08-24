@@ -11,6 +11,8 @@ import {
 } from "@/lib/repo-cmf/validation";
 import { recordAudit } from "@/lib/cmf/audit";
 import { validateAgainstTemplate } from "@/lib/validation/template-check";
+import { runWithCmfDb } from "@/lib/cmf/db-context";
+import { resolveCmfDbKey } from "@/lib/cmf/request-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,9 +36,18 @@ export async function POST(
       );
     }
 
+    // Route the register (and the CMF prepare it triggers) to the database the
+    // loader's CmfDatabaseToggle selected — otherwise it always lands in source.
+    const dbKey = await resolveCmfDbKey(request, userId);
+    return await runWithCmfDb(dbKey, async () => {
+
     const { id } = await params;
-    const body = (await request.json().catch(() => ({}))) as { name?: string };
+    const body = (await request.json().catch(() => ({}))) as {
+      name?: string;
+      skipTemplateCheck?: boolean;
+    };
     const name = String(body.name ?? "").trim();
+    const skipTemplateCheck = body.skipTemplateCheck === true;
     if (!name) {
       return NextResponse.json(
         { error: { title: "Package name required", description: "Enter a name for this package.", action: "rename" } },
@@ -53,18 +64,23 @@ export async function POST(
     }
 
     // Hard gate: re-validate server-side; a non-conformant file must NOT reach CMF.
-    const result = await validateAgainstTemplate(staged.bytes);
-    if (!result.ok) {
-      return NextResponse.json(
-        {
-          error: {
-            title: "Validation not passed",
-            description: `Fix ${result.errorCount} template error(s) before continuing.`,
+    // Skippable by the user's explicit choice on the Validate step — the local
+    // template check is optional, but CMF's own dry-run validation downstream is
+    // always compulsory, so the file is never loaded unverified.
+    if (!skipTemplateCheck) {
+      const result = await validateAgainstTemplate(staged.bytes);
+      if (!result.ok) {
+        return NextResponse.json(
+          {
+            error: {
+              title: "Validation not passed",
+              description: `Fix ${result.errorCount} template error(s) before continuing.`,
+            },
+            errorsByType: result.errorsByType,
           },
-          errorsByType: result.errorsByType,
-        },
-        { status: 422 },
-      );
+          { status: 422 },
+        );
+      }
     }
 
     // Conformant → now call the CMF object APIs.
@@ -100,6 +116,7 @@ export async function POST(
     return NextResponse.json({
       packageId: prep.instance.Id,
       objectTypes: prep.objectTypes,
+    });
     });
   } catch (err) {
     console.error("[api/cmf/packages/stage/:id/register] failed", err);

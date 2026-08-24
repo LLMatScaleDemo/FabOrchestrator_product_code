@@ -11,24 +11,44 @@ import dns from "node:dns";
 import { Agent, setGlobalDispatcher } from "undici";
 
 import { getMesToken } from "./cmf-auth";
+import { currentDbKey } from "@/lib/cmf/db-context";
+import { CMF_DB_PROFILES, profileFor } from "@/lib/cmf/db-registry";
+import { cachedHostResolverPairs } from "@/lib/cmf/connection-store";
 
 /**
- * The CMF host (`atscmapp4.usa.athenatec.com`) is an on-prem server that is NOT
- * in public DNS — it's reached over the VPN by its private IP. `HOST_RESOLVER`
- * ("host=ip[,host=ip]") maps the hostname to that IP so `fetch` doesn't try
- * (and fail) a real DNS lookup. We install it as a custom `lookup` on the global
- * undici Agent (Node's global `fetch` uses this dispatcher).
+ * The CMF hosts (e.g. `atscmapp4.usa.athenatec.com`, `athena-cmf-srv...`) are
+ * on-prem servers NOT in public DNS — reached over the VPN by private IP. Each
+ * DB profile carries its host→IP pair(s); we merge ALL of them into one map so
+ * `fetch` resolves either host without a real DNS lookup. The map is keyed by
+ * hostname, so both databases' hosts coexist in a single process-global undici
+ * dispatcher — the dispatcher does NOT need to be per-DB; only the base URL and
+ * token do (resolved per call from the active DB).
  *
- * The same Agent skips TLS cert verification when CMF_TLS_INSECURE != "0"
- * (default): the cert is self-signed / corp-CA-issued and we connect by IP.
- * For production, install the corp CA root and set CMF_TLS_INSECURE=0.
+ * The Agent skips TLS cert verification when CMF_TLS_INSECURE != "0" (default):
+ * certs are self-signed / corp-CA-issued and we connect by IP. Both DBs share
+ * this policy today. For production, install the corp CA root and set
+ * CMF_TLS_INSECURE=0.
  */
 const CMF_TLS_INSECURE = process.env.CMF_TLS_INSECURE !== "0";
 
+// Static host→IP base from the committed env-default profiles. Admin-managed
+// connections (loaded into connection-store) are consulted first at lookup time
+// so an edited/added host→IP takes effect within the cache TTL without a redeploy.
 const HOST_MAP = new Map<string, string>();
-for (const pair of (process.env.HOST_RESOLVER ?? "").split(",")) {
-  const [host, ip] = pair.split("=").map((s) => s.trim());
-  if (host && ip) HOST_MAP.set(host.toLowerCase(), ip);
+for (const profile of Object.values(CMF_DB_PROFILES)) {
+  for (const [host, ip] of profile.hostResolver) {
+    if (host && ip) HOST_MAP.set(host.toLowerCase(), ip);
+  }
+}
+
+/** Resolve a hostname to a mapped IP: admin-managed (DB) pairs win, then the
+ *  static env-default base. Returns undefined to defer to real DNS. */
+function mappedIp(hostname: string): string | undefined {
+  const h = hostname.toLowerCase();
+  for (const [host, ip] of cachedHostResolverPairs()) {
+    if (host && ip && host.toLowerCase() === h) return ip;
+  }
+  return HOST_MAP.get(h);
 }
 
 const hostResolverLookup: typeof dns.lookup = ((
@@ -38,7 +58,7 @@ const hostResolverLookup: typeof dns.lookup = ((
 ) => {
   const cb = (typeof options === "function" ? options : callback) as typeof callback;
   const opts = (typeof options === "function" ? {} : options) as { all?: boolean };
-  const mapped = HOST_MAP.get(hostname.toLowerCase());
+  const mapped = mappedIp(hostname);
   if (mapped) {
     return opts?.all
       ? cb(null, [{ address: mapped, family: 4 }])
@@ -76,8 +96,8 @@ import {
 } from "./types";
 
 function baseUrl(): string {
-  const v = process.env.CMF_BASE_URL;
-  if (!v) throw new Error("CMF_BASE_URL is not set");
+  const v = profileFor(currentDbKey()).baseUrl;
+  if (!v) throw new Error(`CMF base URL is not set for "${currentDbKey()}"`);
   return v.replace(/\/+$/, "");
 }
 

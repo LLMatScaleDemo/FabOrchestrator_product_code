@@ -304,9 +304,9 @@ export type RoleWhereInput = {
   promptSuggestions?: Prisma.JsonFilter<"Role">
   createdAt?: Prisma.DateTimeFilter<"Role"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Role"> | Date | string
-  users?: Prisma.UserListRelationFilter
-  mcpConnections?: Prisma.McpConnectionListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
+  mcpConnections?: Prisma.McpConnectionListRelationFilter
+  users?: Prisma.UserListRelationFilter
 }
 
 export type RoleOrderByWithRelationInput = {
@@ -326,9 +326,9 @@ export type RoleOrderByWithRelationInput = {
   promptSuggestions?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  users?: Prisma.UserOrderByRelationAggregateInput
-  mcpConnections?: Prisma.McpConnectionOrderByRelationAggregateInput
   invitations?: Prisma.InvitationOrderByRelationAggregateInput
+  mcpConnections?: Prisma.McpConnectionOrderByRelationAggregateInput
+  users?: Prisma.UserOrderByRelationAggregateInput
 }
 
 export type RoleWhereUniqueInput = Prisma.AtLeast<{
@@ -351,9 +351,9 @@ export type RoleWhereUniqueInput = Prisma.AtLeast<{
   promptSuggestions?: Prisma.JsonFilter<"Role">
   createdAt?: Prisma.DateTimeFilter<"Role"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Role"> | Date | string
-  users?: Prisma.UserListRelationFilter
-  mcpConnections?: Prisma.McpConnectionListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
+  mcpConnections?: Prisma.McpConnectionListRelationFilter
+  users?: Prisma.UserListRelationFilter
 }, "id" | "name">
 
 export type RoleOrderByWithAggregationInput = {
@@ -419,9 +419,9 @@ export type RoleCreateInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  users?: Prisma.UserCreateNestedManyWithoutRoleInput
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutRoleInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutRoleInput
+  users?: Prisma.UserCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateInput = {
@@ -441,9 +441,9 @@ export type RoleUncheckedCreateInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutRoleInput
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutRoleInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutRoleInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUpdateInput = {
@@ -463,9 +463,9 @@ export type RoleUpdateInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  users?: Prisma.UserUpdateManyWithoutRoleNestedInput
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutRoleNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutRoleNestedInput
+  users?: Prisma.UserUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateInput = {
@@ -485,9 +485,9 @@ export type RoleUncheckedUpdateInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  users?: Prisma.UserUncheckedUpdateManyWithoutRoleNestedInput
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutRoleNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutRoleNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleCreateManyInput = {
@@ -717,8 +717,8 @@ export type RoleCreateWithoutUsersInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutRoleInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateWithoutUsersInput = {
@@ -738,8 +738,8 @@ export type RoleUncheckedCreateWithoutUsersInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutRoleInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleCreateOrConnectWithoutUsersInput = {
@@ -775,8 +775,8 @@ export type RoleUpdateWithoutUsersInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutRoleNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateWithoutUsersInput = {
@@ -796,8 +796,8 @@ export type RoleUncheckedUpdateWithoutUsersInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutRoleNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleCreateWithoutMcpConnectionsInput = {
@@ -817,8 +817,8 @@ export type RoleCreateWithoutMcpConnectionsInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  users?: Prisma.UserCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutRoleInput
+  users?: Prisma.UserCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateWithoutMcpConnectionsInput = {
@@ -838,8 +838,8 @@ export type RoleUncheckedCreateWithoutMcpConnectionsInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutRoleInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleCreateOrConnectWithoutMcpConnectionsInput = {
@@ -875,8 +875,8 @@ export type RoleUpdateWithoutMcpConnectionsInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  users?: Prisma.UserUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutRoleNestedInput
+  users?: Prisma.UserUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateWithoutMcpConnectionsInput = {
@@ -896,8 +896,8 @@ export type RoleUncheckedUpdateWithoutMcpConnectionsInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  users?: Prisma.UserUncheckedUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutRoleNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleCreateWithoutInvitationsInput = {
@@ -917,8 +917,8 @@ export type RoleCreateWithoutInvitationsInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  users?: Prisma.UserCreateNestedManyWithoutRoleInput
   mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutRoleInput
+  users?: Prisma.UserCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateWithoutInvitationsInput = {
@@ -938,8 +938,8 @@ export type RoleUncheckedCreateWithoutInvitationsInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutRoleInput
   mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutRoleInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleCreateOrConnectWithoutInvitationsInput = {
@@ -975,8 +975,8 @@ export type RoleUpdateWithoutInvitationsInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  users?: Prisma.UserUpdateManyWithoutRoleNestedInput
   mcpConnections?: Prisma.McpConnectionUpdateManyWithoutRoleNestedInput
+  users?: Prisma.UserUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateWithoutInvitationsInput = {
@@ -996,8 +996,8 @@ export type RoleUncheckedUpdateWithoutInvitationsInput = {
   promptSuggestions?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  users?: Prisma.UserUncheckedUpdateManyWithoutRoleNestedInput
   mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutRoleNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 
@@ -1006,15 +1006,15 @@ export type RoleUncheckedUpdateWithoutInvitationsInput = {
  */
 
 export type RoleCountOutputType = {
-  users: number
-  mcpConnections: number
   invitations: number
+  mcpConnections: number
+  users: number
 }
 
 export type RoleCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  users?: boolean | RoleCountOutputTypeCountUsersArgs
-  mcpConnections?: boolean | RoleCountOutputTypeCountMcpConnectionsArgs
   invitations?: boolean | RoleCountOutputTypeCountInvitationsArgs
+  mcpConnections?: boolean | RoleCountOutputTypeCountMcpConnectionsArgs
+  users?: boolean | RoleCountOutputTypeCountUsersArgs
 }
 
 /**
@@ -1030,8 +1030,8 @@ export type RoleCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
 /**
  * RoleCountOutputType without action
  */
-export type RoleCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.UserWhereInput
+export type RoleCountOutputTypeCountInvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.InvitationWhereInput
 }
 
 /**
@@ -1044,8 +1044,8 @@ export type RoleCountOutputTypeCountMcpConnectionsArgs<ExtArgs extends runtime.T
 /**
  * RoleCountOutputType without action
  */
-export type RoleCountOutputTypeCountInvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.InvitationWhereInput
+export type RoleCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserWhereInput
 }
 
 
@@ -1066,9 +1066,9 @@ export type RoleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   promptSuggestions?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  users?: boolean | Prisma.Role$usersArgs<ExtArgs>
-  mcpConnections?: boolean | Prisma.Role$mcpConnectionsArgs<ExtArgs>
   invitations?: boolean | Prisma.Role$invitationsArgs<ExtArgs>
+  mcpConnections?: boolean | Prisma.Role$mcpConnectionsArgs<ExtArgs>
+  users?: boolean | Prisma.Role$usersArgs<ExtArgs>
   _count?: boolean | Prisma.RoleCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["role"]>
 
@@ -1131,9 +1131,9 @@ export type RoleSelectScalar = {
 
 export type RoleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "isSystemRole" | "permissions" | "allowedModels" | "systemInstructions" | "customInstructionsEnabled" | "customInstructionsMaxLength" | "personalMcpEnabled" | "personalMcpMaxCount" | "dailyRequestLimit" | "dailyTokenLimit" | "promptSuggestions" | "createdAt" | "updatedAt", ExtArgs["result"]["role"]>
 export type RoleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  users?: boolean | Prisma.Role$usersArgs<ExtArgs>
-  mcpConnections?: boolean | Prisma.Role$mcpConnectionsArgs<ExtArgs>
   invitations?: boolean | Prisma.Role$invitationsArgs<ExtArgs>
+  mcpConnections?: boolean | Prisma.Role$mcpConnectionsArgs<ExtArgs>
+  users?: boolean | Prisma.Role$usersArgs<ExtArgs>
   _count?: boolean | Prisma.RoleCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type RoleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1142,9 +1142,9 @@ export type RoleIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type $RolePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Role"
   objects: {
-    users: Prisma.$UserPayload<ExtArgs>[]
-    mcpConnections: Prisma.$McpConnectionPayload<ExtArgs>[]
     invitations: Prisma.$InvitationPayload<ExtArgs>[]
+    mcpConnections: Prisma.$McpConnectionPayload<ExtArgs>[]
+    users: Prisma.$UserPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1557,9 +1557,9 @@ readonly fields: RoleFieldRefs;
  */
 export interface Prisma__RoleClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  users<T extends Prisma.Role$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  mcpConnections<T extends Prisma.Role$mcpConnectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$mcpConnectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$McpConnectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitations<T extends Prisma.Role$invitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  mcpConnections<T extends Prisma.Role$mcpConnectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$mcpConnectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$McpConnectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  users<T extends Prisma.Role$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1998,27 +1998,27 @@ export type RoleDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * Role.users
+ * Role.invitations
  */
-export type Role$usersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Role$invitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the User
+   * Select specific fields to fetch from the Invitation
    */
-  select?: Prisma.UserSelect<ExtArgs> | null
+  select?: Prisma.InvitationSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the User
+   * Omit specific fields from the Invitation
    */
-  omit?: Prisma.UserOmit<ExtArgs> | null
+  omit?: Prisma.InvitationOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.UserInclude<ExtArgs> | null
-  where?: Prisma.UserWhereInput
-  orderBy?: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[]
-  cursor?: Prisma.UserWhereUniqueInput
+  include?: Prisma.InvitationInclude<ExtArgs> | null
+  where?: Prisma.InvitationWhereInput
+  orderBy?: Prisma.InvitationOrderByWithRelationInput | Prisma.InvitationOrderByWithRelationInput[]
+  cursor?: Prisma.InvitationWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.UserScalarFieldEnum | Prisma.UserScalarFieldEnum[]
+  distinct?: Prisma.InvitationScalarFieldEnum | Prisma.InvitationScalarFieldEnum[]
 }
 
 /**
@@ -2046,27 +2046,27 @@ export type Role$mcpConnectionsArgs<ExtArgs extends runtime.Types.Extensions.Int
 }
 
 /**
- * Role.invitations
+ * Role.users
  */
-export type Role$invitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Role$usersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Invitation
+   * Select specific fields to fetch from the User
    */
-  select?: Prisma.InvitationSelect<ExtArgs> | null
+  select?: Prisma.UserSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Invitation
+   * Omit specific fields from the User
    */
-  omit?: Prisma.InvitationOmit<ExtArgs> | null
+  omit?: Prisma.UserOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.InvitationInclude<ExtArgs> | null
-  where?: Prisma.InvitationWhereInput
-  orderBy?: Prisma.InvitationOrderByWithRelationInput | Prisma.InvitationOrderByWithRelationInput[]
-  cursor?: Prisma.InvitationWhereUniqueInput
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
+  orderBy?: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[]
+  cursor?: Prisma.UserWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.InvitationScalarFieldEnum | Prisma.InvitationScalarFieldEnum[]
+  distinct?: Prisma.UserScalarFieldEnum | Prisma.UserScalarFieldEnum[]
 }
 
 /**

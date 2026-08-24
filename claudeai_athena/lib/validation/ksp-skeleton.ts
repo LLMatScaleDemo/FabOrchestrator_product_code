@@ -89,15 +89,22 @@ function rewriteHeaderRow(sheetXml: string, headers: string[]): string {
 /**
  * Resolved path to the canonical template — the skeleton source.
  *
- * `templates/KSP_DL_client_final.xlsx` is KSP_DL with every client-marked
- * override physically applied (28 removed object sheets deleted, 12 column
- * removals baked into header rows). It's regenerated whenever the client's
- * catalog changes via `scripts/build-client-final-excel.ts`.
+ * Uses `templates/KSP_DL_AI.xlsx` — the pristine, CMF-valid full master-data
+ * template. The previously-used `KSP_DL_client_final.xlsx` (KSP_DL with 28 object
+ * sheets physically DELETED + 12 column removals, produced by
+ * scripts/build-client-final-excel.ts) left broken OOXML references that make CMF
+ * throw `Unk10000 — "Sequence contains no matching element"` at
+ * `GetMasterDataPackageObjectTypes` on register. Verified 2026-08-03 against live
+ * CMF: raw `client_final` FAILS that step; raw `KSP_DL_AI` registers cleanly
+ * (151 object types). Every file the chat generated from `client_final` inherited
+ * that break, so ALL generated templates (blank and object-specific) failed CMF.
  *
- * We still consult `template-overrides.json` at runtime (belt-and-suspenders:
- * catches any drift between the finalized file and the current override policy).
+ * Client-removed objects/columns are still enforced at runtime via
+ * `template-overrides.json` (isObjectRemoved / getRemovedColumns) — generation
+ * refuses removed objects and never emits removed columns even though this source
+ * still physically contains them.
  */
-const KSP_DL_PATH = path.resolve(process.cwd(), "templates/KSP_DL_client_final.xlsx");
+const KSP_DL_PATH = path.resolve(process.cwd(), "templates/KSP_DL_AI.xlsx");
 
 /**
  * Cache the raw bytes once per server lifetime — the file is 3MB and the
@@ -175,7 +182,7 @@ function dropMergeCellsBeyondRow(sheetXml: string, maxRow: number): string {
  * Parse xl/workbook.xml + xl/_rels/workbook.xml.rels to discover every sheet
  * tab name and the path to its underlying worksheets/sheetN.xml.
  */
-async function buildSheetIndex(zip: JSZip): Promise<{ name: string; path: string }[]> {
+export async function buildSheetIndex(zip: JSZip): Promise<{ name: string; path: string }[]> {
   const wbXml = await zip.file("xl/workbook.xml")!.async("text");
   const relsXml = await zip.file("xl/_rels/workbook.xml.rels")!.async("text");
 
@@ -445,6 +452,13 @@ export async function generateSkeletonBlank(
     setSheetStatesInWorkbookXml(wbXml, hideSet, showSet),
   );
 
+  // NOTE: the Index tab is intentionally left INTACT (lists every object). We
+  // HIDE non-kept sheets rather than remove them, so all sheets the Index lists
+  // are physically present — the file is self-consistent and CMF accepts it.
+  // Pruning the Index (renumbering its table rows) made CMF's package reader
+  // throw "The given key 'N' was not present in the dictionary" for some objects
+  // (verified 2026-08-03 against live CMF), so it is deliberately NOT done.
+
   // Drop a small marker so `validateTemplate` can detect this is a
   // skeleton-built workbook (and skip the expensive ExcelJS re-parse path,
   // which hangs on the rich KSP_DL content even after row stripping).
@@ -559,14 +573,25 @@ export async function generateFromSkeleton(
       continue;
     }
     const inner = dataMatch[1];
-    let maxRowNum = 1; // header
+    // Parse existing rows. KSP sheets ship with HUNDREDS of blank styled rows
+    // (Product ~975); appending after the last row would bury the data far down
+    // and make the sheet look empty. So we place data right after the last row
+    // that actually HAS content (the header, or the last existing data row),
+    // OVERWRITING the blank rows in that range. No rows are removed — the tail
+    // blanks keep their numbers, so the sheet dimension + dataValidations stay
+    // intact (CMF-safe). This makes exported/filled data visible at the top, and
+    // appends new rows contiguously after existing data.
+    const existing: { n: number; xml: string }[] = [];
+    let maxContentRow = 1; // header always counts as content
+    const hasContent = (xml: string) => /<c\b[^>]*>(?:<is>|<v>)/.test(xml);
     const rowRe = /<row\b[^>]*\br="(\d+)"[^>]*(?:\/>|>[\s\S]*?<\/row>)/g;
     let rm: RegExpExecArray | null;
     while ((rm = rowRe.exec(inner))) {
       const n = Number(rm[1]);
-      if (n > maxRowNum) maxRowNum = n;
+      existing.push({ n, xml: rm[0] });
+      if (n > 1 && hasContent(rm[0]) && n > maxContentRow) maxContentRow = n;
     }
-    const startRow = maxRowNum + 1;
+    const startRow = maxContentRow + 1;
 
     // Emit new rows.
     let rowNum = startRow;
@@ -595,8 +620,17 @@ export async function generateFromSkeleton(
       })
       .join("");
 
-    // Insert new rows immediately before </sheetData>.
-    const updated = sheetXml.replace(/<\/sheetData>/, `${newRowsXml}</sheetData>`);
+    // Keep existing rows up to the last content row (header + any existing
+    // data), write the new rows next (overwriting blank rows in that range),
+    // then keep the trailing blank rows below — no rows removed.
+    const lastNewRow = startRow + rows.length - 1;
+    const headAndData = existing.filter((r) => r.n <= maxContentRow).map((r) => r.xml).join("");
+    const tail = existing.filter((r) => r.n > lastNewRow).map((r) => r.xml).join("");
+    const newInner = headAndData + newRowsXml + tail;
+    const updated = sheetXml.replace(
+      /(<sheetData(?:\s[^>]*)?>)[\s\S]*?(<\/sheetData>)/,
+      (_full, open, close) => `${open}${newInner}${close}`,
+    );
     zip.file(sheet.path, updated);
 
     written.push({
@@ -661,6 +695,11 @@ export async function generateFromSkeleton(
     "xl/workbook.xml",
     setSheetStatesInWorkbookXml(wbXml, hideSet, showSet),
   );
+
+  // Index tab left intact (see the note in generateSkeletonBlank): non-kept
+  // sheets are hidden, not removed, so the full Index stays consistent and CMF
+  // accepts it — pruning the Index broke CMF's reader for some objects.
+
   const visibleForMarker = [...showSet];
 
   // Stamp the skeleton marker so `validateTemplate` takes the fast path.
