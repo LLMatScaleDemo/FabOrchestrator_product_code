@@ -51,7 +51,7 @@ const AGENTS: Agent[] = [
     {
         num: "AGENT · 03",
         icon: sv(<><circle cx="7" cy="7" r="2.4" /><circle cx="17" cy="17" r="2.4" /><path d="M9.4 7H15a2 2 0 0 1 2 2v5.6" /><path d="M14.6 17H9a2 2 0 0 1-2-2V9.4" /></>, 20),
-        name: "Modeling Agent",
+        name: "Master Data Load Agent",
         cat: "Enterprise Configuration",
         desc: "AI-guided MES rollouts at scale.",
         ml: "Sites",

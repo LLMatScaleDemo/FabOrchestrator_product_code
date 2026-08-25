@@ -13,6 +13,18 @@ import { prisma } from '@/lib/db';
 import { buildChatTools } from '@/lib/chat-cmf/tools';
 import { DEFAULT_DB_KEY, isCmfDbKey, profileFor, type CmfDbKey } from '@/lib/cmf/db-registry';
 import { getUserCmfAccess, pickAllowedKey } from '@/lib/cmf/access';
+import { PhaseTimer } from '@/lib/perf-timer';
+import { logger } from '@/lib/logger';
+import {
+  recordPromptStart,
+  recordPromptSuccess,
+  recordPromptFailure,
+  recordPromptTimings,
+  type PromptStartHandle,
+  type ToolCallSummary,
+} from '@/lib/prompt-audit';
+import { costForTurn, costForTurnWithRates, type ModelRates } from '@/lib/model-pricing';
+import { getRegistryRates } from '@/lib/model-registry';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -203,15 +215,22 @@ const SYSTEM_PROMPT = [
 ].join('\n');
 
 export async function POST(req: NextRequest) {
+  // Constructed FIRST so the clock covers the whole handler.
+  const perf = new PhaseTimer('modeling-agent', {
+    route: '/api/modeling-agent/chat',
+    method: 'POST',
+  });
+  const requestStartedAtMs = Date.now();
   const auth = await requireAuth(req);
   if (auth instanceof NextResponse) return auth;
   const { user } = auth;
+  perf.mark('auth');
 
   // ── Role gate: require the `modeling_agent` permission (admins bypass) ──
-  const dbUser = await prisma.user.findUnique({
+  const dbUser = await perf.time('userRoleQuery', () => prisma.user.findUnique({
     where: { id: user.id },
     include: { role: true },
-  });
+  }));
   const perms = Array.isArray(dbUser?.role?.permissions)
     ? (dbUser!.role!.permissions as string[])
     : [];
@@ -245,7 +264,7 @@ export async function POST(req: NextRequest) {
   // Per-user CMF access: the user may only export/load against GRANTED
   // connections (union of their direct + role grants; admins bypass). A user with
   // no grants can't use the CMF modeling agent at all.
-  const cmfAccess = await getUserCmfAccess(user.id);
+  const cmfAccess = await perf.time('cmfAccessQuery', () => getUserCmfAccess(user.id));
   if (!cmfAccess.all && cmfAccess.keys.size === 0) {
     return NextResponse.json(
       { error: 'You do not have access to any CMF database. Ask an admin to grant access.' },
@@ -300,10 +319,54 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── REQ-04 — prompt audit ──
+  // The CMF tools reach an on-prem MES over the VPN and are the slowest in the
+  // product, yet this route recorded nothing at all. Open the row up front so it
+  // is closed whether the stream succeeds or fails.
+  const promptAuditUserText = (() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parts = lastUserMessage?.parts as any[] | undefined;
+    return (
+      parts
+        ?.filter((p: { type: string }) => p.type === 'text')
+        .map((p: { text?: string }) => p.text || '')
+        .join('') ||
+      lastUserMessage?.content ||
+      ''
+    );
+  })();
+  let promptAuditHandle: PromptStartHandle | null = null;
+  if (promptAuditUserText) {
+    promptAuditHandle = await recordPromptStart({
+      startedAtMs: requestStartedAtMs,
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+      userPrompt: promptAuditUserText,
+      app: 'faborch',
+      model: MODEL,
+    });
+  }
+
+  // Registry rates for this model, loaded once so the finish callback can price
+  // the turn without an extra await. Falls back to the hardcoded pricing map.
+  let registryRates: ModelRates | null = null;
+  try {
+    registryRates = await getRegistryRates(MODEL);
+  } catch {
+    // Registry unavailable — costForTurn's built-in table is used instead.
+  }
+
+  // Every tool here executes IN THIS PROCESS, so durationMs is the true
+  // round-trip the model waited on — unlike /api/chat, nothing is provider-executed.
+  const toolTimings = new Map<string, { durationMs: number; stepNumber: number; success: boolean }>();
+
   // All chat tools are exposed, including the in-chat validate + load flow
   // (validateForLoad → previewLoadImpact → loadToCmf). loadToCmf commits to CMF
   // only with an explicit confirmed:true (deterministic gate) after the user
   // agrees — see the LOAD PROTOCOL in the system prompt.
+  perf.mark('promptAuditStart');
+
   const visibleTools = buildChatTools(user.id, { exportDbKey, loadDbKey, loadDbAmbiguous });
 
   // Make the agent aware of the active CMF database(s) so it can name the target
@@ -315,14 +378,39 @@ export async function POST(req: NextRequest) {
     `Loads/writes go to: **${profileFor(loadDbKey).label}**.\n` +
     `CRITICAL: before running loadToCmf, ALWAYS tell the user exactly which database you are about to load into — name it (e.g. "${profileFor(loadDbKey).label}") — and get their explicit confirmation that it's the correct database. Never load without stating and confirming the target database first.`;
 
+  const convertedMessages = await convertToModelMessages(uiMessages);
+  perf.mark('buildToolsAndMessages');
+
   const result = streamText({
     model: anthropic(MODEL),
     system: SYSTEM_PROMPT + dbAwareness,
-    messages: await convertToModelMessages(uiMessages),
+    messages: convertedMessages,
     tools: visibleTools,
     stopWhen: stepCountIs(MAX_STEPS),
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     abortSignal: req.signal,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    experimental_onToolCallFinish: (event: any) => {
+      const id = event?.toolCall?.toolCallId;
+      if (!id) return;
+      const name = event?.toolCall?.toolName ?? 'unknown';
+      const durationMs = Math.round(event?.durationMs ?? 0);
+      const stepNumber = event?.stepNumber ?? -1;
+      const success = event?.success !== false;
+      toolTimings.set(id, { durationMs, stepNumber, success });
+      perf.recordTool(name, durationMs, success, stepNumber);
+    },
+    // Time-to-first-token; no-ops after the first chunk.
+    onChunk: () => perf.markFirstToken(),
+    // Each step is one model call plus its tool executions — this is where a
+    // slow CMF round-trip over the VPN shows up against model time.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onStepFinish: (event: any) => {
+      const names = (event?.toolCalls ?? [])
+        .map((tc: { toolName?: string }) => tc.toolName || 'unknown')
+        .join('+');
+      perf.mark(names ? `step:${names}` : 'step:text');
+    },
   });
   result.consumeStream();
 
@@ -331,6 +419,113 @@ export async function POST(req: NextRequest) {
       writer.merge(result.toUIMessageStream({ sendReasoning: true }));
     },
     onFinish: async ({ responseMessage }) => {
+      // ── REQ-04 — close the audit row with per-tool timings, tokens and cost ──
+      // Runs before the persistence below, which returns early when the turn has
+      // no conversation; the audit must not depend on that.
+      perf.mark('streamTail');
+      const timings = perf.snapshot({ userId: user.id, model: MODEL, outcome: 'ok' });
+      logger.info('perf', timings);
+
+      if (promptAuditHandle) {
+        recordPromptTimings(promptAuditHandle.rowId, timings).catch(() => {});
+        try {
+          const steps = (await result.steps) ?? [];
+          const toolCalls: ToolCallSummary[] = [];
+          let requestTokens = 0, retrievalTokens = 0, responseTokens = 0;
+          let requestCost = 0, retrievalCost = 0, responseCost = 0;
+
+          for (let idx = 0; idx < steps.length; idx++) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const step = steps[idx] as any;
+            const resultsByCallId = new Map<string, unknown>();
+            for (const tr of step.toolResults ?? []) {
+              if (tr.toolCallId) resultsByCallId.set(tr.toolCallId, tr.output ?? tr.result);
+            }
+            for (const tc of step.toolCalls ?? []) {
+              const timing = tc.toolCallId ? toolTimings.get(tc.toolCallId) : undefined;
+              toolCalls.push({
+                name: tc.toolName || 'unknown',
+                args: tc.input ?? tc.args,
+                result: tc.toolCallId ? resultsByCallId.get(tc.toolCallId) : undefined,
+                toolCallId: tc.toolCallId,
+                ...(timing ?? {}),
+              });
+            }
+            if (step.usage) {
+              const inTok = step.usage.inputTokens ?? 0;
+              const outTok = step.usage.outputTokens ?? 0;
+              const readTok = step.usage.cachedInputTokens ?? 0;
+              const writeTok = step.usage.cacheCreationInputTokens ?? 0;
+              const usage = {
+                inputTokens: inTok,
+                outputTokens: outTok,
+                cachedInputTokens: readTok,
+                cacheCreationInputTokens: writeTok,
+              };
+              const cost = registryRates
+                ? costForTurnWithRates(registryRates, usage)
+                : costForTurn(MODEL, usage);
+              // Turn 1's input is the request; every later step's input is
+              // retrieval (tool results fed back). Mirrors /api/chat.
+              if (idx === 0) {
+                requestTokens += inTok + readTok + writeTok;
+                requestCost += cost.inputCost;
+              } else {
+                retrievalTokens += inTok + readTok + writeTok;
+                retrievalCost += cost.inputCost;
+              }
+              responseTokens += outTok;
+              responseCost += cost.outputCost;
+            }
+          }
+
+          await recordPromptSuccess({
+            rowId: promptAuditHandle.rowId,
+            startedAtMs: promptAuditHandle.startedAtMs,
+            app: promptAuditHandle.app,
+            userPrompt: promptAuditUserText,
+            llmResponse: (await result.text) || '',
+            toolCalls,
+            requestTokens,
+            retrievalTokens,
+            responseTokens,
+            requestCost,
+            retrievalCost,
+            responseCost,
+          });
+
+          // Usage record — feeds the admin usage/cost dashboard, which until now
+          // showed nothing for the Modeling Agent.
+          let inputTokens = 0, outputTokens = 0, thinkingTokens = 0;
+          let cacheReadTokens = 0, cacheCreationTokens = 0;
+          for (const step of steps) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const u = (step as any).usage;
+            if (!u) continue;
+            inputTokens += u.inputTokens ?? 0;
+            outputTokens += u.outputTokens ?? 0;
+            thinkingTokens += u.reasoningTokens ?? 0;
+            cacheReadTokens += u.cachedInputTokens ?? 0;
+            cacheCreationTokens += u.cacheCreationInputTokens ?? 0;
+          }
+          await prisma.usageRecord.create({
+            data: {
+              userId: user.id,
+              model: MODEL,
+              inputTokens,
+              outputTokens,
+              thinkingTokens,
+              cacheReadTokens,
+              cacheCreationTokens,
+              conversationId: conversationId || null,
+              requestDurationMs: Math.round(perf.elapsed()),
+            },
+          });
+        } catch (err) {
+          console.error('[modeling-agent/chat] audit failed:', err);
+        }
+      }
+
       if (!conversationId) return;
       try {
         const streamParts = Array.isArray(responseMessage.parts) ? responseMessage.parts : [];
@@ -349,6 +544,8 @@ export async function POST(req: NextRequest) {
                 input: part.input ?? part.args ?? {},
                 output: part.output ?? part.result ?? undefined,
                 state: part.state || 'output-available',
+                // Measured duration, so reloaded history keeps its timings.
+                ...(part.toolCallId ? toolTimings.get(part.toolCallId) ?? {} : {}),
               };
             }
             if (t?.startsWith('data-')) return null;
@@ -371,6 +568,23 @@ export async function POST(req: NextRequest) {
     },
     onError: (error) => {
       console.error('[modeling-agent/chat] stream error:', error);
+      perf.flush({ userId: user.id, model: MODEL, outcome: 'stream-error' });
+      if (promptAuditHandle) {
+        recordPromptTimings(
+          promptAuditHandle.rowId,
+          perf.snapshot({ userId: user.id, model: MODEL, outcome: 'stream-error' })
+        ).catch(() => {});
+        recordPromptFailure({
+          rowId: promptAuditHandle.rowId,
+          startedAtMs: promptAuditHandle.startedAtMs,
+          errorEnvelope: {
+            errorId: '',
+            type: 'MODELING_AGENT_STREAM_ERROR',
+            priority: 'HIGH',
+            userMessage: error instanceof Error ? error.message : 'Something went wrong.',
+          },
+        }).catch(() => {});
+      }
       return error instanceof Error ? error.message : 'Something went wrong.';
     },
   });

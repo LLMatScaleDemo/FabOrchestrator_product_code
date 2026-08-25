@@ -1386,28 +1386,54 @@ function ChatContent({
     return [...nonFileSegments, ...fileSegments]
   }
 
-  // Group consecutive tool segments into tool-group segments for compact rendering
+  /**
+   * Group each RUN of consecutive tool calls into its own tool-group, in place.
+   *
+   * This previously hoisted every tool in the message into a SINGLE group at the
+   * first tool's position, because each group used to render its own
+   * "Generating Response..." status line and several groups meant several
+   * duplicate lines. That status line is gone, and the collapse had a real cost:
+   * a turn is a loop (text -> tools -> text -> tools), and flattening it put one
+   * indicator at the top while the later rounds of tool calls showed nothing
+   * where they actually happened.
+   *
+   * Runs now render inline, interleaved with the prose, so the message reads in
+   * the order the model actually worked.
+   */
   const groupConsecutiveTools = (segments: MessageSegment[]): MessageSegment[] => {
     const result: MessageSegment[] = []
-    let toolBuffer: ToolPart[] = []
+    // De-dupe across the WHOLE message: a manually written input/output pair can
+    // surface as two entries for what is really one invocation.
+    const seen = new Set<string>()
+    let run: ToolPart[] = []
 
-    const flushTools = () => {
-      if (toolBuffer.length > 0) {
-        result.push({ type: 'tool-group', content: [...toolBuffer] })
+    const flush = () => {
+      if (run.length > 0) {
+        result.push({ type: 'tool-group', content: run })
+        run = []
       }
-      toolBuffer = []
     }
 
     for (const segment of segments) {
       if (segment.type === 'tool') {
-        toolBuffer.push(segment.content as ToolPart)
-      } else {
-        flushTools()
-        result.push(segment)
+        const tool = segment.content as ToolPart
+        const id = tool.toolCallId || `${tool.type}`
+        if (seen.has(id)) continue
+        seen.add(id)
+        run.push(tool)
+        continue
       }
+      // Whitespace-only text is a streaming artefact, not a real beat — letting
+      // it close a run was what split one round of tool calls into two groups.
+      if (segment.type === 'text' && String(segment.content).trim() === '') {
+        continue
+      }
+      // Real content ends the run, so each round of tool calls renders exactly
+      // where it happened, interleaved with the prose around it.
+      flush()
+      result.push(segment)
     }
-
-    flushTools()
+    flush()
     return result
   }
 

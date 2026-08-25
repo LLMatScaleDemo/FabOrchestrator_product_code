@@ -18,7 +18,7 @@ const KPIS: { label: string; icon: React.ReactNode; value: string; delta: string
 const ACTIVITY: { icon: React.ReactNode; name: string; desc: string; ago: string; pulse?: boolean }[] = [
     { icon: sv(<><circle cx="6" cy="6" r="2.2" /><circle cx="6" cy="18" r="2.2" /><circle cx="18" cy="12" r="2.2" /><path d="M8.2 6H13a3 3 0 0 1 3 3v.4" /><path d="M8.2 18H13a3 3 0 0 0 3-3v-.4" /></>, 16), name: "FabInsight™", desc: "Yield anomaly flagged on Line 4", ago: "2 min", pulse: true },
     { icon: sv(<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-2-2z" />, 16), name: "AI Support", desc: "42 escalations resolved", ago: "18 min" },
-    { icon: sv(<><circle cx="7" cy="7" r="2.4" /><circle cx="17" cy="17" r="2.4" /><path d="M9.4 7H15a2 2 0 0 1 2 2v5.6" /></>, 16), name: "Modeling Agent", desc: "Fab West Phase 2 live", ago: "1 hr" },
+    { icon: sv(<><circle cx="7" cy="7" r="2.4" /><circle cx="17" cy="17" r="2.4" /><path d="M9.4 7H15a2 2 0 0 1 2 2v5.6" /></>, 16), name: "Master Data Load Agent", desc: "Fab West Phase 2 live", ago: "1 hr" },
     { icon: sv(<><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></>, 16), name: "Back-end Agent", desc: "6 connectors deployed", ago: "3 hr" },
 ]
 

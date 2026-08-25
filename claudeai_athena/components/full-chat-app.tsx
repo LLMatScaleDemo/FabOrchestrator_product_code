@@ -1437,46 +1437,54 @@ function ChatContent({
     return [...nonFileSegments, ...fileSegments]
   }
 
-  // Group consecutive tool segments into tool-group segments for compact rendering
   /**
-   * Collapse tool segments into a SINGLE group per message.
+   * Group each RUN of consecutive tool calls into its own tool-group, in place.
    *
-   * Previously this grouped only *consecutive* tools, so anything landing
-   * between two tool parts (a step-start boundary, a stray empty text part)
-   * split them into two groups — and each group renders its own
-   * "Generating Response..." status line, which is how the duplicate appeared.
-   * One response is one status line, so all tools fold into the first group's
-   * position and later ones are absorbed rather than starting a new timeline.
+   * This previously hoisted every tool in the message into a SINGLE group at the
+   * first tool's position, because each group used to render its own
+   * "Generating Response..." status line and several groups meant several
+   * duplicate lines. That status line is gone, and the collapse had a real cost:
+   * a turn is a loop (text -> tools -> text -> tools), and flattening it put one
+   * indicator at the top while the later rounds of tool calls showed nothing
+   * where they actually happened.
+   *
+   * Runs now render inline, interleaved with the prose, so the message reads in
+   * the order the model actually worked.
    */
   const groupConsecutiveTools = (segments: MessageSegment[]): MessageSegment[] => {
-    const tools: ToolPart[] = []
-    for (const segment of segments) {
-      if (segment.type === 'tool') tools.push(segment.content as ToolPart)
-    }
-    if (tools.length === 0) return segments
-
-    // De-dupe by toolCallId — a manually written input/output pair can surface
-    // as two entries for what is really one invocation.
-    const seen = new Set<string>()
-    const unique = tools.filter((t) => {
-      const id = t.toolCallId || `${t.type}`
-      if (seen.has(id)) return false
-      seen.add(id)
-      return true
-    })
-
     const result: MessageSegment[] = []
-    let placed = false
+    // De-dupe across the WHOLE message: a manually written input/output pair can
+    // surface as two entries for what is really one invocation.
+    const seen = new Set<string>()
+    let run: ToolPart[] = []
+
+    const flush = () => {
+      if (run.length > 0) {
+        result.push({ type: 'tool-group', content: run })
+        run = []
+      }
+    }
+
     for (const segment of segments) {
       if (segment.type === 'tool') {
-        if (!placed) {
-          result.push({ type: 'tool-group', content: unique })
-          placed = true
-        }
+        const tool = segment.content as ToolPart
+        const id = tool.toolCallId || `${tool.type}`
+        if (seen.has(id)) continue
+        seen.add(id)
+        run.push(tool)
         continue
       }
+      // Whitespace-only text is a streaming artefact, not a real beat — letting
+      // it close a run was what split one round of tool calls into two groups.
+      if (segment.type === 'text' && String(segment.content).trim() === '') {
+        continue
+      }
+      // Real content ends the run, so each round of tool calls renders exactly
+      // where it happened, interleaved with the prose around it.
+      flush()
       result.push(segment)
     }
+    flush()
     return result
   }
 

@@ -131,21 +131,42 @@ export interface ToolCallSummary {
   result?: any;
   toolCallId?: string;
   rowsReturned?: number;
+  /** Wall-clock execution time, from the SDK's onToolCallFinish. */
+  durationMs?: number;
+  /** Zero-based step this call belonged to. Calls sharing a step ran CONCURRENTLY. */
+  stepNumber?: number;
+  /** False when the tool threw; the step still waited for it. */
+  success?: boolean;
 }
 
 /**
  * Build the JSONB payload written to prompt_audit_logs.tool_calls.
- * Per the MCP team's spec, each entry stores only three fields:
+ * Per the MCP team's spec, each entry stores three fields:
  *   - name:   the tool that was executed
  *   - input:  the parameters the LLM passed to the tool
  *   - output: the full tool response (which, for our MCP tools, already
  *             includes the underlying SQL/SP via `_executed_sql`)
+ *
+ * Timing/identity fields are ADDITIVE — the three fields above keep their exact
+ * names and meaning, so any existing consumer of this JSONB is unaffected.
+ * They are omitted entirely when unknown (e.g. Anthropic's provider-executed
+ * tools run in Anthropic's sandbox, never call our executor, and therefore have
+ * no local duration), so `durationMs` is absent rather than a misleading 0.
+ *
+ * NOTE ON AGGREGATION: calls that share a `stepNumber` ran CONCURRENTLY and the
+ * step waited only for the SLOWEST. Summing `durationMs` across a turn
+ * OVERSTATES the time the user waited. Use, per step, max(durationMs).
  */
 function buildToolCallsPayload(toolCalls: ToolCallSummary[]): unknown[] {
   return toolCalls.map((t) => ({
     name: t.name,
     input: t.args ?? null,
     output: t.result ?? null,
+    ...(t.durationMs !== undefined ? { durationMs: t.durationMs } : {}),
+    ...(t.stepNumber !== undefined ? { stepNumber: t.stepNumber } : {}),
+    ...(t.success !== undefined ? { success: t.success } : {}),
+    ...(t.toolCallId ? { toolCallId: t.toolCallId } : {}),
+    ...(t.rowsReturned !== undefined ? { rowsReturned: t.rowsReturned } : {}),
   }));
 }
 
@@ -200,6 +221,15 @@ export interface PromptStartParams {
   userPrompt: string;
   app?: 'faborch' | 'faborch-admin';
   model?: string;
+  /**
+   * True request start (handler entry), in ms.
+   *
+   * Without it the clock starts HERE — after auth, validation and ~5 sequential
+   * registry/role/limit queries have already run — so response_time_ms
+   * understated the wait by exactly the preflight we most want to see. Callers
+   * pass the timestamp they took on entry.
+   */
+  startedAtMs?: number;
 }
 
 export interface PromptStartHandle {
@@ -215,7 +245,7 @@ export async function recordPromptStart(
   try {
     const promptId = await nextPromptId();
     const id = randomUUID();
-    const startedAtMs = Date.now();
+    const startedAtMs = params.startedAtMs ?? Date.now();
     const app = params.app ?? 'faborch';
     await prisma.$executeRawUnsafe(
       `INSERT INTO "prompt_audit_logs"
@@ -323,6 +353,29 @@ export async function recordPromptSuccess(p: PromptSuccessParams): Promise<void>
     );
   } catch {
     // Best-effort; never break the request.
+  }
+}
+
+/**
+ * Store the full phase/tool timing record on an audit row.
+ *
+ * Deliberately its own statement, wrapped in its own try/catch: the `timings`
+ * column is added by an additive migration, and until that has been run against
+ * a given database this must fail alone rather than roll back the audit write
+ * it is attached to.
+ */
+export async function recordPromptTimings(
+  rowId: string,
+  timings: Record<string, unknown>
+): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "prompt_audit_logs" SET timings = $2::jsonb WHERE id = $1`,
+      rowId,
+      JSON.stringify(timings)
+    );
+  } catch {
+    // Column not present yet (migration not run) — timings still reach the logs.
   }
 }
 

@@ -108,8 +108,7 @@ export function getSystemPrompt(): string {
  */
 export function buildSystemPromptWithTools(
   availableTools: string[],
-  mcpToolDescriptions: { name: string; description: string }[] = [],
-  uploadedFiles: { filename: string; url: string; mediaType?: string }[] = []
+  mcpToolDescriptions: { name: string; description: string }[] = []
 ): string {
   const basePrompt = getSystemPrompt();
 
@@ -196,31 +195,8 @@ Update existing files rather than creating duplicates.
     toolSections.push(`<mcp-connected-tools>\n${mcpSection}\n</mcp-connected-tools>`);
   }
 
-  // Files the user attached this turn are stored in S3 and exposed here as
-  // time-limited presigned URLs. The model may pass these URLs as arguments to
-  // any MCP tool that accepts a file/document/URL input.
-  let uploadedFilesSection = '';
-  if (uploadedFiles.length > 0) {
-    const fileList = uploadedFiles
-      .map(
-        (f) =>
-          `<file name="${f.filename}"${f.mediaType ? ` type="${f.mediaType}"` : ''} url="${f.url}" />`
-      )
-      .join('\n');
-    uploadedFilesSection = `
-
-<uploaded-files>
-The user's uploaded file(s) for this conversation are stored in the FabOrch file store (Amazon S3). Each is reachable at the temporary, pre-authorized HTTPS URL shown below (valid for a limited time):
-${fileList}
-
-These URLs are the file's real storage location — treat them as the source of truth for "where is this file" / "what is the file's URL".
-- When a connected MCP tool accepts a file, document, attachment, or URL argument and the request refers to an uploaded file, pass the exact \`url\` above verbatim as that argument so the tool can fetch the file. Do not modify, shorten, or wrap it.
-- If the user asks for the file's URL, link, or storage location, give them this exact URL. Never claim the file isn't stored or that you don't have access to S3 — you do, and it is listed above.
-</uploaded-files>`;
-  }
-
   if (toolSections.length === 0) {
-    return `${basePrompt}${uploadedFilesSection}`;
+    return `${basePrompt}`;
   }
 
   return `${basePrompt}
@@ -231,5 +207,40 @@ ${toolSections.join('\n')}
 
 <tool-usage>
 Use tools proactively when they add value. For MCP tools, discover schema/capabilities first before querying — don't guess data, always fetch from connected systems.
-</tool-usage>${uploadedFilesSection}`;
+</tool-usage>`;
+}
+
+/**
+ * The uploaded-file block, attached to the LAST USER MESSAGE rather than the
+ * system prompt.
+ *
+ * Why not the system prompt: these are time-limited presigned S3 URLs, so they
+ * differ on EVERY request. Anthropic prompt caching is a prefix match, so a
+ * volatile system prompt invalidated the whole cached prefix (tools + system)
+ * on any turn with an attachment — full input reprice and a slower first token.
+ * Riding on the last user message keeps the system prefix byte-stable while the
+ * model still sees fresh URLs, because that message is new every turn anyway.
+ *
+ * This mirrors how the FabInsight glossary and metric briefs are attached. The
+ * block is appended to the in-memory model messages only and is never
+ * persisted, so history never accumulates expired URLs.
+ */
+export function buildUploadedFilesBlock(
+  uploadedFiles: { filename: string; url: string; mediaType?: string }[]
+): string {
+  if (uploadedFiles.length === 0) return '';
+  const fileList = uploadedFiles
+    .map(
+      (f) =>
+        `<file name="${f.filename}"${f.mediaType ? ` type="${f.mediaType}"` : ''} url="${f.url}" />`
+    )
+    .join('\n');
+  return `<uploaded-files>
+The user's uploaded file(s) for this conversation are stored in the FabOrch file store (Amazon S3). Each is reachable at the temporary, pre-authorized HTTPS URL shown below (valid for a limited time):
+${fileList}
+
+These URLs are the file's real storage location — treat them as the source of truth for "where is this file" / "what is the file's URL".
+- When a connected MCP tool accepts a file, document, attachment, or URL argument and the request refers to an uploaded file, pass the exact \`url\` above verbatim as that argument so the tool can fetch the file. Do not modify, shorten, or wrap it.
+- If the user asks for the file's URL, link, or storage location, give them this exact URL. Never claim the file isn't stored or that you don't have access to S3 — you do, and it is listed above.
+</uploaded-files>`;
 }

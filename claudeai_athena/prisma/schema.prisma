@@ -558,6 +558,8 @@ model prompt_audit_logs {
   request_tokens   Int?
   retrieval_tokens Int?
   response_tokens  Int?
+  /// Per-request phase/tool timing breakdown. See add_prompt_audit_timings.sql.
+  timings          Json?
   request_cost     Decimal?            @db.Decimal(12, 6)
   retrieval_cost   Decimal?            @db.Decimal(12, 6)
   response_cost    Decimal?            @db.Decimal(12, 6)

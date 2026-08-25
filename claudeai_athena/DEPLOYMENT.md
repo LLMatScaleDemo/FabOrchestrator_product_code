@@ -124,6 +124,25 @@ never in git or Terraform state.
 | `KEY_ENCRYPTION_SECRET` | AES-256-GCM key (64 hex) |
 | `APP_URL`, `SMTP_*` | app / email |
 
+### Performance tuning (optional)
+| Var | Value / purpose |
+|-----|-----------------|
+| `CHAT_THINKING_EFFORT` | `low` \| `medium` \| `high` \| `max` — reasoning effort for adaptive-thinking models on `/api/chat`. **Defaults to `high`.** Was previously pinned to `max` on Opus, which is the slowest setting; `high` keeps strong reasoning at materially lower latency. Read at RUNTIME, so it can be changed without a rebuild. `max` is Opus-only and is downgraded to `high` on Sonnet automatically. |
+
+### UI diagnostics (optional)
+| Var | Value / purpose |
+|-----|-----------------|
+| `NEXT_PUBLIC_SHOW_TOOL_TIMER` | `1` to show the live seconds counter on the tool-usage indicator, `0` to hide it. **Unset = hidden in production, shown in development** — a stopwatch ticking up at a waiting user reads as a defect, so it stays off for customers. Turn it on temporarily to reproduce a latency complaint in a deployed build. |
+
+> ⚠️ `NEXT_PUBLIC_*` is inlined at **build** time, not read at runtime. Changing
+> it needs a **rebuild/redeploy** — setting it on the EB environment alone will
+> not change an already-built image.
+>
+> This flag affects the UI **only**. Server-side timing capture (the `perf`
+> CloudWatch line, `prompt_audit_logs.timings`, `usage_records.request_duration_ms`
+> and the per-tool durations on message parts) is **unconditional** and always
+> records, whatever the UI shows.
+
 ### CMF / Master Data Load (required for the loader to work)
 | Var | Value / purpose |
 |-----|-----------------|

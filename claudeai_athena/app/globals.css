@@ -2537,3 +2537,55 @@ pre[class*="language-"] span.linenumber {
   --fabviz-border: #2e3036;
   --fabviz-track: #26272c;
 }
+
+/* ─────────────────────────────────────────────────────────
+ * LOADING STATE — pixel-grid tool loader
+ * (components/prompt-kit/loading-state.tsx)
+ *
+ * The component binds straight to --text-* / --bg-*, so it tracks light/dark
+ * through the existing tokens (.dark already redefines them).
+ *
+ * An alias layer (--ink, --tooltip-bg, …) lived here briefly and was removed:
+ * an unresolved var() invalidates background-color and gradients outright, so
+ * the grid and label rendered invisible while the timer — a `color`, which
+ * falls back to inherit — kept showing. One less indirection to get wrong.
+ *
+ * Only the keyframes and shadow-overlay belong here now.
+ * ───────────────────────────────────────────────────────── */
+@theme inline {
+  --shadow-overlay: 0 8px 24px -6px hsl(0 0% 0% / 0.18), 0 2px 6px -2px hsl(0 0% 0% / 0.12);
+}
+
+/* Cell lights up as the wavefront passes. */
+@keyframes pixel-on {
+  0%, 100% { opacity: 0.15; }
+  35%      { opacity: 1; }
+}
+
+/* Sweeps the highlight across the clipped label text. */
+@keyframes shimmer-text {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Context card entrance for the Surfer variant. */
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Documented behaviour: reduced motion freezes the grid to its dim state and
+ * drops the shimmer. The elapsed timer keeps ticking — it is information, not
+ * decoration. Enforced here so the component stays declarative. */
+@media (prefers-reduced-motion: reduce) {
+  [role="status"] [style*="pixel-on"],
+  [role="status"] [style*="shimmer-text"],
+  [role="status"] [style*="pop-in"] {
+    animation: none !important;
+  }
+  /* 0.15 is the dim half of a pulse; frozen there the grid reads as blank, so
+   * rest somewhere actually visible. The timer keeps ticking regardless. */
+  [role="status"] [style*="pixel-on"] {
+    opacity: 0.4 !important;
+  }
+}

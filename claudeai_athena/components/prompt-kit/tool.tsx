@@ -14,6 +14,7 @@ import {
   Settings,
   XCircle,
 } from "lucide-react"
+import LoadingState from "@/components/prompt-kit/loading-state"
 import { useState } from "react"
 
 // PromptKit-aligned tool states
@@ -31,6 +32,12 @@ export type ToolPart = {
   output?: Record<string, unknown>
   toolCallId?: string
   errorText?: string
+  /** Measured execution time, persisted with the message so reloaded history
+   *  still shows what the call cost. Absent for provider-executed tools. */
+  durationMs?: number
+  /** Step this call belonged to. Calls sharing a step ran CONCURRENTLY, so a
+   *  group's real cost is the sum over steps of each step's slowest call. */
+  stepNumber?: number
 }
 
 export type ToolProps = {
@@ -304,17 +311,11 @@ const Tool = ({ toolPart, defaultOpen = false, className }: ToolProps) => {
             )}
 
             {state === "input-streaming" && (
-              <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Processing tool call...
-              </div>
+              <LoadingState label={`Preparing ${formatToolName(toolPart.type)}`} />
             )}
 
             {state === "input-available" && (
-              <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Executing tool...
-              </div>
+              <LoadingState label={`Running ${formatToolName(toolPart.type)}`} />
             )}
 
             {toolCallId && (
@@ -499,6 +500,8 @@ export function extractToolParts(parts: unknown[]): ToolPart[] {
         output,
         toolCallId,
         errorText,
+        ...(typeof p.durationMs === 'number' ? { durationMs: p.durationMs } : {}),
+        ...(typeof p.stepNumber === 'number' ? { stepNumber: p.stepNumber } : {}),
       })
     }
   }

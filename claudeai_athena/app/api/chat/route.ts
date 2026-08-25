@@ -6,7 +6,7 @@ import { loadActiveMcpToolsWithDescriptions } from '@/lib/mcp-client';
 import { requireAuth } from '@/lib/auth-middleware';
 import { getAnthropicFilesClient } from '@/lib/anthropic-files';
 import { uploadUserFileToS3, presignKey } from '@/lib/s3-upload';
-import { buildSystemPromptWithTools } from '@/lib/system-prompts';
+import { buildSystemPromptWithTools, buildUploadedFilesBlock } from '@/lib/system-prompts';
 import { fitMessagesToContextWindow } from '@/lib/context-window';
 import { validateOrThrow, ChatRequestSchema } from '@/lib/validation';
 import { FabOrchError, isFabOrchError } from '@/lib/errors/faborch-errors';
@@ -17,6 +17,7 @@ import {
   recordPromptStart,
   recordPromptSuccess,
   recordPromptFailure,
+  recordPromptTimings,
   type PromptStartHandle,
   type ToolCallSummary,
 } from '@/lib/prompt-audit';
@@ -28,6 +29,7 @@ import { matchDashboard } from '@/lib/fabinsight/catalog';
 import { glossaryBlock } from '@/lib/fabinsight/aliases';
 import { detectMetricAsk, buildMetricBrief } from '@/lib/fabinsight/metrics';
 import { isDashboardAdmin } from '@/lib/fabinsight/access';
+import { PhaseTimer } from '@/lib/perf-timer';
 
 export const maxDuration = 300;
 
@@ -65,6 +67,31 @@ function withKeepAlive(res: Response, intervalMs = 20000): Response {
     },
   });
   return new Response(stream, { headers: res.headers, status: res.status, statusText: res.statusText });
+}
+
+/**
+ * Reasoning effort for adaptive-thinking models.
+ *
+ * Opus was pinned to 'max', the most expensive setting: on this workload the
+ * slowest turns averaged ~198s, and thinking is a large part of that. 'high'
+ * keeps strong reasoning at a materially lower latency, so it is the default.
+ *
+ * Env-tunable (server-side, read at RUNTIME — no rebuild needed) so the trade
+ * can be A/B'd against the new `perf` timings without a code change:
+ *   CHAT_THINKING_EFFORT = low | medium | high | max
+ * 'max' is Opus-only; on Sonnet it is downgraded to 'high' by the API contract,
+ * so we downgrade explicitly rather than send something the model rejects.
+ */
+const VALID_EFFORTS = ['low', 'medium', 'high', 'max'] as const;
+type ThinkingEffort = (typeof VALID_EFFORTS)[number];
+
+function resolveEffort(modelId: string): ThinkingEffort {
+  const raw = (process.env.CHAT_THINKING_EFFORT ?? '').trim().toLowerCase();
+  const configured = (VALID_EFFORTS as readonly string[]).includes(raw)
+    ? (raw as ThinkingEffort)
+    : 'high';
+  const isOpus = modelId === 'claude-opus-4-8' || modelId === 'claude-opus-4-7';
+  return configured === 'max' && !isOpus ? 'high' : configured;
 }
 
 // Models that support adaptive thinking (type: "adaptive" + effort)
@@ -178,6 +205,10 @@ function cleanToolMessages(modelMessages: any[]): any[] {
 }
 
 export async function POST(req: NextRequest) {
+  // Phase timer, constructed FIRST so the clock covers the whole handler —
+  // including the preflight the prompt-audit row used to start after.
+  const perf = new PhaseTimer('chat', { route: '/api/chat', method: 'POST' });
+  const requestStartedAtMs = Date.now();
   const auth = await requireAuth(req);
   if (auth instanceof NextResponse) return auth;
   const { user } = auth;
@@ -186,11 +217,13 @@ export async function POST(req: NextRequest) {
   // (responses can run multi-minute; we don't want the original POST
   // timestamp to be the only activity event).
   const bearerToken = req.headers.get('Authorization')?.slice(7) ?? null;
+  perf.mark('auth');
 
   try {
     // Validate request body — throws canonical INVALID_PARAMETER on bad input.
     const body = await req.json();
     const validated = validateOrThrow(ChatRequestSchema, body);
+    perf.mark('parseBody');
     const {
       messages: uiMessages,
       model: requestedModel,
@@ -208,6 +241,7 @@ export async function POST(req: NextRequest) {
     // in the hardcoded ALLOWED_MODELS list. When the registry is empty/missing,
     // getAllowedModelIds() returns [] and we rely entirely on ALLOWED_MODELS.
     const registryAllowedIds = await getAllowedModelIds();
+    perf.mark('registryAllowedIds');
     const isModelAllowed = registryAllowedIds.includes(modelId) || ALLOWED_MODELS.includes(modelId);
     if (!isModelAllowed) {
       const validOptions = registryAllowedIds.length > 0 ? registryAllowedIds : ALLOWED_MODELS;
@@ -227,6 +261,7 @@ export async function POST(req: NextRequest) {
     } catch {
       // Registry unavailable — fall back to hardcoded pricing.
     }
+    perf.mark('registryRates');
 
     // ── Role-based model access control (managed by admin_athena) ──
     // Fetch user with role to check permissions
@@ -235,6 +270,7 @@ export async function POST(req: NextRequest) {
       where: { id: user.id },
       include: { role: true },
     });
+    perf.mark('userRoleQuery');
 
     if (userWithRole?.role) {
       const allowedModels = Array.isArray(userWithRole.role.allowedModels)
@@ -266,6 +302,7 @@ export async function POST(req: NextRequest) {
           _count: true,
           _sum: { inputTokens: true, outputTokens: true, thinkingTokens: true },
         });
+        perf.mark('usageLimitQuery');
 
         if (userWithRole.role.dailyRequestLimit && usage._count >= userWithRole.role.dailyRequestLimit) {
           return NextResponse.json(
@@ -289,6 +326,7 @@ export async function POST(req: NextRequest) {
     // Prefer the registry's thinkingType for this model; fall back to the
     // hardcoded ADAPTIVE_THINKING_MODELS/MANUAL_THINKING_MODELS sets.
     const registryThinking = await getThinkingConfig(modelId);
+    perf.mark('thinkingConfig');
     const resolvedThinkingMode = registryThinking?.type ?? getThinkingMode(modelId);
     const thinkingMode = enableReasoning ? resolvedThinkingMode : 'none';
     // Manual-thinking budget: registry value if provided, else the default.
@@ -312,6 +350,7 @@ export async function POST(req: NextRequest) {
     let promptAuditHandle: PromptStartHandle | null = null;
     if (promptAuditUserText) {
       promptAuditHandle = await recordPromptStart({
+        startedAtMs: requestStartedAtMs,
         userId: user.id,
         userName: user.name,
         userEmail: user.email,
@@ -320,6 +359,7 @@ export async function POST(req: NextRequest) {
         model: modelId,
       });
     }
+    perf.mark('promptAuditStart');
     // ── End REQ-04 prompt-start hook ──
 
     // ── Store this turn's attached files in S3 (faborch-user-uploads) ──
@@ -385,6 +425,14 @@ export async function POST(req: NextRequest) {
         });
       }
     }
+
+    // ── Per-tool timing (REQ-04 metadata) ──
+    // `experimental_onToolCallFinish` fires once per tool execution with the
+    // real wall-clock duration. It fires ONLY for tools we execute in-process
+    // (MCP tools): Anthropic's provider-executed tools (code_execution,
+    // web_search, web_fetch) run in Anthropic's sandbox, so the SDK never calls
+    // our executor and they are absent here by design.
+    const toolTimings = new Map<string, { durationMs: number; stepNumber: number; success: boolean }>();
 
     // Build tools object
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -487,6 +535,7 @@ export async function POST(req: NextRequest) {
       const authorizedSet = new Set(authorizedConnections.map(c => c.id));
       authorizedMcpIds = activeMcpIds.filter((id: string) => authorizedSet.has(id));
     }
+    perf.mark('mcpAuthzQuery');
 
     // Load MCP tools if any authorized connections are active
     if (authorizedMcpIds.length > 0) {
@@ -496,6 +545,28 @@ export async function POST(req: NextRequest) {
         const mcpToolCount = Object.keys(mcpTools).length;
         if (mcpToolCount > 0) {
           Object.assign(tools, mcpTools);
+          // Cache breakpoint on the LAST tool definition. Tools sit first in
+          // Anthropic's cacheable prefix (tools -> system -> messages), so this
+          // one covers the entire tool block — the largest stable chunk of the
+          // request, re-sent on every step of every turn.
+          //
+          // Deliberately an MCP tool: provider-executed tools (code_execution,
+          // web_search) take a different path in the provider and never consume
+          // a breakpoint, so marking one would silently do nothing.
+          const lastMcpTool = Object.keys(mcpTools).at(-1);
+          if (lastMcpTool && tools[lastMcpTool]) {
+            tools[lastMcpTool] = {
+              ...tools[lastMcpTool],
+              providerOptions: {
+                ...(tools[lastMcpTool].providerOptions ?? {}),
+                anthropic: {
+                  ...(tools[lastMcpTool].providerOptions?.anthropic ?? {}),
+                  cacheControl: { type: 'ephemeral' as const },
+                },
+              },
+            };
+            console.log(`[Chat] Cache breakpoint on tool block (last: ${lastMcpTool})`);
+          }
           mcpToolDescriptions = descriptions;
           console.log(`[Chat] Successfully loaded ${mcpToolCount} MCP tools:`, Object.keys(mcpTools));
           console.log(`[Chat] MCP tool descriptions for prompt:`, descriptions.map(d => d.name));
@@ -505,6 +576,7 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         console.error('[Chat] Error loading MCP tools:', error);
       }
+      perf.mark('mcpToolLoad');
     }
 
     // Supported MIME types for inline file parts (Anthropic API):
@@ -589,8 +661,10 @@ export async function POST(req: NextRequest) {
     // Convert UI messages to model messages format, then drop any orphaned
     // tool_use / tool_result blocks (e.g. an interrupted server-side code
     // execution replayed from history) so Anthropic doesn't 400 the request.
+    perf.mark('anthropicFileUpload');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const messages = cleanToolMessages(await convertToModelMessages(sanitizedMessages as any));
+    perf.mark('convertMessages');
 
     // ── Curated FabInsight prompts ────────────────────────────────────────
     //
@@ -704,6 +778,7 @@ export async function POST(req: NextRequest) {
         });
       }
     }
+    perf.mark('historyLoad');
     const promptFileRefs = await Promise.all(
       [...s3RefMap.entries()].map(async ([key, meta]) => ({
         filename: meta.filename,
@@ -712,18 +787,32 @@ export async function POST(req: NextRequest) {
       }))
     );
 
+    perf.mark('s3Presign');
+
+    // ── Uploaded-file URLs ────────────────────────────────────────────────
+    // Attached to the last user message, NOT the system prompt: presigned URLs
+    // change every request, and a volatile system prefix disabled prompt caching
+    // for the entire turn. See buildUploadedFilesBlock.
+    if (lastUserMsg && promptFileRefs.length > 0) {
+      const filesBlock = buildUploadedFilesBlock(promptFileRefs);
+      if (Array.isArray(lastUserMsg.content)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (lastUserMsg.content as any[]).push({ type: 'text' as const, text: filesBlock });
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (lastUserMsg as any).content = `${lastUserText}\n\n${filesBlock}`;
+      }
+      logger.info(`[Chat] Uploaded-file block attached (${promptFileRefs.length} file(s))`);
+    }
+
     // Everything from here to `streamText` depends on `messages`, which a
     // curated turn mutates only once its data has arrived. Wrapping it in a
     // thunk lets a normal turn build eagerly (unchanged) while a curated turn
     // defers until the fetch completes inside the stream.
     const buildStream = () => {
     // Build dynamic system prompt with available tools (+ this conversation's S3 file URLs)
-    const systemPrompt = buildSystemPromptWithTools(
-      toolNames,
-      mcpToolDescriptions,
-      promptFileRefs
-    );
-    console.log(`[Chat] System prompt includes ${mcpToolDescriptions.length} MCP tool descriptions, ${promptFileRefs.length} S3 file(s)`);
+    const systemPrompt = buildSystemPromptWithTools(toolNames, mcpToolDescriptions);
+    console.log(`[Chat] System prompt includes ${mcpToolDescriptions.length} MCP tool descriptions (${promptFileRefs.length} S3 file(s) carried on the user message)`);
 
     // Fit messages within the context window (trim tool results + drop old groups)
     const fittedMessages = fitMessagesToContextWindow(messages, systemPrompt);
@@ -732,33 +821,51 @@ export async function POST(req: NextRequest) {
     // Cache the large stable prefix (tools + system) and the growing
     // conversation history so repeat turns read them at ~0.1x instead of full
     // input price, and shave time-to-first-token. Prompt caching is a PREFIX
-    // match: any byte change before a breakpoint wastes the cache write. The
-    // system prompt embeds per-request presigned S3 URLs when files are
-    // attached (they change every request), which would bust the whole prefix
-    // — so we only enable caching when there are no volatile file refs (the
-    // common case). Multi-turn, no-file conversations get the full win.
-    const cacheEnabled = promptFileRefs.length === 0 && fittedMessages.length > 0;
+    // match: any byte change before a breakpoint wastes the cache write.
+    //
+    // Presigned S3 URLs used to live in the system prompt, which made that
+    // prefix volatile and forced caching OFF for every turn with an attachment.
+    // They now ride on the last user message instead (see
+    // buildUploadedFilesBlock), so the system prefix is byte-stable and caching
+    // stays on — attachments included.
+    const cacheEnabled = fittedMessages.length > 0;
     const ephemeral = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let outboundMessages: any[] = fittedMessages;
     if (cacheEnabled) {
-      // Fold the system prompt into a leading system message so the breakpoint
-      // covers tools+system, then mark the last message to cache the history.
+      // Anthropic allows FOUR cache breakpoints and reads the longest matching
+      // prefix. We spend them on the four boundaries that are stable for
+      // different lengths of time:
+      //
+      //   1. the tool block           (set above, on the last MCP tool)
+      //   2. the system prompt        (stable for the life of the deployment)
+      //   3. the end of PRIOR history (stable for the whole of this turn)
+      //   4. the current last message (stable across this turn's tool loop)
+      //
+      // #3 is the one that matters for the slow turns. A multi-step turn re-sends
+      // its whole context on every step — the 5k-output bucket averages ~682k
+      // input tokens against a 200k window — so without a breakpoint behind the
+      // growing tail, each step reprocesses the entire conversation cold.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mark = (m: any) => ({
+        ...m,
+        providerOptions: { ...(m?.providerOptions ?? {}), ...ephemeral },
+      });
+
       const msgs = [
         { role: 'system', content: systemPrompt, providerOptions: ephemeral },
         ...fittedMessages,
       ];
-      const last = msgs[msgs.length - 1];
-       
-      msgs[msgs.length - 1] = {
-        ...last,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        providerOptions: { ...(last as any).providerOptions, ...ephemeral },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
+      // Second-to-last message = the end of everything that existed before this
+      // turn started. Skipped when there is no prior history to cache, so a
+      // breakpoint is never wasted on a one-message conversation.
+      if (msgs.length >= 3) {
+        msgs[msgs.length - 2] = mark(msgs[msgs.length - 2]);
+      }
+      msgs[msgs.length - 1] = mark(msgs[msgs.length - 1]);
       outboundMessages = msgs;
     }
-    console.log(`[Chat] Prompt caching ${cacheEnabled ? 'ENABLED (system+history breakpoints)' : 'disabled (volatile file refs present)'}`);
+    console.log(`[Chat] Prompt caching ${cacheEnabled ? `ENABLED (${outboundMessages.length >= 3 ? 3 : 2} message breakpoints + tool block)` : 'disabled (no messages)'}`);
 
     // Build streamText configuration
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -785,6 +892,12 @@ export async function POST(req: NextRequest) {
       // Log tool calls for debugging - this is called after each step (including tool executions)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onStepFinish: (event: any) => {
+        // Each step = one model call + the tools it triggered. Marking it names
+        // where a slow MCP round-trip or code-execution container actually sat.
+        const stepToolNames = (event?.toolCalls ?? [])
+          .map((tc: { toolName?: string }) => tc.toolName || 'unknown')
+          .join('+');
+        perf.mark(stepToolNames ? `step:${stepToolNames}` : 'step:text');
         console.log(`[Chat] ========== STEP FINISHED ==========`);
         console.log(`[Chat] Step type: ${event.stepType}`);
         console.log(`[Chat] Finish reason: ${event.finishReason}`);
@@ -841,8 +954,7 @@ export async function POST(req: NextRequest) {
 
     if (thinkingMode === 'adaptive') {
       anthropicOptions.thinking = { type: 'adaptive' };
-      // Opus models (4.8 / 4.7) use 'max' effort; Sonnet uses 'high' ('max' is Opus-only).
-      const effort = (modelId === 'claude-opus-4-8' || modelId === 'claude-opus-4-7') ? 'max' : 'high';
+      const effort = resolveEffort(modelId);
       anthropicOptions.effort = effort;
       console.log(`[Chat] Adaptive thinking enabled (effort: ${effort})`);
     } else if (thinkingMode === 'manual') {
@@ -863,6 +975,26 @@ export async function POST(req: NextRequest) {
 
     streamConfig.providerOptions = { anthropic: anthropicOptions };
 
+    // Record each tool's execution time so the prompt-audit row can carry it.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    streamConfig.experimental_onToolCallFinish = (event: any) => {
+      const id = event?.toolCall?.toolCallId;
+      if (!id) return;
+      const name = event?.toolCall?.toolName ?? 'unknown';
+      const durationMs = Math.round(event?.durationMs ?? 0);
+      const stepNumber = event?.stepNumber ?? -1;
+      const success = event?.success !== false;
+      toolTimings.set(id, { durationMs, stepNumber, success });
+      // Same measurement into the phase timer, which derives the concurrency
+      // view (waited vs serial vs straggler blocking) across the whole turn.
+      perf.recordTool(name, durationMs, success, stepNumber);
+    };
+
+    // Time-to-first-token: the first chunk off the model stream is what the user
+    // perceives as "the response started". markFirstToken() no-ops after the
+    // first call, so this is safe to fire on every chunk.
+    streamConfig.onChunk = () => perf.markFirstToken();
+
     // Propagate container ID between steps for code execution continuity
     streamConfig.prepareStep = forwardAnthropicContainerIdFromLastStep;
 
@@ -871,6 +1003,7 @@ export async function POST(req: NextRequest) {
     // then write file-download data chunks after completion - all in one response.
     // DB persistence uses onFinish which receives responseMessage.parts — the exact
     // parts the client saw (including step-start, interleaved text/tool parts).
+    perf.mark('streamSetup');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return streamText(streamConfig as any);
     };
@@ -996,6 +1129,11 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        // Everything up to here is time the user spends watching tokens arrive;
+        // everything after is tail latency — the text has stopped but the stream
+        // is still open, so the UI still looks busy.
+        perf.mark('modelStream');
+
         // 3. Extract file_ids from code_execution outputs and write to stream
         if (conversationId && steps && steps.length > 0) {
           const fileDownloads: Array<{ fileId: string; filename: string; mimeType: string; sizeBytes: number }> = [];
@@ -1091,6 +1229,16 @@ export async function POST(req: NextRequest) {
         }
       },
       onFinish: async ({ responseMessage }) => {
+        // Tail latency: between the model's last token and the stream closing.
+        perf.mark('streamTail');
+        // Emit + persist timings FIRST — the persistence below returns early
+        // when there is no conversation, and the record must not depend on it.
+        const timings = perf.snapshot({ userId: user.id, model: modelId, outcome: 'ok' });
+        logger.info('perf', timings);
+        if (promptAuditHandle) {
+          recordPromptTimings(promptAuditHandle.rowId, timings).catch(() => {});
+        }
+
         // Persist the message to DB using the exact parts the client received.
         // responseMessage.parts has step-start, text, tool-*, reasoning parts
         // in the correct interleaved order — matching what the streaming view showed.
@@ -1123,6 +1271,10 @@ export async function POST(req: NextRequest) {
                 input: part.input ?? part.args ?? {},
                 output: part.output ?? part.result ?? undefined,
                 state: part.state || 'output-available',
+                // Persist the measured duration so a reloaded conversation can
+                // still show what each round of tools cost. Absent for
+                // provider-executed tools, which we never time locally.
+                ...(part.toolCallId ? toolTimings.get(part.toolCallId) ?? {} : {}),
               };
             }
 
@@ -1134,6 +1286,7 @@ export async function POST(req: NextRequest) {
                 input: part.input ?? part.args ?? {},
                 output: part.output ?? part.result ?? undefined,
                 state: part.state || 'output-available',
+                ...(part.toolCallId ? toolTimings.get(part.toolCallId) ?? {} : {}),
               };
             }
 
@@ -1219,6 +1372,9 @@ export async function POST(req: NextRequest) {
                 cacheReadTokens,
                 cacheCreationTokens,
                 conversationId: conversationId || null,
+                // Column existed in the schema but was never written. Real
+                // end-to-end wall time, measured from handler entry.
+                requestDurationMs: Math.round(perf.elapsed()),
               },
             });
           } catch (usageErr) {
@@ -1257,9 +1413,12 @@ export async function POST(req: NextRequest) {
                 }
                 if (Array.isArray(s.toolCalls)) {
                   for (const tc of s.toolCalls) {
+                    const timing = tc.toolCallId ? toolTimings.get(tc.toolCallId) : undefined;
                     toolCalls.push({
                       name: tc.toolName || tc.name || 'unknown',
                       args: tc.input ?? tc.args,
+                      // Absent for provider-executed tools — see toolTimings.
+                      ...(timing ?? {}),
                       // `result` holds the FULL MCP-server response — that
                       // typically includes the SQL the MCP built + the rows.
                       // Persisted into prompt_audit_logs.tool_calls.
@@ -1353,12 +1512,17 @@ export async function POST(req: NextRequest) {
               return FabOrchError.lambdaMcpCrash(error, { route: '/api/chat' });
             })();
         logger.fabOrchError(fabErr, { route: '/api/chat' });
+        perf.flush({ userId: user.id, model: modelId, outcome: 'stream-error', errorId: fabErr.errorId });
         // REQ-03 — also persist stream-time errors to error_audit_logs.
         import('@/lib/errors/error-audit').then(m =>
           m.recordError(fabErr, { userId: user.id, route: '/api/chat', method: 'POST' })
         ).catch(() => {});
         // REQ-04 — close the prompt-audit row with the error envelope.
         if (promptAuditHandle) {
+          recordPromptTimings(
+            promptAuditHandle.rowId,
+            perf.snapshot({ userId: user.id, model: modelId, outcome: 'stream-error', errorId: fabErr.errorId })
+          ).catch(() => {});
           recordPromptFailure({
             rowId: promptAuditHandle.rowId,
             startedAtMs: promptAuditHandle.startedAtMs,
@@ -1386,6 +1550,7 @@ export async function POST(req: NextRequest) {
     // REQ-04 — close the prompt-audit row if we opened one.
     // promptAuditHandle is declared inside the try; we re-look-up via the
     // outer let-binding pattern below if you ever extract it.
+    perf.flush({ userId: user.id, outcome: 'preflight-error' });
     return handleApiError(error, req, { route: '/api/chat', userId: user.id });
   }
 }
