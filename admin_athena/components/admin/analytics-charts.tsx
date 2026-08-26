@@ -17,6 +17,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Label,
   LabelList,
   Line,
@@ -550,6 +551,265 @@ export function SuccessGauge({ rate, loading = false }: { rate: number | null; l
           </Pie>
         </PieChart>
       </ChartContainer>
+    </ChartFrame>
+  );
+}
+
+/* ── Response-time charts ─────────────────────────────────────────────
+ *
+ * Source: prompt_audit_logs.timings, written per request by the Fab app's
+ * PhaseTimer. Durations are milliseconds on the wire and formatted for display
+ * here — a chart axis reading "94600" helps nobody.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+/** ms → a duration a human reads at a glance ("820ms", "12.4s", "2m 44s"). */
+export function fmtDuration(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "0s";
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  const s = ms / 1000;
+  if (s < 60) return `${s.toFixed(1)}s`;
+  const m = Math.floor(s / 60);
+  return `${m}m ${Math.round(s % 60)}s`;
+}
+
+/**
+ * Daily response time: median vs 95th percentile, with volume behind it.
+ *
+ * Median and p95 together because they answer different questions — the median
+ * is the typical experience, p95 is the one people complain about. A median
+ * that holds steady while p95 climbs is a tail problem, not a general slowdown,
+ * and plotting only an average would hide exactly that.
+ */
+export function LatencyTrendChart({
+  data,
+  loading = false,
+  emptyMessage = "No measured turns in this window",
+}: {
+  data: Array<{ day: string; turns: number; p50: number; p95: number; ttft: number }>;
+  loading?: boolean;
+  emptyMessage?: string;
+}) {
+  const reduce = usePrefersReducedMotion();
+  if (loading) return <ChartSkeleton className="h-[260px]" />;
+  if (data.length === 0) return <ChartEmpty className="h-[260px]" message={emptyMessage} />;
+
+  const config: ChartConfig = {
+    turns: { label: "Turns", color: "var(--chart-4)" },
+    p50: { label: "Median", color: "var(--chart-1)" },
+    p95: { label: "95th pct", color: "var(--chart-3)" },
+    ttft: { label: "First token", color: "var(--chart-2)" },
+  };
+  const last = data[data.length - 1];
+
+  return (
+    <ChartFrame
+      summary={`Response time by day. Latest: median ${fmtDuration(last.p50)}, 95th percentile ${fmtDuration(last.p95)}, first token ${fmtDuration(last.ttft)} across ${fmtInt(last.turns)} turns.`}
+    >
+      <ChartContainer config={config} className="h-[260px] w-full">
+        <ComposedChart data={data} margin={{ left: 4, right: 8, top: 8 }}>
+          <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border" />
+          <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
+          <YAxis
+            yAxisId="ms"
+            tickLine={false}
+            axisLine={false}
+            className="tabular-nums"
+            tickFormatter={(v) => fmtDuration(Number(v))}
+          />
+          <YAxis yAxisId="turns" orientation="right" hide />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value, name) =>
+                  name === "turns"
+                    ? `${fmtInt(Number(value))} turns`
+                    : fmtDuration(Number(value))
+                }
+              />
+            }
+          />
+          <ChartLegend content={<ChartLegendContent />} />
+          {/* Volume sits behind the lines: a spike in p95 on two turns is noise,
+              on two hundred it is a real regression. */}
+          <Bar
+            yAxisId="turns"
+            dataKey="turns"
+            fill="var(--color-turns)"
+            opacity={0.18}
+            isAnimationActive={!reduce}
+          />
+          <Line
+            yAxisId="ms"
+            type="monotone"
+            dataKey="p95"
+            stroke="var(--color-p95)"
+            strokeWidth={2}
+            dot={false}
+            isAnimationActive={!reduce}
+          />
+          <Line
+            yAxisId="ms"
+            type="monotone"
+            dataKey="p50"
+            stroke="var(--color-p50)"
+            strokeWidth={2}
+            dot={false}
+            isAnimationActive={!reduce}
+          />
+          <Line
+            yAxisId="ms"
+            type="monotone"
+            dataKey="ttft"
+            stroke="var(--color-ttft)"
+            strokeWidth={2}
+            strokeDasharray="4 3"
+            dot={false}
+            isAnimationActive={!reduce}
+          />
+        </ComposedChart>
+      </ChartContainer>
+    </ChartFrame>
+  );
+}
+
+/**
+ * Slowest tools by total time contributed.
+ *
+ * Ranked by TOTAL rather than average: a 3-second tool called 200 times costs
+ * far more than a 30-second one called twice, and only the total says which to
+ * fix first. The average and worst case ride along in the tooltip.
+ */
+export function ToolLatencyChart({
+  data,
+  loading = false,
+  emptyMessage = "No tool calls measured in this window",
+}: {
+  data: Array<{ name: string; calls: number; avgMs: number; maxMs: number; totalMs: number }>;
+  loading?: boolean;
+  emptyMessage?: string;
+}) {
+  const reduce = usePrefersReducedMotion();
+  if (loading) return <ChartSkeleton className="h-[280px]" />;
+  const rows = data.slice(0, 10);
+  if (rows.length === 0) return <ChartEmpty className="h-[280px]" message={emptyMessage} />;
+
+  const config: ChartConfig = { totalMs: { label: "Total time", color: "var(--chart-3)" } };
+
+  return (
+    <ChartFrame
+      summary={`Slowest tools by total time. Top: ${rows[0].name} — ${fmtDuration(rows[0].totalMs)} across ${fmtInt(rows[0].calls)} calls (avg ${fmtDuration(rows[0].avgMs)}).`}
+    >
+      <ChartContainer config={config} className="h-[280px] w-full">
+        <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 56 }}>
+          <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-border" />
+          <XAxis
+            type="number"
+            tickLine={false}
+            axisLine={false}
+            className="tabular-nums"
+            tickFormatter={(v) => fmtDuration(Number(v))}
+          />
+          <YAxis
+            type="category"
+            dataKey="name"
+            width={190}
+            tickLine={false}
+            axisLine={false}
+            tick={{ fontSize: 12 }}
+          />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value, _name, item) => {
+                  const r = item?.payload as (typeof rows)[number] | undefined;
+                  if (!r) return fmtDuration(Number(value));
+                  return `${fmtDuration(r.totalMs)} total · ${fmtInt(r.calls)} calls · avg ${fmtDuration(r.avgMs)} · worst ${fmtDuration(r.maxMs)}`;
+                }}
+              />
+            }
+          />
+          <Bar dataKey="totalMs" fill="var(--color-totalMs)" radius={4} isAnimationActive={!reduce}>
+            <LabelList
+              dataKey="totalMs"
+              position="right"
+              className="fill-muted-foreground tabular-nums"
+              formatter={(v) => fmtDuration(Number(v))}
+            />
+          </Bar>
+        </BarChart>
+      </ChartContainer>
+    </ChartFrame>
+  );
+}
+
+/**
+ * Where an average turn's time goes.
+ *
+ * Deliberately only two segments that sum to the whole: time before the first
+ * token, and time streaming the answer. Tool time is NOT a third segment — it
+ * happens DURING streaming, so adding it would double-count and produce a bar
+ * longer than the request. It is shown as a separate reference row instead.
+ */
+export function TimeBreakdownChart({
+  data,
+  loading = false,
+}: {
+  data: { ttftMs: number; streamMs: number; toolWaitedMs: number; blockingMs: number };
+  loading?: boolean;
+}) {
+  const reduce = usePrefersReducedMotion();
+  if (loading) return <ChartSkeleton className="h-[200px]" />;
+  const total = data.ttftMs + data.streamMs;
+  if (total <= 0) return <ChartEmpty className="h-[200px]" message="No measured turns in this window" />;
+
+  const rows = [
+    { label: "Whole request", ttft: data.ttftMs, stream: data.streamMs },
+  ];
+  const config: ChartConfig = {
+    ttft: { label: "Before first token", color: "var(--chart-2)" },
+    stream: { label: "Streaming the answer", color: "var(--chart-1)" },
+  };
+  const toolPct = total > 0 ? (data.toolWaitedMs / total) * 100 : 0;
+
+  return (
+    <ChartFrame
+      summary={`Average turn: ${fmtDuration(data.ttftMs)} before the first token, then ${fmtDuration(data.streamMs)} streaming. Tools account for ${fmtDuration(data.toolWaitedMs)} of the streaming time (${toolPct.toFixed(0)}% of the request).`}
+    >
+      <div className="space-y-3">
+        <ChartContainer config={config} className="h-[120px] w-full">
+          <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 16 }} barSize={38}>
+            <XAxis
+              type="number"
+              tickLine={false}
+              axisLine={false}
+              className="tabular-nums"
+              tickFormatter={(v) => fmtDuration(Number(v))}
+            />
+            <YAxis type="category" dataKey="label" width={110} tickLine={false} axisLine={false} />
+            <ChartTooltip
+              content={<ChartTooltipContent formatter={(v) => fmtDuration(Number(v))} />}
+            />
+            <ChartLegend content={<ChartLegendContent />} />
+            <Bar dataKey="ttft" stackId="t" fill="var(--color-ttft)" isAnimationActive={!reduce} />
+            <Bar dataKey="stream" stackId="t" fill="var(--color-stream)" radius={[0, 4, 4, 0]} isAnimationActive={!reduce} />
+          </BarChart>
+        </ChartContainer>
+        <dl className="grid grid-cols-2 gap-3 text-sm">
+          <div className="rounded-lg border border-border p-3">
+            <dt className="text-xs text-muted-foreground">Waiting on tools</dt>
+            <dd className="mt-1 font-semibold tabular-nums">
+              {fmtDuration(data.toolWaitedMs)}{" "}
+              <span className="text-xs font-normal text-muted-foreground">
+                ({toolPct.toFixed(0)}% of request)
+              </span>
+            </dd>
+          </div>
+          <div className="rounded-lg border border-border p-3">
+            <dt className="text-xs text-muted-foreground">Lost to slowest parallel tool</dt>
+            <dd className="mt-1 font-semibold tabular-nums">{fmtDuration(data.blockingMs)}</dd>
+          </div>
+        </dl>
+      </div>
     </ChartFrame>
   );
 }

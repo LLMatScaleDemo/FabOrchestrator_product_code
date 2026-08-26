@@ -1914,5 +1914,138 @@ export function getAdminTools(adminUserId: string) {
         };
       },
     },
+
+    query_performance: {
+      description:
+        'Answer questions about RESPONSE TIME and TOOL SPEED from the per-request timing breakdown in prompt_audit_logs.timings. Use for questions like "what is our median response time?", "which tool is slowest?", "how many turns finish under 40 seconds?", "what is the slowest phase?", "which user has the slowest turns?", "is response time getting worse?", "how much time do we spend waiting on tools?". ' +
+        'Each measured turn records: totalMs (whole request, from handler entry), ttftMs (time to first token — what the user perceives as "it started"), streamMs (first token to last), phases (named stages including step:<toolname>), toolDetail (per tool: name, ms, ok, step), toolWaitedMs (what the turn ACTUALLY waited on tools — the sum over steps of each step\'s SLOWEST call, because tools in one step run concurrently), toolSerialMs (the same tools run one after another), toolBlockingMs (time finished tools sat idle waiting on a slower sibling). ' +
+        'IMPORTANT: only turns run AFTER the timing instrumentation was deployed carry this data — older turns are excluded, so counts here are smaller than total prompt counts. Provider-executed tools (code_execution, web_search, web_fetch) run in Anthropic\'s sandbox and have NO individual duration; their cost appears inside the enclosing step phase instead. ' +
+        'Never sum toolDetail durations to get "time waited" — that overstates it whenever tools ran in parallel; use toolWaitedMs.',
+      inputSchema: z.object({
+        metric: z
+          .enum(['summary', 'by_tool', 'by_phase', 'by_user', 'trend', 'slowest_turns'])
+          .describe(
+            'summary = percentiles + share under thresholds; by_tool = per-tool call count/avg/max/total; by_phase = which named phases cost most; by_user = per-user medians; trend = per-day median/p95; slowest_turns = the worst individual requests.',
+          ),
+        days: z.number().optional().describe('Look-back window in days (default 30, max 90).'),
+        userKey: z.string().optional().describe('Restrict to one user (matches email or name, case-insensitive substring).'),
+        route: z.enum(['chat', 'modeling-agent']).optional().describe('Restrict to one agent.'),
+        limit: z.number().optional().describe('Max rows for list-style metrics (default 15, cap 50).'),
+      }),
+      execute: async (input: {
+        metric: 'summary' | 'by_tool' | 'by_phase' | 'by_user' | 'trend' | 'slowest_turns';
+        days?: number; userKey?: string; route?: string; limit?: number;
+      }) => {
+        const days = Math.min(90, Math.max(1, input.days ?? 30));
+        const limit = Math.min(50, Math.max(1, input.limit ?? 15));
+        // Only measured turns — mixing instrumented and uninstrumented rows
+        // would silently skew every percentile.
+        const where: string[] = ["timings IS NOT NULL", `datetime >= NOW() - INTERVAL '${days} days'`];
+        const params: unknown[] = [];
+        if (input.userKey) {
+          params.push(`%${input.userKey}%`);
+          where.push(`(user_email ILIKE $${params.length} OR user_name ILIKE $${params.length})`);
+        }
+        if (input.route) {
+          params.push(input.route);
+          where.push(`timings->>'label' = $${params.length}`);
+        }
+        const W = where.join(' AND ');
+
+        const run = async <T>(sql: string): Promise<T[]> => {
+          try {
+            return await prisma.$queryRawUnsafe<T[]>(sql, ...params);
+          } catch {
+            return [];
+          }
+        };
+        // BigInt/Decimal from raw SQL are not JSON-serialisable; normalise.
+        const clean = (rows: Record<string, unknown>[]) =>
+          rows.map((r) => {
+            const o: Record<string, unknown> = {};
+            for (const [k, v] of Object.entries(r)) {
+              o[k] = typeof v === 'bigint' ? Number(v)
+                : v !== null && typeof v === 'object' && 'toNumber' in (v as object)
+                  ? Number(v as unknown as number)
+                  : typeof v === 'string' && /^[0-9.]+$/.test(v) && k !== 'day' ? Number(v)
+                    : v;
+            }
+            return o;
+          });
+
+        const note =
+          'Measured turns only (instrumented after the timing deploy). toolWaitedMs is the real wait; ' +
+          'summing individual tool durations overstates it when tools ran in parallel.';
+
+        switch (input.metric) {
+          case 'summary': {
+            const rows = await run<Record<string, unknown>>(`
+              SELECT COUNT(*) AS measured_turns,
+                ROUND((percentile_cont(0.5)  WITHIN GROUP (ORDER BY (timings->>'totalMs')::numeric))::numeric) AS total_p50_ms,
+                ROUND((percentile_cont(0.95) WITHIN GROUP (ORDER BY (timings->>'totalMs')::numeric))::numeric) AS total_p95_ms,
+                ROUND(MAX((timings->>'totalMs')::numeric)) AS total_max_ms,
+                ROUND((percentile_cont(0.5)  WITHIN GROUP (ORDER BY (timings->>'ttftMs')::numeric))::numeric) AS ttft_p50_ms,
+                ROUND(AVG((timings->>'toolWaitedMs')::numeric)) AS avg_tool_wait_ms,
+                ROUND(AVG((timings->>'toolBlockingMs')::numeric)) AS avg_straggler_ms,
+                ROUND(100.0*COUNT(*) FILTER (WHERE (timings->>'totalMs')::numeric <= 40000)/NULLIF(COUNT(*),0),1) AS pct_under_40s,
+                ROUND(100.0*COUNT(*) FILTER (WHERE (timings->>'totalMs')::numeric <= 60000)/NULLIF(COUNT(*),0),1) AS pct_under_60s
+              FROM prompt_audit_logs WHERE ${W}`);
+            return { windowDays: days, note, summary: clean(rows)[0] ?? null };
+          }
+          case 'by_tool': {
+            const rows = await run<Record<string, unknown>>(`
+              SELECT d->>'name' AS tool, COUNT(*) AS calls,
+                     ROUND(AVG((d->>'ms')::numeric)) AS avg_ms,
+                     ROUND(MAX((d->>'ms')::numeric)) AS max_ms,
+                     ROUND(SUM((d->>'ms')::numeric)) AS total_ms,
+                     COUNT(*) FILTER (WHERE (d->>'ok') = 'false') AS failures
+              FROM prompt_audit_logs p, LATERAL jsonb_array_elements(p.timings->'toolDetail') AS d
+              WHERE ${W} GROUP BY 1 ORDER BY total_ms DESC LIMIT ${limit}`);
+            return { windowDays: days, note: note + ' Ranked by TOTAL time contributed, not average.', tools: clean(rows) };
+          }
+          case 'by_phase': {
+            const rows = await run<Record<string, unknown>>(`
+              SELECT ph.key AS phase, COUNT(*) AS turns,
+                     ROUND(AVG(ph.value::text::numeric)) AS avg_ms,
+                     ROUND(SUM(ph.value::text::numeric)) AS total_ms
+              FROM prompt_audit_logs p, LATERAL jsonb_each(p.timings->'phases') AS ph
+              WHERE ${W} GROUP BY 1 ORDER BY total_ms DESC LIMIT ${limit}`);
+            return { windowDays: days, note: note + ' A "step:<tools>" phase covers one model call PLUS the tools it triggered.', phases: clean(rows) };
+          }
+          case 'by_user': {
+            const rows = await run<Record<string, unknown>>(`
+              SELECT COALESCE(user_email, user_name, '-') AS account, COUNT(*) AS turns,
+                     ROUND((percentile_cont(0.5) WITHIN GROUP (ORDER BY (timings->>'totalMs')::numeric))::numeric) AS median_ms,
+                     ROUND(MAX((timings->>'totalMs')::numeric)) AS worst_ms,
+                     ROUND(AVG((timings->>'toolWaitedMs')::numeric)) AS avg_tool_wait_ms
+              FROM prompt_audit_logs WHERE ${W} GROUP BY 1 ORDER BY median_ms DESC LIMIT ${limit}`);
+            return { windowDays: days, note, users: clean(rows) };
+          }
+          case 'trend': {
+            const rows = await run<Record<string, unknown>>(`
+              SELECT to_char(datetime,'YYYY-MM-DD') AS day, COUNT(*) AS turns,
+                     ROUND((percentile_cont(0.5)  WITHIN GROUP (ORDER BY (timings->>'totalMs')::numeric))::numeric) AS median_ms,
+                     ROUND((percentile_cont(0.95) WITHIN GROUP (ORDER BY (timings->>'totalMs')::numeric))::numeric) AS p95_ms,
+                     ROUND(AVG((timings->>'ttftMs')::numeric)) AS avg_ttft_ms
+              FROM prompt_audit_logs WHERE ${W} GROUP BY 1 ORDER BY 1`);
+            return { windowDays: days, note, trend: clean(rows) };
+          }
+          case 'slowest_turns': {
+            const rows = await run<Record<string, unknown>>(`
+              SELECT prompt_id, COALESCE(user_email,user_name,'-') AS account,
+                     to_char(datetime,'YYYY-MM-DD HH24:MI') AS at,
+                     timings->>'label' AS agent,
+                     ROUND((timings->>'totalMs')::numeric) AS total_ms,
+                     ROUND((timings->>'ttftMs')::numeric) AS ttft_ms,
+                     (timings->>'toolCalls')::int AS tool_calls,
+                     timings->'slowest'->>0 AS dominant_phase,
+                     left(user_prompt, 160) AS prompt_preview
+              FROM prompt_audit_logs WHERE ${W}
+              ORDER BY (timings->>'totalMs')::numeric DESC NULLS LAST LIMIT ${limit}`);
+            return { windowDays: days, note, slowestTurns: clean(rows) };
+          }
+        }
+      },
+    },
   };
 }
