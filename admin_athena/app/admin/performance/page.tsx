@@ -15,6 +15,15 @@ import { useCallback, useEffect, useState } from "react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -205,46 +214,70 @@ export default function PerformancePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : (data?.slowest.length ?? 0) === 0 ? (
-            <p className="text-sm text-muted-foreground">No measured turns in this window.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                    <th className="py-2 pr-4 font-medium">Prompt</th>
-                    <th className="py-2 pr-4 font-medium">User</th>
-                    <th className="py-2 pr-4 font-medium">When</th>
-                    <th className="py-2 pr-4 font-medium">Agent</th>
-                    <th className="py-2 pr-4 text-right font-medium">Total</th>
-                    <th className="py-2 pr-4 text-right font-medium">1st token</th>
-                    <th className="py-2 pr-4 text-right font-medium">Tools</th>
-                    <th className="py-2 font-medium">Dominant phase</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data?.slowest.map((r) => (
-                    <tr key={r.promptId} className="border-b border-border/50">
-                      <td className="py-2 pr-4 font-mono text-xs">{r.promptId}</td>
-                      <td className="py-2 pr-4">{r.user}</td>
-                      <td className="py-2 pr-4 whitespace-nowrap text-muted-foreground">{r.datetime}</td>
-                      <td className="py-2 pr-4">
+          <div
+            className="max-h-[480px] overflow-auto rounded-lg border"
+            role="region"
+            aria-label="Slowest individual turns"
+            tabIndex={0}
+          >
+            <Table className="min-w-[880px]">
+              <TableCaption className="sr-only">
+                The slowest requests in the selected window, with the phase that dominated each one.
+              </TableCaption>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="sticky top-0 z-10 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prompt</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">When</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Agent</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Total</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">1st token</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Tools</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dominant phase</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                      Loading&hellip;
+                    </TableCell>
+                  </TableRow>
+                ) : (data?.slowest.length ?? 0) === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                      No measured turns in this window.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  data?.slowest.map((r) => (
+                    <TableRow key={r.promptId} className="hover:bg-muted/30">
+                      <TableCell className="px-4 py-3 font-mono text-xs">{r.promptId}</TableCell>
+                      <TableCell className="px-4 py-3 font-medium">{r.user}</TableCell>
+                      <TableCell className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {r.datetime}
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <Badge variant="secondary">{r.route}</Badge>
-                      </td>
-                      <td className="py-2 pr-4 text-right tabular-nums font-medium">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right font-medium tabular-nums">
                         {fmtDuration(r.totalMs)}
-                      </td>
-                      <td className="py-2 pr-4 text-right tabular-nums">{fmtDuration(r.ttftMs)}</td>
-                      <td className="py-2 pr-4 text-right tabular-nums">{r.toolCalls}</td>
-                      <td className="py-2 font-mono text-xs text-muted-foreground">{r.topPhase}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                        {fmtDuration(r.ttftMs)}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                        {r.toolCalls}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                        {r.topPhase}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

@@ -434,11 +434,30 @@ function ChatSidebar({
   return (
     <Sidebar collapsible="icon" className="border-r" role="navigation" aria-label="Conversations">
       <SidebarHeader>
-        <div className="flex w-full items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-[16.5px] font-bold tracking-[-0.2px]">
-              FabOrchestrator<span style={{ color: "var(--chat-brand-blue)" }}>.ai</span>
-            </span>
+        {/* Stacks in icon mode rather than hiding either control: the trigger is
+            the ONLY way to re-expand a collapsed sidebar, so it must always
+            stay reachable. */}
+        <div className="flex w-full items-center justify-between gap-2 group-data-[collapsible=icon]:flex-col-reverse group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            {/* Explicit way back to the cockpit. Master Data Load is entered
+                from there, so a user part-way through a loader session needs an
+                obvious exit that is not the browser back button. */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/home")}
+              aria-label="Back to FabOrchestrator overview"
+              title="Back to overview"
+              className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              <NavSvg><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></NavSvg>
+            </Button>
+            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+              <span className="truncate text-[16.5px] font-bold tracking-[-0.2px]">
+                FabOrchestrator<span style={{ color: "var(--chat-brand-blue)" }}>.ai</span>
+              </span>
+            </div>
           </div>
           <SidebarTrigger className="size-8 shrink-0 border-0 bg-transparent shadow-none hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" />
         </div>

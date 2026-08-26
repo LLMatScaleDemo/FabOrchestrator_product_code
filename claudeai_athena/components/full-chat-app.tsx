@@ -442,11 +442,28 @@ function ChatSidebar({
   return (
     <Sidebar collapsible="icon" className="border-r" role="navigation" aria-label="Conversations">
       <SidebarHeader>
-        <div className="flex w-full items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-[16.5px] font-bold tracking-[-0.2px]">
-              FabOrchestrator<span style={{ color: "var(--chat-brand-blue)" }}>.ai</span>
-            </span>
+        <div className="flex w-full items-center justify-between gap-2 group-data-[collapsible=icon]:flex-col-reverse group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            {/* Back to the cockpit. A route to /home already existed as
+                "FO Overview", but it sat inside the Workspace group among
+                decorative links, so it read as navigation rather than a way
+                back and was easy to miss. This is the explicit exit. */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/home")}
+              aria-label="Back to FabOrchestrator overview"
+              title="Back to overview"
+              className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              <NavSvg><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></NavSvg>
+            </Button>
+            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+              <span className="truncate text-[16.5px] font-bold tracking-[-0.2px]">
+                FabOrchestrator<span style={{ color: "var(--chat-brand-blue)" }}>.ai</span>
+              </span>
+            </div>
           </div>
           <SidebarTrigger className="size-8 shrink-0 border-0 bg-transparent shadow-none hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" />
         </div>

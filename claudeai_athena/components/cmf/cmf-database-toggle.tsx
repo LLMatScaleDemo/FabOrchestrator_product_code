@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { CMF_ACTIVE_DB_KEY } from "@/lib/cmf/client-auth";
@@ -63,6 +64,9 @@ export function CmfDatabaseToggle({
   const [open, setOpen] = useState(false);
   // Keep the full preferences blob so a PATCH doesn't clobber other settings.
   const prefsRef = useRef<Record<string, unknown>>({});
+  // Mirrors `active` so `apply` (a []-dep callback) can compare against the
+  // previous value without going stale.
+  const activeRef = useRef<string>(DEFAULT_DBS[0].key);
   const dbsRef = useRef<DbOption[]>(DEFAULT_DBS);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -113,6 +117,7 @@ export function CmfDatabaseToggle({
       const valid = new Set(list.map((d) => d.key));
       const next = savedKey && valid.has(savedKey) ? savedKey : list[0]?.key ?? "";
       setActive(next);
+      activeRef.current = next;
       try { localStorage.setItem(CMF_ACTIVE_DB_KEY, next); } catch { /* ignore */ }
       onChangeRef.current(selectionFor(next, list));
     })();
@@ -122,7 +127,24 @@ export function CmfDatabaseToggle({
   }, []);
 
   const apply = useCallback((next: string) => {
+    const prev = activeRef.current;
     setActive(next);
+    activeRef.current = next;
+
+    // Confirm the switch. This is not decoration: the active database is the
+    // target for LOADS as well as exports, so a silent change is the kind that
+    // ends with data written to the wrong system. Naming it makes the change
+    // visible at the moment it happens.
+    //
+    // Only on a real change — re-selecting the database already in use is a
+    // no-op and should not produce a notification.
+    if (prev !== next) {
+      const label = dbsRef.current.find((d) => d.key === next)?.label ?? next;
+      toast.success(`Switched to ${label}`, {
+        description: "Exports read from, and loads write to, this database.",
+      });
+    }
+
     try { localStorage.setItem(CMF_ACTIVE_DB_KEY, next); } catch { /* ignore */ }
     const sel = selectionFor(next, dbsRef.current);
     onChangeRef.current(sel);
