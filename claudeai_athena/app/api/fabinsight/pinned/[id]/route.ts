@@ -69,9 +69,17 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const existing = await prisma.pinnedDashboard.findUnique({ where: { id }, select: { id: true } });
+  const existing = await prisma.pinnedDashboard.findUnique({
+    where: { id },
+    select: { id: true, dashboardId: true, sourceKey: true },
+  });
   if (!existing) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
   await prisma.pinnedDashboard.delete({ where: { id } });
+  // Remove any refresh schedule that targeted this dashboard, so a deleted
+  // custom dashboard does not leave an orphaned schedule ticking.
+  await prisma.reportSchedule
+    .deleteMany({ where: { dashboardId: existing.dashboardId, sourceKey: existing.sourceKey } })
+    .catch(() => {});
   return NextResponse.json({ success: true });
 }

@@ -15,12 +15,15 @@ import { prisma } from "@/lib/db";
 import { getDashboard, fetchDashboardData } from "@/lib/fabinsight/dashboards";
 import { renderDashboard } from "@/lib/fabinsight/render";
 import { claimDueSchedules } from "@/lib/fabinsight/schedule";
+import { fetchCustomData, parseCustomDef, renderCustomDashboard } from "@/lib/fabinsight/custom";
 
 type PinRow = {
   id: string;
   dashboardId: string;
   params: unknown;
   sourceKey: string;
+  kind?: string | null;
+  definition?: unknown;
 };
 
 /** Only lot/product reach SQL — mirrors the /render route's whitelist. */
@@ -33,16 +36,29 @@ function whitelistParams(params: unknown): Record<string, string> {
 }
 
 export async function refreshPin(pin: PinRow): Promise<{ ok: boolean; error?: string }> {
-  const def = getDashboard(pin.dashboardId);
-  if (!def) {
-    await prisma.pinnedDashboard
-      .update({ where: { id: pin.id }, data: { lastStatus: "error: unknown dashboard", refreshedAt: new Date() } })
-      .catch(() => {});
-    return { ok: false, error: "unknown dashboard" };
-  }
   try {
-    const data = await fetchDashboardData(def, whitelistParams(pin.params));
-    const { html, summary } = renderDashboard(data);
+    let html: string;
+    let summary: string;
+
+    if (pin.kind === "custom") {
+      // Custom dashboard: re-run its stored query set through the generic layout.
+      // parseCustomDef re-applies the read-only SQL guard on every run.
+      const def = parseCustomDef(pin.definition);
+      const data = await fetchCustomData(def);
+      ({ html, summary } = renderCustomDashboard(data, def));
+    } else {
+      // Recipe dashboard: one of the fixed 7.
+      const def = getDashboard(pin.dashboardId);
+      if (!def) {
+        await prisma.pinnedDashboard
+          .update({ where: { id: pin.id }, data: { lastStatus: "error: unknown dashboard", refreshedAt: new Date() } })
+          .catch(() => {});
+        return { ok: false, error: "unknown dashboard" };
+      }
+      const data = await fetchDashboardData(def, whitelistParams(pin.params));
+      ({ html, summary } = renderDashboard(data));
+    }
+
     await prisma.pinnedDashboard.update({
       where: { id: pin.id },
       data: { cachedHtml: html, cachedSummary: summary, refreshedAt: new Date(), lastStatus: "ok" },
@@ -64,7 +80,7 @@ export async function refreshDashboardPins(
 ): Promise<{ refreshed: number; failed: number }> {
   const pins = await prisma.pinnedDashboard.findMany({
     where: { dashboardId, sourceKey },
-    select: { id: true, dashboardId: true, params: true, sourceKey: true },
+    select: { id: true, dashboardId: true, params: true, sourceKey: true, kind: true, definition: true },
   });
   let refreshed = 0;
   let failed = 0;

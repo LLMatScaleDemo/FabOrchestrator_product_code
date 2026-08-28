@@ -22,6 +22,7 @@ type Pinned = {
   id: string
   title: string
   dashboardId: string
+  kind?: string
   params: Record<string, string>
   createdAt: string
   createdBy: string
@@ -115,11 +116,17 @@ export default function ReportsPage() {
     setRenderError(null)
     setNoSnapshot(false)
     try {
-      const res = await fetch("/api/fabinsight/render", {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ dashboardId: p.dashboardId, params: p.params ?? {} }),
-      })
+      // Custom dashboards have no live /render route — re-run them by id (which
+      // re-executes their stored queries and updates the shared snapshot). The 7
+      // recipes still render live via /render.
+      const res =
+        p.kind === "custom"
+          ? await fetch(`/api/fabinsight/pinned/${p.id}/refresh`, { method: "POST", headers: authHeaders() })
+          : await fetch("/api/fabinsight/render", {
+              method: "POST",
+              headers: authHeaders(),
+              body: JSON.stringify({ dashboardId: p.dashboardId, params: p.params ?? {} }),
+            })
       const raw = await res.text()
       const json = raw ? (JSON.parse(raw) as { html?: string; refreshedAt?: string; error?: string }) : {}
       if (!res.ok) throw new Error(json.error ?? `Could not load live data (${res.status}).`)
@@ -186,6 +193,7 @@ export default function ReportsPage() {
   }, [html, open])
 
   const subtitle = (p: Pinned) => {
+    if (p.kind === "custom") return "Custom dashboard"
     const bits = [p.dashboardId.replace(/-/g, " ")]
     if (p.params?.lot) bits.push(`lot ${p.params.lot}`)
     if (p.params?.product) bits.push(`product ${p.params.product}`)

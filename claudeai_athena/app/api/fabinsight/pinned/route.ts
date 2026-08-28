@@ -1,9 +1,13 @@
+import { randomUUID } from 'crypto';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireAuth } from '@/lib/auth-middleware';
 import { prisma } from '@/lib/db';
 import { isDashboardAdmin } from '@/lib/fabinsight/access';
 import { getDashboard } from '@/lib/fabinsight/dashboards';
+import { parseCustomDef, type CustomDef } from '@/lib/fabinsight/custom';
+import { refreshPin } from '@/lib/fabinsight/refresh';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,6 +29,7 @@ export async function GET(request: NextRequest) {
       id: true,
       title: true,
       dashboardId: true,
+      kind: true,
       params: true,
       createdAt: true,
       refreshedAt: true,
@@ -38,6 +43,7 @@ export async function GET(request: NextRequest) {
       id: r.id,
       title: r.title,
       dashboardId: r.dashboardId,
+      kind: r.kind,
       params: r.params,
       createdAt: r.createdAt.toISOString(),
       // Scheduled-snapshot metadata — the HTML itself is fetched per report
@@ -68,6 +74,9 @@ export async function POST(request: NextRequest) {
     dashboardId?: string;
     params?: Record<string, string>;
     replace?: boolean;
+    /** Present for an admin-created custom dashboard: { queries: [...] }. */
+    kind?: string;
+    definition?: { queries?: unknown } | unknown;
   };
 
   const title = (body.title ?? '').trim();
@@ -75,14 +84,41 @@ export async function POST(request: NextRequest) {
   if (title.length > 120) {
     return NextResponse.json({ error: 'Name is too long (120 characters max).' }, { status: 400 });
   }
-  if (!body.dashboardId || !getDashboard(body.dashboardId)) {
-    return NextResponse.json({ error: 'Unknown dashboard.' }, { status: 400 });
-  }
 
-  const params = {
-    ...(typeof body.params?.lot === 'string' ? { lot: body.params.lot } : {}),
-    ...(typeof body.params?.product === 'string' ? { product: body.params.product } : {}),
-  };
+  // A pin is either a "custom" dashboard (its own query set travels in the body)
+  // or a "recipe" — one of the fixed 7, gated by getDashboard().
+  const isCustom = body.kind === 'custom' || (!!body.definition && !body.dashboardId);
+  let dashboardId: string;
+  let kind: string;
+  let customDef: CustomDef | null = null;
+  let params: Record<string, string> = {};
+
+  if (isCustom) {
+    try {
+      // Re-validate + normalise (re-applies the read-only SQL guard) server-side —
+      // never trust the client's definition even though the agent produced it.
+      const defInput = (body.definition ?? {}) as Record<string, unknown>;
+      customDef = parseCustomDef({ title, queries: (defInput as { queries?: unknown }).queries });
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : 'Invalid custom dashboard definition.' },
+        { status: 400 },
+      );
+    }
+    kind = 'custom';
+    // A stable id distinct from the 7 recipe ids; the schedule keys off this.
+    dashboardId = `custom-${randomUUID().slice(0, 8)}`;
+  } else {
+    if (!body.dashboardId || !getDashboard(body.dashboardId)) {
+      return NextResponse.json({ error: 'Unknown dashboard.' }, { status: 400 });
+    }
+    kind = 'recipe';
+    dashboardId = body.dashboardId;
+    params = {
+      ...(typeof body.params?.lot === 'string' ? { lot: body.params.lot } : {}),
+      ...(typeof body.params?.product === 'string' ? { product: body.params.product } : {}),
+    };
+  }
 
   // A duplicate name would make the list ambiguous. On the first attempt we
   // ask the caller to confirm a replace (needsReplace) rather than silently
@@ -90,7 +126,7 @@ export async function POST(request: NextRequest) {
   // pin's recipe and clear its cached snapshot so it re-renders fresh.
   const clash = await prisma.pinnedDashboard.findFirst({
     where: { title: { equals: title, mode: 'insensitive' } },
-    select: { id: true, title: true },
+    select: { id: true, title: true, dashboardId: true },
   });
   if (clash && !body.replace) {
     return NextResponse.json(
@@ -104,14 +140,19 @@ export async function POST(request: NextRequest) {
   }
 
   if (clash && body.replace) {
+    // Keep a custom pin's existing id so any schedule attached to it survives.
+    const keepDashboardId = isCustom ? clash.dashboardId : dashboardId;
     const updated = await prisma.pinnedDashboard.update({
       where: { id: clash.id },
       data: {
         title,
-        dashboardId: body.dashboardId,
+        dashboardId: keepDashboardId,
+        kind,
+        definition: customDef ?? undefined,
         params,
-        // New recipe → the old snapshot is stale; clear it so it re-renders on
-        // the next scheduled tick (or via Refresh) instead of showing wrong data.
+        // New recipe/definition → the old snapshot is stale; clear it so it
+        // re-renders on the next scheduled tick (or via Refresh) instead of
+        // showing wrong data.
         cachedHtml: null,
         cachedSummary: null,
         refreshedAt: null,
@@ -128,12 +169,28 @@ export async function POST(request: NextRequest) {
   const created = await prisma.pinnedDashboard.create({
     data: {
       title,
-      dashboardId: body.dashboardId,
+      dashboardId,
+      kind,
+      definition: customDef ?? undefined,
       params,
       createdById: auth.user.id,
     },
     select: { id: true, title: true, dashboardId: true, params: true, createdAt: true },
   });
+
+  // Custom dashboards have no live-render route, so cache their snapshot now:
+  // "whatever the last run is stays statically present in every user's view"
+  // until someone refreshes. Best-effort — a pin is still valid if this fails.
+  if (isCustom && customDef) {
+    await refreshPin({
+      id: created.id,
+      dashboardId,
+      params,
+      sourceKey: 'lumentum',
+      kind: 'custom',
+      definition: customDef,
+    }).catch(() => {});
+  }
 
   return NextResponse.json(
     { dashboard: { ...created, createdAt: created.createdAt.toISOString() } },

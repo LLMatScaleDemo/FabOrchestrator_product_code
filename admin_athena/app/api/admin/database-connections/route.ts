@@ -126,8 +126,7 @@ export async function POST(req: NextRequest) {
     const sqlDatabase = String(b.sqlDatabase ?? "").trim();
     const sqlUser = String(b.sqlUser ?? "").trim();
     const baseUrl = String(b.baseUrl ?? "").trim();
-    // Token DB name = the database name (auto; not a user-facing field).
-    const tokenDbName = sqlDatabase;
+    // Token key is set to the UNIQUE db_key below (not the database name) — see note there.
 
     const missing = [
       ["label", label],
@@ -145,6 +144,15 @@ export async function POST(req: NextRequest) {
     // advanced/import use), made unique with a numeric suffix.
     const keyBase = typeof b.dbKey === "string" && b.dbKey.trim() ? slugify(b.dbKey) : slugify(label);
     const dbKey = await uniqueKey(keyBase);
+
+    // Token key = the UNIQUE connection key, NOT the database name. Two
+    // connections can legitimately share a database name (e.g.
+    // "CriticalManufacturing" on different servers); keying the bearer-token row
+    // by database name made them overwrite each other's token. db_key is unique
+    // per connection, so each gets its own token row. The refresher Lambda is
+    // provisioned with this same value as TOKEN_DB_NAME, and Fab Orch reads the
+    // token by the connection's token_db_name — so the two always match.
+    const tokenDbName = dbKey;
 
     const password = typeof b.password === "string" ? b.password : "";
     if (!password) {

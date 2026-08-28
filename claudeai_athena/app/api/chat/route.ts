@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { streamText, convertToModelMessages, stepCountIs, createUIMessageStream, createUIMessageStreamResponse } from 'ai';
+import { streamText, convertToModelMessages, stepCountIs, createUIMessageStream, createUIMessageStreamResponse, tool } from 'ai';
+import { z } from 'zod';
 import { anthropic, forwardAnthropicContainerIdFromLastStep, createAnthropicWithContainerUploads } from '@/lib/anthropic';
 import { addMessage, getMessages } from '@/lib/storage';
 import { loadActiveMcpToolsWithDescriptions } from '@/lib/mcp-client';
@@ -29,6 +30,7 @@ import { matchDashboard } from '@/lib/fabinsight/catalog';
 import { glossaryBlock } from '@/lib/fabinsight/aliases';
 import { detectMetricAsk, buildMetricBrief } from '@/lib/fabinsight/metrics';
 import { isDashboardAdmin } from '@/lib/fabinsight/access';
+import { parseCustomDef, fetchCustomData, renderCustomDashboard } from '@/lib/fabinsight/custom';
 import { PhaseTimer } from '@/lib/perf-timer';
 
 export const maxDuration = 300;
@@ -705,6 +707,87 @@ export async function POST(req: NextRequest) {
         : undefined;
     let curated: CuratedTurn | null = null;
 
+    // Custom dashboards the model builds this turn via create_dashboard. Each
+    // rendered <antArtifact> is appended to the stream after the model finishes,
+    // exactly like a curated dashboard (see the stream `execute` below).
+    const customArtifacts: Array<{ text: string }> = [];
+
+    // create_dashboard — admin-only. Lets the model build an ARBITRARY dashboard
+    // from read-only SELECTs against the manufacturing DB (the same source the 7
+    // curated dashboards use). The query set is stored on the pin, so Refresh and
+    // scheduled runs re-execute it for fresh data. The model may first use its
+    // connected data tools to explore the schema, then pass the final SELECT(s).
+    if (canCreateDashboards) {
+      tools.create_dashboard = tool({
+        description: [
+          'Build a custom live dashboard for the admin from one or more read-only SQL SELECT queries, and show it in the panel.',
+          'Use this when the admin asks to create / build / make a new dashboard, or to adapt an existing report into a new one.',
+          '',
+          'Data source: Microsoft SQL Server (T-SQL), Opcenter SemiDemo MES, schema "cammes". Key tables:',
+          '  cammes.Container            one row per lot: Qty, LevelId, CurrentHoldCount, DueDate, FactoryStartDate, ProductName.',
+          '  cammes.HistoryMainline h    move history: CDOName (TrackInLot/TrackOutLot/MoveLot/StartLot), ContainerName, ProductName,',
+          '                              ResourceName, SpecName (step), WorkflowName (route), EmployeeName, ShiftName, Qty,',
+          '                              MoveInTimestamp, LastMoveOutTimestamp.',
+          '  cammes.MoveHistory mh       mh.CycleTime (fractional DAYS); join mh.HistoryMainlineId = h.HistoryMainlineId.',
+          '  cammes.ResourceDef          equipment master.',
+          '',
+          'Rules for every panel SQL: a SINGLE read-only SELECT (no INSERT/UPDATE/DDL/EXEC, no ";"). Use T-SQL "TOP n" to bound rows',
+          '(never LIMIT). Give every column a clear alias — aliases become the table headers / KPI labels. A one-row SELECT renders as',
+          'KPI cards; multi-row renders as a table. Keep it to at most 6 panels. If a query fails, you will be told the error — fix it and retry.',
+          'After it succeeds, do NOT reprint the dashboard as text; briefly tell the admin it is shown, that they can Pin it to Recent Reports,',
+          'and that once pinned they can schedule its refresh from the admin app.',
+        ].join('\n'),
+        inputSchema: z.object({
+          title: z.string().min(1).max(120).describe('Short dashboard name, e.g. "Scrap by Product — Last 7 Days".'),
+          panels: z
+            .array(
+              z.object({
+                label: z.string().min(1).max(80).describe('Panel/section heading shown above this query result.'),
+                sql: z.string().min(1).describe('A single read-only T-SQL SELECT with aliased columns.'),
+              }),
+            )
+            .min(1)
+            .max(6)
+            .describe('One panel per query, in display order.'),
+        }),
+        execute: async ({ title, panels }: { title: string; panels: Array<{ label: string; sql: string }> }) => {
+          try {
+            const def = parseCustomDef({
+              title,
+              queries: panels.map((p, i) => ({ key: `set${i + 1}`, label: p.label, sql: p.sql })),
+            });
+            // Dry-run: execute the queries now so a broken one comes back to the
+            // model as an error it can fix, rather than a dead pinned dashboard.
+            const data = await fetchCustomData(def);
+            const okSets = data.sets.filter((set) => !set.error);
+            if (!okSets.length) {
+              return {
+                status: 'error',
+                message:
+                  'Every query failed: ' +
+                  data.sets.map((set) => set.error).filter(Boolean).join(' | ') +
+                  '. Fix the SQL (check table/column names and T-SQL syntax) and call create_dashboard again.',
+              };
+            }
+            const { html, title: finalTitle, summary } = renderCustomDashboard(data, def);
+            const turnId = `custom-${Date.now().toString(36)}`;
+            customArtifacts.push({
+              text: `\n\n<antArtifact identifier="${turnId}" type="text/html" title="${finalTitle}">\n${html}\n</antArtifact>`,
+            });
+            return {
+              status: 'ok',
+              title: finalTitle,
+              summary,
+              panels: data.sets.map((set) => ({ label: set.label, rows: set.rows.length, error: set.error })),
+              note: 'The dashboard is now shown in the panel. Do not reprint it as text. Tell the admin they can Pin it to Recent Reports, and schedule its refresh from the admin app once pinned.',
+            };
+          } catch (e) {
+            return { status: 'error', message: e instanceof Error ? e.message : 'Invalid dashboard definition.' };
+          }
+        },
+      });
+    }
+
     // Broad metric brief — real figures for yield / OEE, attached like the
     // glossary. Not a dashboard: the brief tells the model to answer in prose.
     if (metricAsk && lastUserMsg && lastUserText) {
@@ -1126,6 +1209,20 @@ export async function POST(req: NextRequest) {
             writer.write({ type: 'text-end', id: artTextId });
           } catch (err) {
             console.error('[Chat] FabInsight artifact write failed:', err);
+          }
+        }
+
+        // 2c. Custom dashboards built via create_dashboard this turn: append each
+        // rendered <antArtifact> after the model's text, exactly like a curated
+        // one, so it renders in the panel and round-trips into onFinish's parts.
+        for (let i = 0; i < customArtifacts.length; i++) {
+          const artTextId = `custom-artifact-${i}-${Date.now().toString(36)}`;
+          try {
+            writer.write({ type: 'text-start', id: artTextId });
+            writer.write({ type: 'text-delta', id: artTextId, delta: customArtifacts[i].text });
+            writer.write({ type: 'text-end', id: artTextId });
+          } catch (err) {
+            console.error('[Chat] custom dashboard artifact write failed:', err);
           }
         }
 

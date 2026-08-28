@@ -407,6 +407,11 @@ model PinnedDashboard {
   id            String    @id @default(uuid())
   title         String
   dashboardId   String    @map("dashboard_id")
+  /// "recipe" = one of the 7 curated dashboards (data comes from dashboards.ts).
+  /// "custom" = an admin-created dashboard whose query set lives in `definition`.
+  kind          String    @default("recipe")
+  /// For custom dashboards: { queries: [{ key, label, sql, limit? }] }. Null for recipes.
+  definition    Json?
   params        Json      @default("{}")
   createdById   String    @map("created_by_id")
   createdAt     DateTime  @default(now()) @map("created_at")

@@ -203,7 +203,14 @@ export function ArtifactPreview({
   // written by renderDashboard). If it's there we can re-run the query rather
   // than just remounting the iframe with the same HTML — which is what the
   // "refresh should show changes in the backend" requirement actually needs.
-  const fabRecipe = useMemo((): { id: string; params: Record<string, string> } | null => {
+  const fabRecipe = useMemo((): {
+    id?: string
+    params?: Record<string, string>
+    // Present for an admin-created custom dashboard (kind === "custom").
+    kind?: string
+    title?: string
+    queries?: Array<{ key?: string; label: string; sql: string; limit?: number }>
+  } | null => {
     const m = /<meta name="fab-recipe" content="([^"]*)"/.exec(artifact.content ?? "")
     if (!m) return null
     try {
@@ -245,10 +252,15 @@ export function ArtifactPreview({
     setPinState("saving")
     setPinError(null)
     try {
+      // A custom dashboard pins its whole query set; a recipe pins by id + params.
+      const pinBody =
+        fabRecipe.kind === "custom"
+          ? { title: pinName.trim(), kind: "custom", definition: { queries: fabRecipe.queries ?? [] }, replace }
+          : { title: pinName.trim(), dashboardId: fabRecipe.id, params: fabRecipe.params ?? {}, replace }
       const res = await fetch("/api/fabinsight/pinned", {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ title: pinName.trim(), dashboardId: fabRecipe.id, params: fabRecipe.params ?? {}, replace }),
+        body: JSON.stringify(pinBody),
       })
       // A 500 can arrive with an empty or HTML body, so never assume JSON —
       // parsing blindly turns a server error into an unreadable parse error.
@@ -436,7 +448,10 @@ export function ArtifactPreview({
   }, [displayContent, artifact.content, artifact.type, strategy])
 
   const handleRefreshPreview = useCallback(async () => {
-    if (!fabRecipe) {
+    // No live-render recipe (a plain preview, or an unpinned CUSTOM dashboard —
+    // which has no /render route): just remount the iframe. A pinned custom
+    // dashboard is refreshed from Recent Reports via its own re-run endpoint.
+    if (!fabRecipe || !fabRecipe.id) {
       setIframeKey((prev) => prev + 1)
       return
     }

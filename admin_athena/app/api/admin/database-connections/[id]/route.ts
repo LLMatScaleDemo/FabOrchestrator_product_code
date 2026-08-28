@@ -79,8 +79,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const sqlDatabase = String(b.sqlDatabase ?? "").trim();
     const sqlUser = String(b.sqlUser ?? "").trim();
     const baseUrl = String(b.baseUrl ?? "").trim();
-    // Token DB name = database name (auto). Host→IP derived from base URL + server.
-    const tokenDbName = sqlDatabase;
+    // Token key = the connection's immutable, UNIQUE db_key — never the database
+    // name (two connections can share one, e.g. "CriticalManufacturing" on
+    // different servers, and would collide on a single bearer-token row). This
+    // also migrates any pre-existing connection onto its own key when it's saved.
+    const existingRow = (await prisma.$queryRawUnsafe(
+      `SELECT db_key FROM cmf_connections WHERE id = $1`,
+      id,
+    )) as Array<{ db_key: string }>;
+    if (!existingRow.length) {
+      return NextResponse.json({ error: "Connection not found." }, { status: 404 });
+    }
+    const tokenDbName = existingRow[0].db_key;
 
     const missing = [
       ["label", label],

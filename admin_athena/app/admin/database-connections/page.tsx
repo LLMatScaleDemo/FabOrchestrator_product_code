@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -208,6 +208,7 @@ export default function DatabaseConnectionsPage() {
         open={dialogOpen}
         editing={editing}
         token={token}
+        connections={connections}
         onClose={() => setDialogOpen(false)}
         onSaved={() => { setDialogOpen(false); fetchData(); }}
       />
@@ -216,10 +217,11 @@ export default function DatabaseConnectionsPage() {
 }
 
 // ── Add / Edit Connection ──
-function ConnectionDialog({ open, editing, token, onClose, onSaved }: {
+function ConnectionDialog({ open, editing, token, connections, onClose, onSaved }: {
   open: boolean;
   editing: Connection | null;
   token: string | null;
+  connections: Connection[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -238,6 +240,25 @@ function ConnectionDialog({ open, editing, token, onClose, onSaved }: {
   const [showPassword, setShowPassword] = useState(false);
   const [showPortalPassword, setShowPortalPassword] = useState(false);
   const [loadingSecrets, setLoadingSecrets] = useState(false);
+
+  // Heads-up if this connection's name / database duplicates an existing one.
+  // Not a blocker — each connection now keeps its own token — but it flags a
+  // likely mix-up (e.g. two servers both using "CriticalManufacturing").
+  const dupWarnings = useMemo(() => {
+    const out: string[] = [];
+    const others = connections.filter((c) => c.id !== editing?.id);
+    const lbl = label.trim().toLowerCase();
+    const db = sqlDatabase.trim().toLowerCase();
+    if (lbl) {
+      const m = others.find((c) => c.label.trim().toLowerCase() === lbl);
+      if (m) out.push(`A connection named “${m.label}” already exists — pick a different label to avoid confusion.`);
+    }
+    if (db) {
+      const m = others.find((c) => c.sqlDatabase.trim().toLowerCase() === db);
+      if (m) out.push(`Another connection (“${m.label}”) already uses the database “${m.sqlDatabase}” on server ${m.sqlServer}. That's fine — each connection keeps its own token — just confirm this is a different server.`);
+    }
+    return out;
+  }, [connections, editing?.id, label, sqlDatabase]);
 
   useEffect(() => {
     if (open) {
@@ -333,6 +354,16 @@ function ConnectionDialog({ open, editing, token, onClose, onSaved }: {
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          {dupWarnings.length > 0 && (
+            <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+              <div className="space-y-1 text-xs text-amber-700 dark:text-amber-400">
+                {dupWarnings.map((w, i) => (
+                  <p key={i}>{w}</p>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="conn-label">Label <span className="text-destructive" aria-hidden="true">*</span></Label>
             <Input id="conn-label" value={label} onChange={(e) => { setLabel(e.target.value); if (errors.label) setErrors((p) => ({ ...p, label: "" })); }} placeholder="Entegris / KSP (source)" aria-invalid={!!errors.label} />

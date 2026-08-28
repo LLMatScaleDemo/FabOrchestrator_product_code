@@ -2,12 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth-middleware";
 import prisma from "@/lib/db";
-import {
-  REPORT_DASHBOARDS,
-  resolveDashboardIds,
-  computeReportNextRun,
-  toFrequency,
-} from "@/lib/report-schedule";
+import { computeReportNextRun, toFrequency } from "@/lib/report-schedule";
+import { getSchedulableDashboards, resolveAgainst } from "@/lib/report-dashboards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,11 +40,14 @@ export async function POST(req: NextRequest) {
       : [];
     const daysOfWeekStr = daysList.length ? daysList.join(",") : null;
 
-    const ids = resolveDashboardIds(body.report ?? []);
+    // Resolve against the LIVE pinned dashboards (7 curated + custom), not a
+    // fixed list — so a newly-created custom dashboard is schedulable here too.
+    const list = await getSchedulableDashboards();
+    const ids = resolveAgainst(list, body.report ?? []);
     if (ids.length === 0) {
       return NextResponse.json(
         {
-          error: `Select a report. Valid options: ${REPORT_DASHBOARDS.map((d) => d.label).join(", ")}, or "All reports".`,
+          error: `Select a report. Available: ${list.map((d) => d.label).join(", ") || "(none pinned yet)"}, or "All reports".`,
         },
         { status: 400 },
       );
@@ -109,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      updated: ids.map((id) => REPORT_DASHBOARDS.find((d) => d.id === id)?.label ?? id),
+      updated: ids.map((id) => list.find((d) => d.id === id)?.label ?? id),
       frequency,
       enabled,
       sourceKey,
@@ -118,5 +117,22 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     console.error("[api/admin/report-schedule] failed", e);
     return NextResponse.json({ error: "Could not save the schedule." }, { status: 500 });
+  }
+}
+
+/**
+ * GET — the live list of schedulable dashboards (everything pinned to Recent
+ * Reports: the 7 curated dashboards plus any admin-created custom ones), for the
+ * in-chat schedule form's report dropdown. Each carries a `scheduled` flag.
+ */
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+  try {
+    const dashboards = await getSchedulableDashboards();
+    return NextResponse.json({ dashboards });
+  } catch (e) {
+    console.error("[api/admin/report-schedule] GET failed", e);
+    return NextResponse.json({ error: "Could not load dashboards." }, { status: 500 });
   }
 }

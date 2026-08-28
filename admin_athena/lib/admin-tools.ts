@@ -20,39 +20,17 @@ import {
   unassignDataSource,
 } from './mcp-onthefly/service';
 import prisma from './db';
+import { getSchedulableDashboards, resolveAgainst } from './report-dashboards';
 
 // ── Recent Reports refresh scheduling ───────────────────────────────────────
-// The 7 curated FabInsight dashboards (kept in sync with Fab Orch's
-// lib/fabinsight/catalog.ts DASHBOARD_ORDER). All schedule times are UTC. The
-// admin app writes report_schedules (raw SQL below); Fab Orch's cron tick reads
-// it and refreshes each dashboard's pinned reports.
-const REPORT_DASHBOARDS: { id: string; label: string }[] = [
-  { id: 'factory-operations', label: 'Factory Operations' },
-  { id: 'lot-history', label: 'Lot History' },
-  { id: 'process-analytics', label: 'Process Analytics' },
-  { id: 'maintenance-prediction', label: 'Maintenance' },
-  { id: 'bottleneck-prediction', label: 'Bottleneck Risk' },
-  { id: 'analytics-dashboard', label: 'Product Analytics' },
-  { id: 'executive-overview', label: 'Executive Overview' },
-];
+// Schedulable dashboards are now LIVE — whatever is pinned to Recent Reports
+// (the 7 curated dashboards plus any admin-created custom ones). The list comes
+// from getSchedulableDashboards() (reads the shared pinned_dashboards table);
+// resolveAgainst() maps a user-supplied name/id/"all" to dashboard ids. All
+// schedule times are UTC. The admin app writes report_schedules (raw SQL below);
+// Fab Orch's cron tick reads it and refreshes each dashboard's pinned reports.
 
 type ReportFrequency = 'hourly' | 'daily' | 'weekly' | 'monthly';
-
-function normalizeName(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-/** Resolve a user-supplied dashboard name/id to a canonical dashboard id. */
-function resolveDashboardId(input: string): string | null {
-  const n = normalizeName(input);
-  for (const d of REPORT_DASHBOARDS) {
-    if (normalizeName(d.id) === n || normalizeName(d.label) === n) return d.id;
-  }
-  const hit = REPORT_DASHBOARDS.find(
-    (d) => normalizeName(d.label).includes(n) || n.includes(normalizeName(d.id)),
-  );
-  return hit ? hit.id : null;
-}
 
 /** Next run (UTC), strictly after `from`. Mirrors Fab Orch lib/fabinsight/schedule.ts. */
 function computeReportNextRun(
@@ -1766,7 +1744,7 @@ export function getAdminTools(adminUserId: string) {
 
     set_report_schedule: {
       description:
-        'Set or change the automatic refresh schedule for the Recent Reports — the 7 curated FabInsight dashboards (Factory Operations, Lot History, Process Analytics, Maintenance, Bottleneck Risk, Product Analytics, Executive Overview). Use when the admin asks to schedule/reschedule how often reports refresh, e.g. "refresh all reports every hour", "Product Analytics daily at 6am", "run the Maintenance report weekly on Monday", "disable the Lot History schedule". All times are UTC. Pass ["all"] to apply to every dashboard, or specific dashboard names to give each its own timing. Fab Orch picks up the change on its next tick (~5 min).',
+        'Set or change the automatic refresh schedule for the Recent Reports — ANY pinned dashboard (the 7 curated ones plus any custom dashboard an admin created and pinned). Use when the admin asks to schedule/reschedule how often reports refresh, e.g. "refresh all reports every hour", "Product Analytics daily at 6am", "schedule my Scrap-by-Product dashboard hourly", "disable the Lot History schedule". Times are UTC. Pass ["all"] to apply to every pinned dashboard, or specific dashboard names to give each its own timing. If you are unsure what is pinned, call get_report_schedules first — it lists every pinned dashboard and which are not yet scheduled. Fab Orch picks up the change on its next tick (~5 min).',
       inputSchema: z.object({
         dashboards: z.array(z.string()).describe('Dashboard names/ids, or ["all"] for every dashboard'),
         frequency: z.enum(['hourly', 'daily', 'weekly', 'monthly']).describe('Refresh cadence'),
@@ -1790,21 +1768,18 @@ export function getAdminTools(adminUserId: string) {
         const sourceKey = (args.sourceKey || 'lumentum').trim();
         const enabled = args.enabled ?? true;
 
-        const wantAll = args.dashboards.some((d) => normalizeName(d) === 'all');
-        const ids: string[] = [];
-        const unknown: string[] = [];
-        if (wantAll) {
-          ids.push(...REPORT_DASHBOARDS.map((d) => d.id));
-        } else {
-          for (const d of args.dashboards) {
-            const id = resolveDashboardId(d);
-            if (id) { if (!ids.includes(id)) ids.push(id); }
-            else unknown.push(d);
-          }
+        // Resolve against the LIVE list of pinned dashboards (7 curated + custom).
+        const list = await getSchedulableDashboards();
+        if (list.length === 0) {
+          return { error: 'No dashboards are pinned yet. Pin a dashboard to Recent Reports before scheduling it.' };
         }
+        const ids = resolveAgainst(list, args.dashboards);
+        const unknown = args.dashboards.filter(
+          (d) => d.toLowerCase().trim() !== 'all' && resolveAgainst(list, d).length === 0,
+        );
         if (ids.length === 0) {
           return {
-            error: `No known dashboards matched. Valid dashboards: ${REPORT_DASHBOARDS.map((d) => d.label).join(', ')}.`,
+            error: `No pinned dashboards matched. Available: ${list.map((d) => d.label).join(', ')}, or "all".`,
             unknown,
           };
         }
@@ -1861,7 +1836,7 @@ export function getAdminTools(adminUserId: string) {
 
         return {
           success: true,
-          updated: ids.map((id) => REPORT_DASHBOARDS.find((d) => d.id === id)?.label ?? id),
+          updated: ids.map((id) => list.find((d) => d.id === id)?.label ?? id),
           frequency: args.frequency,
           enabled,
           sourceKey,
@@ -1874,9 +1849,10 @@ export function getAdminTools(adminUserId: string) {
 
     get_report_schedules: {
       description:
-        'Show the current automatic refresh schedules for the Recent Reports (the 7 dashboards): cadence, next run, last run/status, and whether each is enabled. Use when the admin asks what the report refresh schedule is or to confirm a change.',
+        'Show the current report-refresh schedules (cadence, next/last run, enabled) AND the full list of pinned dashboards, flagging which pinned dashboards are NOT yet scheduled. Use when the admin asks what the report schedule is, when a report next refreshes, to confirm a change, or to find newly-added dashboards that still need a schedule. When some pinned dashboards are unscheduled, tell the admin which ones and offer to schedule them. Times are UTC.',
       inputSchema: z.object({}),
       execute: async () => {
+        const list = await getSchedulableDashboards();
         const rows = await prisma.$queryRawUnsafe<
           Array<{
             dashboard_id: string;
@@ -1898,7 +1874,7 @@ export function getAdminTools(adminUserId: string) {
         return {
           total: rows.length,
           schedules: rows.map((r) => ({
-            dashboard: REPORT_DASHBOARDS.find((d) => d.id === r.dashboard_id)?.label ?? r.dashboard_id,
+            dashboard: list.find((d) => d.id === r.dashboard_id)?.label ?? r.dashboard_id,
             dashboardId: r.dashboard_id,
             sourceKey: r.source_key,
             frequency: r.frequency,
@@ -1911,6 +1887,12 @@ export function getAdminTools(adminUserId: string) {
             lastRunUtc: r.last_run_at ? new Date(r.last_run_at).toISOString() : null,
             lastStatus: r.last_status,
           })),
+          // Pinned dashboards that have NO schedule yet — offer to schedule these
+          // ("these N are newly added and not scheduled — want to schedule them?").
+          unscheduled: list
+            .filter((d) => !d.scheduled)
+            .map((d) => ({ dashboard: d.label, dashboardId: d.id, kind: d.kind })),
+          pinnedTotal: list.length,
         };
       },
     },

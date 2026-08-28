@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { REPORT_DASHBOARDS, REPORT_SOURCES, toFrequency, type ReportFrequency } from "@/lib/report-schedule";
+
+type DashOption = { id: string; label: string };
 
 export type ScheduleFormInitial = {
   database?: string;
@@ -24,13 +26,13 @@ function norm(s: string): string {
 }
 
 /** Resolve a marker's report value to a <select> value: "all", a dashboard id, or "". */
-function resolveReportValue(input?: string): string {
+function resolveReportValue(input: string | undefined, list: DashOption[]): string {
   if (!input) return "";
   if (norm(input) === "all") return "all";
   const n = norm(input);
   const hit =
-    REPORT_DASHBOARDS.find((d) => norm(d.id) === n || norm(d.label) === n) ??
-    REPORT_DASHBOARDS.find((d) => norm(d.label).includes(n));
+    list.find((d) => norm(d.id) === n || norm(d.label) === n) ??
+    list.find((d) => norm(d.label).includes(n));
   return hit ? hit.id : "";
 }
 
@@ -55,7 +57,29 @@ export function ReportScheduleCard({
   onDone?: (summary: string | null) => void;
 }) {
   const [database, setDatabase] = useState(initial.database || REPORT_SOURCES[0].key);
-  const [report, setReport] = useState(resolveReportValue(initial.report));
+  // Live list of schedulable dashboards (7 curated + any admin-created custom).
+  // Seeded with the curated 7 so the form works before the fetch resolves and if
+  // nothing is pinned yet.
+  const [dashboards, setDashboards] = useState<DashOption[]>(REPORT_DASHBOARDS);
+  const [report, setReport] = useState(() => resolveReportValue(initial.report, REPORT_DASHBOARDS));
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    fetch("/api/admin/report-schedule", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { dashboards?: DashOption[] } | null) => {
+        if (cancelled || !j?.dashboards?.length) return;
+        const live = j.dashboards.map((d) => ({ id: d.id, label: d.label }));
+        setDashboards(live);
+        // If the model's report value didn't match the curated fallback, try the live list.
+        setReport((cur) => (cur ? cur : resolveReportValue(initial.report, live)));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token, initial.report]);
   const [frequency, setFrequency] = useState<ReportFrequency>(toFrequency(initial.frequency));
   const [intervalMinutes, setIntervalMinutes] = useState<number>(initial.intervalMinutes || 60);
   const [atTime, setAtTime] = useState<string>(initial.atTime || "06:00");
@@ -103,7 +127,7 @@ export function ReportScheduleCard({
       const json = raw ? (JSON.parse(raw) as { error?: string; updated?: string[]; nextRunAtUtc?: string }) : {};
       if (!res.ok) throw new Error(json.error ?? `Could not save the schedule (${res.status}).`);
 
-      const scope = report === "all" ? "all 7 reports" : (json.updated?.[0] ?? "the report");
+      const scope = report === "all" ? "all reports" : (json.updated?.[0] ?? "the report");
       const daysLabel = daysOfWeek.map((d) => DOW_SHORT[d]).join(", ");
       const cadence =
         frequency === "hourly"
@@ -125,8 +149,8 @@ export function ReportScheduleCard({
   };
 
   const reportOptions = useMemo(
-    () => [{ value: "all", label: "All reports" }, ...REPORT_DASHBOARDS.map((d) => ({ value: d.id, label: d.label }))],
-    [],
+    () => [{ value: "all", label: "All reports" }, ...dashboards.map((d) => ({ value: d.id, label: d.label }))],
+    [dashboards],
   );
 
   const disabled = !active || state === "saving" || state === "saved";
