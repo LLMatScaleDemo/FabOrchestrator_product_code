@@ -16,10 +16,11 @@ export type ScheduleRow = {
   sourceKey: string;
   frequency: string; // hourly | daily | weekly | monthly
   intervalMinutes: number | null;
-  atTime: string | null; // "HH:MM" UTC
+  atTime: string | null; // "HH:MM" — wall-clock in `timezone`
   dayOfWeek: number | null; // 0-6 (Sun=0) — legacy single-day
   daysOfWeek: number[] | null; // 0-6 list — weekly can run on several days
   dayOfMonth: number | null; // 1-31
+  timezone: string; // IANA tz the atTime/day are interpreted in (default "UTC")
   nextRunAt: Date | null;
 };
 
@@ -43,56 +44,96 @@ function parseHM(s: string | null): [number, number] {
   return [hh, mm];
 }
 
-function setUtcDayClamped(d: Date, dom: number): void {
-  const daysInMonth = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
-  d.setUTCDate(Math.min(dom, daysInMonth));
+// ── Timezone-aware wall-clock math (built-in Intl, no dependency) ────────────
+// KEEP IN SYNC with admin_athena's lib/report-schedule.ts (same helper).
+// atTime + day are a WALL-CLOCK in the schedule's timezone; we convert that to
+// the correct UTC instant so the UTC-based scheduler fires at the right moment,
+// and it stays correct across DST because the offset is recomputed each run.
+
+const DOW: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+/** The wall-clock parts a given UTC instant shows in `tz`. */
+function partsInTz(utc: Date, tz: string): { y: number; mon: number; day: number; dow: number } {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hourCycle: "h23", weekday: "short",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const p: Record<string, string> = {};
+  for (const x of dtf.formatToParts(utc)) if (x.type !== "literal") p[x.type] = x.value;
+  return { y: +p.year, mon: +p.month, day: +p.day, dow: DOW[p.weekday] ?? 0 };
 }
 
-/** Next run time (UTC), strictly after `from`. */
+/** tz offset (ms) at a UTC instant = (its wall-clock read as UTC) − the instant. */
+function tzOffsetMs(utcMs: number, tz: string): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const p: Record<string, string> = {};
+  for (const x of dtf.formatToParts(new Date(utcMs))) if (x.type !== "literal") p[x.type] = x.value;
+  return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second) - utcMs;
+}
+
+/** UTC Date for wall-clock (y, mon[1-12], day, hh, mm) interpreted in `tz`. DST-aware. */
+function zonedToUtc(y: number, mon: number, day: number, hh: number, mm: number, tz: string): Date {
+  if (!tz || tz === "UTC") return new Date(Date.UTC(y, mon - 1, day, hh, mm, 0));
+  const guess = Date.UTC(y, mon - 1, day, hh, mm, 0);
+  let utc = guess - tzOffsetMs(guess, tz);
+  utc = guess - tzOffsetMs(utc, tz); // one correction pass for DST boundaries
+  return new Date(utc);
+}
+
+/** Add `n` LOCAL calendar days to (base y/mon/day) then resolve hh:mm in `tz` to UTC. */
+function localDayToUtc(y: number, mon: number, day: number, n: number, hh: number, mm: number, tz: string): Date {
+  const d = new Date(Date.UTC(y, mon - 1, day + n)); // Date normalizes month/year rollover
+  return zonedToUtc(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), hh, mm, tz);
+}
+
+/** Monthly: clamp day-of-month to the month's length, then resolve in `tz`. */
+function monthlyToUtc(y: number, mon: number, dom: number, hh: number, mm: number, tz: string): Date {
+  const dim = new Date(Date.UTC(y, mon, 0)).getUTCDate();
+  return zonedToUtc(y, mon, Math.min(dom, dim), hh, mm, tz);
+}
+
+/** Next run time (UTC), strictly after `from`, honouring the schedule's timezone. */
 export function computeNextRun(s: ScheduleRow, from: Date): Date {
+  const tz = s.timezone && s.timezone.trim() ? s.timezone.trim() : "UTC";
   const [hh, mm] = parseHM(s.atTime);
 
-  switch (s.frequency) {
-    case "hourly": {
-      const mins = s.intervalMinutes && s.intervalMinutes > 0 ? s.intervalMinutes : 60;
-      return new Date(from.getTime() + mins * 60_000);
-    }
-    case "daily": {
-      const next = new Date(from);
-      next.setUTCHours(hh, mm, 0, 0);
-      if (next <= from) next.setUTCDate(next.getUTCDate() + 1);
-      return next;
-    }
-    case "weekly": {
-      // One or more days of the week (Mon/Wed/Fri…). Next run is the soonest of
-      // the selected days at the given time. Falls back to the legacy single day.
-      const days = s.daysOfWeek && s.daysOfWeek.length ? s.daysOfWeek : [s.dayOfWeek ?? 1];
-      let best: Date | null = null;
-      for (const d of days) {
-        const cand = new Date(from);
-        cand.setUTCHours(hh, mm, 0, 0);
-        let delta = (d - cand.getUTCDay() + 7) % 7;
-        if (delta === 0 && cand <= from) delta = 7;
-        cand.setUTCDate(cand.getUTCDate() + delta);
-        if (!best || cand < best) best = cand;
-      }
-      return best ?? new Date(from.getTime() + 7 * 86_400_000);
-    }
-    case "monthly": {
-      const targetDom = s.dayOfMonth ?? 1;
-      const next = new Date(from);
-      next.setUTCHours(hh, mm, 0, 0);
-      next.setUTCDate(1); // avoid rollover while changing month
-      setUtcDayClamped(next, targetDom);
-      if (next <= from) {
-        next.setUTCMonth(next.getUTCMonth() + 1, 1);
-        setUtcDayClamped(next, targetDom);
-      }
-      return next;
-    }
-    default:
-      return new Date(from.getTime() + 60 * 60_000);
+  if (s.frequency === "hourly") {
+    const mins = s.intervalMinutes && s.intervalMinutes > 0 ? s.intervalMinutes : 60;
+    return new Date(from.getTime() + mins * 60_000);
   }
+
+  const now = partsInTz(from, tz); // "today" in the schedule's timezone
+
+  if (s.frequency === "daily") {
+    let cand = zonedToUtc(now.y, now.mon, now.day, hh, mm, tz);
+    if (cand <= from) cand = localDayToUtc(now.y, now.mon, now.day, 1, hh, mm, tz);
+    return cand;
+  }
+  if (s.frequency === "weekly") {
+    const days = s.daysOfWeek && s.daysOfWeek.length ? s.daysOfWeek : [s.dayOfWeek ?? 1];
+    let best: Date | null = null;
+    for (const d of days) {
+      const delta = (d - now.dow + 7) % 7;
+      let cand = localDayToUtc(now.y, now.mon, now.day, delta, hh, mm, tz);
+      if (cand <= from) cand = localDayToUtc(now.y, now.mon, now.day, delta + 7, hh, mm, tz);
+      if (!best || cand < best) best = cand;
+    }
+    return best ?? new Date(from.getTime() + 7 * 86_400_000);
+  }
+  if (s.frequency === "monthly") {
+    const dom = s.dayOfMonth ?? 1;
+    let cand = monthlyToUtc(now.y, now.mon, dom, hh, mm, tz);
+    if (cand <= from) {
+      const ny = now.mon === 12 ? now.y + 1 : now.y;
+      const nm = now.mon === 12 ? 1 : now.mon + 1;
+      cand = monthlyToUtc(ny, nm, dom, hh, mm, tz);
+    }
+    return cand;
+  }
+  return new Date(from.getTime() + 60 * 60_000);
 }
 
 /**
@@ -117,6 +158,7 @@ export async function claimDueSchedules(now: Date = new Date()): Promise<Schedul
       dayOfWeek: row.dayOfWeek,
       daysOfWeek: parseDaysOfWeek(row.daysOfWeek),
       dayOfMonth: row.dayOfMonth,
+      timezone: row.timezone ?? "UTC",
       nextRunAt: row.nextRunAt,
     };
     const next = computeNextRun(s, now);

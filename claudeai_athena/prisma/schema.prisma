@@ -447,6 +447,8 @@ model ReportSchedule {
   updatedById     String?   @map("updated_by_id")
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   daysOfWeek      String?   @map("days_of_week")
+  /// IANA timezone the atTime/day are interpreted in (e.g. "America/Los_Angeles"); "UTC" default.
+  timezone        String    @default("UTC")
 
   @@unique([dashboardId, sourceKey], map: "report_schedules_dashboard_source_key")
   @@index([enabled, nextRunAt], map: "report_schedules_enabled_next_run_idx")

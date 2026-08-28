@@ -354,16 +354,6 @@ function ConnectionDialog({ open, editing, token, connections, onClose, onSaved 
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          {dupWarnings.length > 0 && (
-            <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-              <div className="space-y-1 text-xs text-amber-700 dark:text-amber-400">
-                {dupWarnings.map((w, i) => (
-                  <p key={i}>{w}</p>
-                ))}
-              </div>
-            </div>
-          )}
           <div className="space-y-2">
             <Label htmlFor="conn-label">Label <span className="text-destructive" aria-hidden="true">*</span></Label>
             <Input id="conn-label" value={label} onChange={(e) => { setLabel(e.target.value); if (errors.label) setErrors((p) => ({ ...p, label: "" })); }} placeholder="Entegris / KSP (source)" aria-invalid={!!errors.label} />
@@ -438,6 +428,16 @@ function ConnectionDialog({ open, editing, token, connections, onClose, onSaved 
             </label>
           </div>
 
+          {dupWarnings.length > 0 && (
+            <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+              <div className="space-y-1 text-xs text-amber-700 dark:text-amber-400">
+                {dupWarnings.map((w, i) => (
+                  <p key={i}>{w}</p>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={submitting} className="bg-primary">

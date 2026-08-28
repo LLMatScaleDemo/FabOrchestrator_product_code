@@ -1285,7 +1285,7 @@ export function getAdminTools(adminUserId: string) {
     // ──────────────────────────────────────────────────────────────
     query_prompt_audit: {
       description:
-        'Query prompt_audit_logs to answer admin questions like "show all prompts today", "what did X ask this week?", "show failed prompts in the last 7 days", "what did PRO-... cost?", "who is the most expensive user this week?". Each row carries: promptId (PRO-YYYYMMDD-NNNN), userId (FK to users.id), userName, userEmail, datetime, userPrompt, topicMatched (one of the 7 use-case names or "AdminData" or null), queryExecuted (tool-call summary), dataRetrieved (tools+rows summary), llmResponse, responseTimeMs, status, toolCalls (array of {name, input, output} — output typically includes the SQL the MCP built plus the rows). PLUS per-turn token+cost columns: requestTokens/requestCost (turn 1 input — the model reading the user question), retrievalTokens/retrievalCost (turns 2..N input — feeding tool results back), responseTokens/responseCost (all turns\' output). totalTokens and totalCost are returned per row as computed sums. All costs are USD priced dynamically per-turn using each turn\'s model rate. Use userKey for fuzzy user lookup. Capped at 1000 rows.',
+        'Query prompt_audit_logs to answer admin questions like "show all prompts today", "what did X ask this week?", "show failed prompts in the last 7 days", "what did PRO-... cost?", "who is the most expensive user this week?". Each row carries: promptId (PRO-YYYYMMDD-NNNN), userId (FK to users.id), userName, userEmail, datetime, userPrompt, topicMatched (one of the 7 use-case names or "AdminData" or null), queryExecuted (tool-call summary), dataRetrieved (tools+rows summary), llmResponse, responseTimeMs, status, toolCalls (array of {name, input, output} — output typically includes the SQL the MCP built plus the rows). PLUS per-turn token+cost columns: requestTokens/requestCost (turn 1 input — the model reading the user question), retrievalTokens/retrievalCost (turns 2..N input — feeding tool results back), responseTokens/responseCost (all turns\' output). totalTokens and totalCost are returned per row as computed sums. All costs are USD priced dynamically per-turn using each turn\'s model rate. Use userKey for fuzzy user lookup. Capped at 1000 rows. IMPORTANT: llmResponse and toolCalls are HEAVY (a single row can be megabytes) and are OMITTED by default — for counts, lists, "how many", "by user/account", cost/token, or any analysis question, leave includeDetail OFF. Only set includeDetail=true when the admin asks about ONE specific prompt\'s actual response or tool calls (e.g. a single PRO-... id), and it is auto-capped to 25 rows.',
       inputSchema: z.object({
         userKey: z.string().optional().describe('Fuzzy user identifier (matches user_name, user_email, or email local-part).'),
         userEmail: z.string().email().optional().describe('Exact user email.'),
@@ -1305,7 +1305,8 @@ export function getAdminTools(adminUserId: string) {
         app: z.enum(['faborch','faborch-admin']).optional().describe('Restrict to FabOrch chat (topic_matched != AdminData) or admin chat (topic_matched = AdminData).'),
         dateFrom: z.string().optional().describe('ISO 8601 lower bound on datetime'),
         dateTo: z.string().optional().describe('ISO 8601 upper bound on datetime'),
-        limit: z.number().optional().describe('Max rows (default 100, hard cap 1000).'),
+        limit: z.number().optional().describe('Max rows (default 100, hard cap 1000; auto-capped to 25 when includeDetail is true).'),
+        includeDetail: z.boolean().optional().describe('Include the HEAVY per-row fields (llmResponse + full toolCalls). DEFAULT false — leave OFF for counts/lists/analysis/"by account". Only set true for a SPECIFIC prompt\'s response/tool calls (a single PRO-... id).'),
       }),
       execute: async (input: {
         userKey?: string; userEmail?: string;
@@ -1313,9 +1314,19 @@ export function getAdminTools(adminUserId: string) {
         status?: 'PENDING'|'SUCCESS'|'FAILED'|'TIMEOUT'|'CANCELLED'|'all';
         topicMatched?: string; promptIdLike?: string;
         app?: 'faborch'|'faborch-admin';
-        dateFrom?: string; dateTo?: string; limit?: number;
+        dateFrom?: string; dateTo?: string; limit?: number; includeDetail?: boolean;
       }) => {
         const { queryPromptAudit } = await import('./prompt-audit');
+        const detail = input.includeDetail ?? false;
+        // Detail rows carry the full response + tool I/O (megabytes each), so cap
+        // them hard. Non-detail rows drop those + truncate text, so a broad query
+        // ("last 2 days by account") can never overflow the model's token budget.
+        const effLimit = detail ? Math.min(input.limit ?? 25, 25) : input.limit;
+        const trunc = (v: unknown, n: number): string | null => {
+          if (v === null || v === undefined) return null;
+          const s = typeof v === 'string' ? v : JSON.stringify(v);
+          return s.length > n ? s.slice(0, n) + '…[truncated]' : s;
+        };
         const { rows, truncated } = await queryPromptAudit({
           userKey: input.userKey ?? null,
           userEmail: input.userEmail ?? null,
@@ -1326,7 +1337,7 @@ export function getAdminTools(adminUserId: string) {
           app: input.app ?? null,
           dateFrom: input.dateFrom ? new Date(input.dateFrom) : null,
           dateTo: input.dateTo ? new Date(input.dateTo) : null,
-          limit: input.limit,
+          limit: effLimit,
         });
 
         prisma.auditLog.create({
@@ -1342,25 +1353,21 @@ export function getAdminTools(adminUserId: string) {
         return {
           total: rows.length,
           truncated,
+          detail,
           rows: rows.map((r: typeof rows[number]) => ({
             promptId: r.promptId,
             userId: r.userId,
             userName: r.userName,
             userEmail: r.userEmail,
             datetime: r.datetime,
-            userPrompt: r.userPrompt,
+            // Text fields truncated so a broad query stays small.
+            userPrompt: trunc(r.userPrompt, 300),
             topicMatched: r.topicMatched,
-            queryExecuted: r.queryExecuted,
-            dataRetrieved: r.dataRetrieved,
-            llmResponse: r.llmResponse,
+            queryExecuted: trunc(r.queryExecuted, 200),
+            dataRetrieved: trunc(r.dataRetrieved, 200),
             responseTimeMs: r.responseTimeMs,
             status: r.status,
             publicStatus: r.status === 'SUCCESS' ? 'Success' : 'Failed',
-            // Full tool I/O — array of { name, input, output }. `output`
-            // contains the underlying SQL/SP (in `_executed_sql`) plus
-            // the rows the MCP server returned. Render this for
-            // "show me the tool calls for PRO-..." or detail questions.
-            toolCalls: r.toolCalls,
             // Per-turn token counts and USD costs (priced dynamically
             // per turn using that turn's model rate).
             requestTokens:   r.requestTokens,
@@ -1375,9 +1382,18 @@ export function getAdminTools(adminUserId: string) {
               ((r.requestCost   ? Number(r.requestCost)   : 0) +
                (r.retrievalCost ? Number(r.retrievalCost) : 0) +
                (r.responseCost  ? Number(r.responseCost)  : 0)) || null,
+            // Heavy fields ONLY in detail mode, and still truncated — llmResponse
+            // is the model's answer text; toolCalls is [{name,input,output}] where
+            // output holds the executed SQL + the rows the MCP returned.
+            ...(detail
+              ? { llmResponse: trunc(r.llmResponse, 1500), toolCalls: trunc(r.toolCalls, 3000) }
+              : {}),
           })),
           ...(truncated
-            ? { note: 'Returned the first 1000 rows. Please refine your filter to narrow the results.' }
+            ? { note: `Returned the first ${rows.length} rows. Refine your filter to narrow the results.` }
+            : {}),
+          ...(!detail
+            ? { hint: 'Response text and tool calls were omitted (analysis mode). For one specific prompt, call again with includeDetail=true (and its promptId) to see them.' }
             : {}),
         };
       },
@@ -1866,9 +1882,10 @@ export function getAdminTools(adminUserId: string) {
             next_run_at: Date | null;
             last_run_at: Date | null;
             last_status: string | null;
+            timezone: string | null;
           }>
         >(
-          `SELECT dashboard_id, source_key, frequency, interval_minutes, at_time, day_of_week, day_of_month, enabled, next_run_at, last_run_at, last_status
+          `SELECT dashboard_id, source_key, frequency, interval_minutes, at_time, day_of_week, day_of_month, enabled, next_run_at, last_run_at, last_status, timezone
            FROM report_schedules ORDER BY dashboard_id`,
         );
         return {
@@ -1879,7 +1896,8 @@ export function getAdminTools(adminUserId: string) {
             sourceKey: r.source_key,
             frequency: r.frequency,
             intervalMinutes: r.interval_minutes,
-            atTimeUtc: r.at_time,
+            atTime: r.at_time,
+            timezone: r.timezone ?? "UTC",
             dayOfWeek: r.day_of_week,
             dayOfMonth: r.day_of_month,
             enabled: r.enabled,

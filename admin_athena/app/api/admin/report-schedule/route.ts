@@ -29,9 +29,11 @@ export async function POST(req: NextRequest) {
       daysOfWeek?: number[];
       dayOfMonth?: number;
       enabled?: boolean;
+      timezone?: string;
     };
 
     const sourceKey = (body.database || "lumentum").trim() || "lumentum";
+    const timezone = (body.timezone || "UTC").trim() || "UTC";
     const frequency = toFrequency(body.frequency);
     const enabled = body.enabled ?? true;
     // Weekly can run on several days ("1,3,5"). Sanitize to 0-6 ints.
@@ -53,11 +55,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const nextRun = computeReportNextRun(frequency, { ...body, daysOfWeek: daysList }, new Date());
+    const nextRun = computeReportNextRun(frequency, { ...body, daysOfWeek: daysList, timezone }, new Date());
     for (const id of ids) {
       await prisma.$executeRawUnsafe(
         `INSERT INTO report_schedules
-           (id, dashboard_id, source_key, frequency, interval_minutes, at_time, day_of_week, days_of_week, day_of_month, enabled, next_run_at, updated_by_id, updated_at)
+           (id, dashboard_id, source_key, frequency, interval_minutes, at_time, day_of_week, days_of_week, day_of_month, enabled, next_run_at, updated_by_id, timezone, updated_at)
          VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
          ON CONFLICT (dashboard_id, source_key) DO UPDATE SET
            frequency = EXCLUDED.frequency,
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
            enabled = EXCLUDED.enabled,
            next_run_at = EXCLUDED.next_run_at,
            updated_by_id = EXCLUDED.updated_by_id,
+           timezone = EXCLUDED.timezone,
            updated_at = now()`,
         id,
         sourceKey,
@@ -81,6 +84,7 @@ export async function POST(req: NextRequest) {
         enabled,
         nextRun,
         auth.user.id,
+        timezone,
       );
     }
 

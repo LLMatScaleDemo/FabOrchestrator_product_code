@@ -16,10 +16,24 @@ export type ScheduleFormInitial = {
   daysOfWeek?: number[]; // 0-6 list
   dayOfMonth?: number; // 1-31
   enabled?: boolean;
+  timezone?: string; // IANA tz for atTime/day (default: the admin's browser tz)
 };
 
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Common IANA timezones offered in the dropdown (the admin's own tz is added too). */
+const TIMEZONES = [
+  "UTC",
+  "America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York", "America/Sao_Paulo",
+  "Europe/London", "Europe/Berlin", "Europe/Moscow",
+  "Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Asia/Shanghai", "Asia/Tokyo",
+  "Australia/Sydney",
+];
+
+function browserTz(): string {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; }
+}
 
 function norm(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -83,6 +97,12 @@ export function ReportScheduleCard({
   const [frequency, setFrequency] = useState<ReportFrequency>(toFrequency(initial.frequency));
   const [intervalMinutes, setIntervalMinutes] = useState<number>(initial.intervalMinutes || 60);
   const [atTime, setAtTime] = useState<string>(initial.atTime || "06:00");
+  const [timezone, setTimezone] = useState<string>(initial.timezone || browserTz());
+  // Offer the common list plus the admin's own tz (and any initial one) if not already present.
+  const tzOptions = useMemo(() => {
+    const set = new Set<string>([...TIMEZONES, browserTz(), ...(initial.timezone ? [initial.timezone] : [])]);
+    return [...set];
+  }, [initial.timezone]);
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>(() => {
     if (initial.daysOfWeek && initial.daysOfWeek.length) {
       return [...new Set(initial.daysOfWeek.filter((d) => d >= 0 && d <= 6))].sort((a, b) => a - b);
@@ -120,6 +140,7 @@ export function ReportScheduleCard({
           atTime: frequency !== "hourly" ? atTime : undefined,
           daysOfWeek: frequency === "weekly" ? daysOfWeek : undefined,
           dayOfMonth: frequency === "monthly" ? dayOfMonth : undefined,
+          timezone: frequency !== "hourly" ? timezone : undefined,
           enabled,
         }),
       });
@@ -133,10 +154,10 @@ export function ReportScheduleCard({
         frequency === "hourly"
           ? `every ${intervalMinutes} min`
           : frequency === "daily"
-            ? `daily at ${atTime} UTC`
+            ? `daily at ${atTime} ${timezone}`
             : frequency === "weekly"
-              ? `weekly on ${daysLabel} at ${atTime} UTC`
-              : `monthly on day ${dayOfMonth} at ${atTime} UTC`;
+              ? `weekly on ${daysLabel} at ${atTime} ${timezone}`
+              : `monthly on day ${dayOfMonth} at ${atTime} ${timezone}`;
       const summary = enabled
         ? `✅ Scheduled ${scope} — ${cadence}.`
         : `⏸ Paused the schedule for ${scope}.`;
@@ -160,7 +181,9 @@ export function ReportScheduleCard({
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-primary">🗓</span>
         Schedule report refresh
-        <span className="ml-auto text-[11px] font-normal text-muted-foreground">times in UTC</span>
+        <span className="ml-auto text-[11px] font-normal text-muted-foreground">
+          {frequency === "hourly" ? "interval-based" : `times in ${timezone.replace(/_/g, " ")}`}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -211,8 +234,19 @@ export function ReportScheduleCard({
 
         {(frequency === "daily" || frequency === "weekly" || frequency === "monthly") && (
           <div>
-            <label className={labelCls}>Time (UTC)</label>
+            <label className={labelCls}>Time</label>
             <input type="time" className={selectCls} value={atTime} disabled={disabled} onChange={(e) => setAtTime(e.target.value)} />
+          </div>
+        )}
+
+        {(frequency === "daily" || frequency === "weekly" || frequency === "monthly") && (
+          <div>
+            <label className={labelCls}>Timezone</label>
+            <select className={selectCls} value={timezone} disabled={disabled} onChange={(e) => setTimezone(e.target.value)}>
+              {tzOptions.map((tz) => (
+                <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
+              ))}
+            </select>
           </div>
         )}
 

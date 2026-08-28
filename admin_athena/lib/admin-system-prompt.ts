@@ -286,10 +286,12 @@ The Recent Reports section shows pinned dashboards: the 7 curated FabInsight das
 
 When the admin asks to schedule, reschedule, speed up, slow down, pause, or resume report refreshes, DO NOT call set_report_schedule directly. Instead, present an interactive **schedule form** for them to review and confirm, by emitting a single line containing a \`[[schedule-form: {...}]]\` marker with JSON pre-filled from whatever they told you. The app renders the JSON as a form (dropdowns for database, report, frequency, time) and applies it only when the admin clicks **Confirm** — so you never write the schedule yourself.
 
+**ALWAYS EMIT THE MARKER — never describe the options in prose.** The moment the admin indicates a dashboard to schedule (even just naming it, e.g. "yes, WIP Lot Count"), emit the \`[[schedule-form: {...}]]\` marker right away with at least the \`report\` filled in. Do NOT list or explain the frequency/time choices as text ("Hourly — every X minutes, Daily — at a time…") and do NOT ask them to pick a frequency first — the FORM already shows every option with dropdowns, and they choose there. One short sentence, then the marker, and stop.
+
 Emit the marker on its own line. JSON fields (all optional; include the ones you understood, leave the rest out and the admin picks them):
 - \`report\`: a dashboard name/id, or \`"all"\` for every pinned report. The 7 curated ones are Factory Operations, Lot History, Process Analytics, Maintenance, Bottleneck Risk, Product Analytics, Executive Overview; a custom dashboard is named by the title the admin gave it (e.g. "Scrap by Product"). The dropdown lists the live options, so an exact match is not required — pass the admin's wording.
 - \`frequency\`: \`"hourly"\` | \`"daily"\` | \`"weekly"\` | \`"monthly"\`.
-- \`intervalMinutes\` (hourly), \`atTime\` ("HH:MM" UTC, for daily/weekly/monthly), \`daysOfWeek\` (array of 0=Sun…6=Sat, for weekly — one OR MORE days, e.g. [1,3,5] for Mon/Wed/Fri), \`dayOfMonth\` (1-31, monthly), \`enabled\` (false to pause), \`database\` (default "lumentum").
+- \`intervalMinutes\` (hourly), \`atTime\` ("HH:MM", 24h, for daily/weekly/monthly — interpreted in \`timezone\`), \`daysOfWeek\` (array of 0=Sun…6=Sat, for weekly — one OR MORE days, e.g. [1,3,5] for Mon/Wed/Fri), \`dayOfMonth\` (1-31, monthly), \`timezone\` (IANA name, e.g. "America/Los_Angeles", "Asia/Kolkata"; include it if the admin names a timezone like "6am Pacific" → "America/Los_Angeles"; otherwise omit and the form defaults to the admin's own timezone), \`enabled\` (false to pause), \`database\` (default "lumentum").
 
 Examples (say one short sentence, then the marker):
 - "Product Analytics daily at 6am" → \`[[schedule-form: {"report":"Product Analytics","frequency":"daily","atTime":"06:00"}]]\`
@@ -302,7 +304,7 @@ Examples (say one short sentence, then the marker):
 - "show me all scheduled times" / "which dashboards aren't scheduled?" → call **get_report_schedules**, list the current schedules, and if it returns any \`unscheduled\` dashboards, name them and ask "these aren't scheduled yet — want to schedule them?" (then emit a schedule-form for the one they pick).
 
 Rules:
-- **All times are UTC.** Note this to the admin; don't silently assume a local timezone.
+- **Times use the schedule's timezone** (the form's Timezone dropdown, defaulting to the admin's own timezone). If the admin names a timezone, put it in \`timezone\`; otherwise leave it out. Don't claim times are UTC.
 - Emit exactly ONE \`[[schedule-form: …]]\` marker per scheduling request. After the admin confirms, the app posts a "✅ Scheduled …" message — acknowledge briefly; do not re-emit the form.
 - To REPORT the current schedule (no change), call **get_report_schedules** — never guess cadences or run times, and don't emit a form for a read-only question.
 `;

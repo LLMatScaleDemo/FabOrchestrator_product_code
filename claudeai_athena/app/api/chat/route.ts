@@ -31,6 +31,8 @@ import { glossaryBlock } from '@/lib/fabinsight/aliases';
 import { detectMetricAsk, buildMetricBrief } from '@/lib/fabinsight/metrics';
 import { isDashboardAdmin } from '@/lib/fabinsight/access';
 import { parseCustomDef, fetchCustomData, renderCustomDashboard } from '@/lib/fabinsight/custom';
+import { fabQuery } from '@/lib/fabinsight/mcp';
+import { assertReadOnlySelect } from '@/lib/fabinsight/sql-guard';
 import { PhaseTimer } from '@/lib/perf-timer';
 
 export const maxDuration = 300;
@@ -734,6 +736,12 @@ export async function POST(req: NextRequest) {
           'Rules for every panel SQL: a SINGLE read-only SELECT (no INSERT/UPDATE/DDL/EXEC, no ";"). Use T-SQL "TOP n" to bound rows',
           '(never LIMIT). Give every column a clear alias — aliases become the table headers / KPI labels. A one-row SELECT renders as',
           'KPI cards; multi-row renders as a table. Keep it to at most 6 panels. If a query fails, you will be told the error — fix it and retry.',
+          '',
+          'IMPORTANT — ONE dashboard only. To check which columns/values exist or verify your SQL, use the run_mes_query tool (it returns rows',
+          'as DATA, not a dashboard). NEVER call create_dashboard for a "column check", "probe", "id probe" or any exploration — that shows the',
+          'admin a junk dashboard. Call create_dashboard ONLY for the actual dashboard the admin asked for. If you must revise it, call it again',
+          'with the corrected version — only your LAST create_dashboard is shown to the admin, so make the final, correct one your last call.',
+          '',
           'After it succeeds, do NOT reprint the dashboard as text; briefly tell the admin it is shown, that they can Pin it to Recent Reports,',
           'and that once pinned they can schedule its refresh from the admin app.',
         ].join('\n'),
@@ -783,6 +791,30 @@ export async function POST(req: NextRequest) {
             };
           } catch (e) {
             return { status: 'error', message: e instanceof Error ? e.message : 'Invalid dashboard definition.' };
+          }
+        },
+      });
+
+      // run_mes_query — read-only exploration. Returns rows as DATA (no dashboard),
+      // so the model can verify columns/values before building the real dashboard
+      // instead of littering the panel with "column check" probe dashboards.
+      tools.run_mes_query = tool({
+        description: [
+          'Run ONE read-only SQL SELECT against the manufacturing DB (same cammes.* schema as create_dashboard) and get the rows back as DATA.',
+          'Use this to EXPLORE before building a dashboard — check which columns/values exist, verify a table, or sample data.',
+          'It never creates a dashboard, so use it freely for column checks / probes INSTEAD of create_dashboard.',
+          'Single read-only SELECT only (no writes/DDL/EXEC, no ";"). Use T-SQL "TOP n" to bound rows. At most 50 rows are returned.',
+        ].join('\n'),
+        inputSchema: z.object({
+          sql: z.string().min(1).describe('A single read-only T-SQL SELECT (e.g. SELECT TOP 5 * FROM cammes.Container).'),
+        }),
+        execute: async ({ sql }: { sql: string }) => {
+          try {
+            const safe = assertReadOnlySelect(sql);
+            const rows = await fabQuery(safe, 50);
+            return { status: 'ok', rowCount: rows.length, rows };
+          } catch (e) {
+            return { status: 'error', message: e instanceof Error ? e.message : 'Query failed.' };
           }
         },
       });
@@ -1212,14 +1244,14 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // 2c. Custom dashboards built via create_dashboard this turn: append each
-        // rendered <antArtifact> after the model's text, exactly like a curated
-        // one, so it renders in the panel and round-trips into onFinish's parts.
-        for (let i = 0; i < customArtifacts.length; i++) {
-          const artTextId = `custom-artifact-${i}-${Date.now().toString(36)}`;
+        // 2c. Custom dashboard: show ONLY the LAST create_dashboard of the turn.
+        // The model may call it several times while iterating (or wrongly probe
+        // with it), but the admin should see exactly one finished dashboard.
+        if (customArtifacts.length) {
+          const artTextId = `custom-artifact-${Date.now().toString(36)}`;
           try {
             writer.write({ type: 'text-start', id: artTextId });
-            writer.write({ type: 'text-delta', id: artTextId, delta: customArtifacts[i].text });
+            writer.write({ type: 'text-delta', id: artTextId, delta: customArtifacts[customArtifacts.length - 1].text });
             writer.write({ type: 'text-end', id: artTextId });
           } catch (err) {
             console.error('[Chat] custom dashboard artifact write failed:', err);
