@@ -12,6 +12,8 @@
  */
 
 import { runDueReportRefresh } from "@/lib/fabinsight/refresh";
+import { runDiscrepancyAlerts } from "@/lib/fabinsight/alerts";
+import { sampleMetricBaselines } from "@/lib/fabinsight/baselines";
 
 const g = globalThis as unknown as { __fabReportSchedulerStarted?: boolean };
 
@@ -56,6 +58,12 @@ export function startReportScheduler(): void {
       if (out.claimed > 0) {
         console.log(`[report-scheduler] claimed ${out.claimed}, refreshed ${out.refreshed}, failed ${out.failed}`);
       }
+      // Discrepancy alerts — evaluated each tick against admin-set thresholds,
+      // throttled per-threshold internally.
+      await runDiscrepancyAlerts();
+      // Metric baselines — sample metric values for the admin's dynamic "normal
+      // range"; globally throttled (default every 15 min) inside the call.
+      await sampleMetricBaselines();
     } catch (err) {
       console.error("[report-scheduler] tick failed", err);
     } finally {

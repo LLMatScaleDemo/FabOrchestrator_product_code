@@ -155,6 +155,13 @@ export type pinned_dashboards = Prisma.pinned_dashboardsModel
  */
 export type ReportSchedule = Prisma.ReportScheduleModel
 /**
+ * Model AlertThreshold
+ * Admin-configurable discrepancy alert thresholds (alert_thresholds). Written by
+ * the admin app (raw SQL), read + evaluated by Fab Orch's scheduler. One row per
+ * (metric_key, source_key, dashboard_id). This model is for parity/documentation.
+ */
+export type AlertThreshold = Prisma.AlertThresholdModel
+/**
  * Model prompt_audit_daily_counter
  * 
  */

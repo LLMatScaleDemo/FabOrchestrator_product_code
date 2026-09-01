@@ -417,6 +417,7 @@ model PinnedDashboard {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
   sourceKey     String    @default("lumentum") @map("source_key")
+  metricColumns Json      @default("[]") @map("metric_columns")
   cachedHtml    String?   @map("cached_html")
   cachedSummary String?   @map("cached_summary")
   refreshedAt   DateTime? @map("refreshed_at") @db.Timestamptz(6)
@@ -453,6 +454,33 @@ model ReportSchedule {
   @@unique([dashboardId, sourceKey], map: "report_schedules_dashboard_source_key")
   @@index([enabled, nextRunAt], map: "report_schedules_enabled_next_run_idx")
   @@map("report_schedules")
+}
+
+/// Admin-configurable discrepancy alert thresholds. Written by the admin app,
+/// read + evaluated by the Fab Orch scheduler (lib/fabinsight/alerts.ts). One
+/// row per (metric_key, source_key, dashboard_id). Mirrors the ReportSchedule
+/// write-in-admin / read-in-fab pattern.
+model AlertThreshold {
+  id          String    @id @default(uuid())
+  metricKey   String    @map("metric_key")
+  label       String?
+  comparator  String    @default("gt")
+  minValue    Float?    @map("min_value")
+  maxValue    Float?    @map("max_value")
+  dashboardId String?   @map("dashboard_id")
+  sourceKey   String    @default("lumentum") @map("source_key")
+  throttleMin Int       @default(60) @map("throttle_min")
+  isActive    Boolean   @default(true) @map("is_active")
+  recipientRoleIds Json  @default("[]") @map("recipient_role_ids")
+  customSetKey String?  @map("custom_set_key")
+  customColumn String?  @map("custom_column")
+  lastFiredAt DateTime? @map("last_fired_at") @db.Timestamptz(6)
+  createdById String?   @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([isActive], map: "alert_thresholds_active_idx")
+  @@map("alert_thresholds")
 }
 
 model error_audit_daily_counter {

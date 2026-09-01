@@ -62,10 +62,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       await tx.mcpRegistry.update({ where: { id }, data });
 
       // Propagate to every assignment (role + user) derived from this connector.
+      // Match by registryId AND by the connector's (old) serverUrl: some copies
+      // are created without a registryId back-link (the add_mcp_to_role chat tool,
+      // and users' own personal connections to the same server), so a
+      // registryId-only updateMany left those rows showing the stale name in Fab
+      // Orch. serverUrl uniquely identifies a connector (enforced by the
+      // uniqueness guard above), so this is safe. `registryId: id` in the payload
+      // also backfills the link on those orphaned rows so future edits match
+      // directly. Note: match on existing.serverUrl (the pre-edit URL) so rows are
+      // found even when this same request is also changing the URL.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const propagate: any = { name, serverUrl: url, authType: at };
+      const propagate: any = { name, serverUrl: url, authType: at, registryId: id };
       if (credsChanged) propagate.authCredentialsEncrypted = newCreds;
-      await tx.mcpConnection.updateMany({ where: { registryId: id }, data: propagate });
+      await tx.mcpConnection.updateMany({
+        where: { OR: [{ registryId: id }, { serverUrl: existing.serverUrl }] },
+        data: propagate,
+      });
 
       await recordAuditLogDirect(tx, {
         userId: auth.user.id,

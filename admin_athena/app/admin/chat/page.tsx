@@ -18,6 +18,7 @@ import { extractToolParts } from "@/components/prompt-kit/tool";
 import { Button } from "@/components/ui/button";
 import { MCPDataSourceUploadDialog, type CreatedDataSource } from "@/components/mcp/mcp-datasource-upload-dialog";
 import { ReportScheduleCard, type ScheduleFormInitial } from "@/components/admin/report-schedule-card";
+import { AlertThresholdCard, type AlertThresholdInitial } from "@/components/admin/alert-threshold-card";
 import { Users, FileText, LineChart, Shield } from "lucide-react";
 
 // Inter, scoped to the Admin Assistant hero to match the approved design.
@@ -287,6 +288,7 @@ export default function AdminChatPage() {
                               onSecureUpload={openSecureUploadPicker}
                               token={token}
                               onScheduleDone={(summary) => { if (summary) sendMessage({ text: summary }); }}
+                              onAlertDone={(summary) => { if (summary) sendMessage({ text: summary }); }}
                             />
                           );
                         })}
@@ -377,6 +379,8 @@ const READ_ACK_TEXT = "I have read, understood, and accept the terms and securit
 // Report-schedule form marker: the model emits [[schedule-form: {json}]] which
 // the UI turns into an interactive form (and strips from the rendered text).
 const SCHEDULE_FORM_RE = /\[\[schedule-form:\s*(\{[\s\S]*?\})\s*\]\]/i;
+// Alert-threshold form marker: [[alert-threshold: {json}]] → interactive form.
+const ALERT_THRESHOLD_RE = /\[\[alert-threshold:\s*(\{[\s\S]*?\})\s*\]\]/i;
 
 // A checkbox the admin MUST tick before the action button(s) enable. Local state.
 function ConsentGate({
@@ -452,6 +456,7 @@ function MessageBubble({
   onSecureUpload,
   token,
   onScheduleDone,
+  onAlertDone,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message: any;
@@ -462,6 +467,7 @@ function MessageBubble({
   onSecureUpload?: () => void;
   token?: string | null;
   onScheduleDone?: (summary: string | null) => void;
+  onAlertDone?: (summary: string | null) => void;
 }) {
   const isUser = message.role === "user";
   const parts = message.parts || [];
@@ -532,6 +538,16 @@ function MessageBubble({
               scheduleInitial = {}; // malformed JSON → empty form, admin fills it
             }
           }
+          // Alert-threshold form marker → pre-fill an interactive form.
+          const alertMatch = ALERT_THRESHOLD_RE.exec(fullText);
+          let alertInitial: AlertThresholdInitial | null = null;
+          if (alertMatch) {
+            try {
+              alertInitial = JSON.parse(alertMatch[1]) as AlertThresholdInitial;
+            } catch {
+              alertInitial = {};
+            }
+          }
           return (
             <>
               {textParts.map((p: { text: string }, i: number) => {
@@ -544,6 +560,7 @@ function MessageBubble({
                   .replace(CONFIRM_ACK_RE, "")
                   .replace(READ_ACK_RE, "")
                   .replace(SCHEDULE_FORM_RE, "")
+                  .replace(ALERT_THRESHOLD_RE, "")
                   .replace(/\n\s*>?\s*$/, "")
                   .trimEnd();
                 return <Markdown key={i}>{cleaned}</Markdown>;
@@ -586,6 +603,17 @@ function MessageBubble({
                   active={showGate}
                   token={token ?? null}
                   onDone={onScheduleDone}
+                />
+              )}
+
+              {/* Alert-threshold form — pre-filled from the model's marker; the
+                  admin adjusts and Confirm writes it directly. */}
+              {alertInitial && onAlertDone && (
+                <AlertThresholdCard
+                  initial={alertInitial}
+                  active={showGate}
+                  token={token ?? null}
+                  onDone={onAlertDone}
                 />
               )}
             </>

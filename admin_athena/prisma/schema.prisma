@@ -530,6 +530,32 @@ model ReportSchedule {
   @@map("report_schedules")
 }
 
+/// Admin-configurable discrepancy alert thresholds (alert_thresholds). Written by
+/// the admin app (raw SQL), read + evaluated by Fab Orch's scheduler. One row per
+/// (metric_key, source_key, dashboard_id). This model is for parity/documentation.
+model AlertThreshold {
+  id            String    @id @default(uuid())
+  metric_key    String
+  label         String?
+  comparator    String    @default("gt")
+  min_value     Float?
+  max_value     Float?
+  dashboard_id  String?
+  source_key    String    @default("lumentum")
+  throttle_min  Int       @default(60)
+  is_active     Boolean   @default(true)
+  recipient_role_ids Json  @default("[]")
+  custom_set_key String?
+  custom_column  String?
+  last_fired_at DateTime? @db.Timestamptz(6)
+  created_by_id String?
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([is_active])
+  @@map("alert_thresholds")
+}
+
 model prompt_audit_daily_counter {
   counter_date DateTime @id @db.Date
   last_seq     Int      @default(0)

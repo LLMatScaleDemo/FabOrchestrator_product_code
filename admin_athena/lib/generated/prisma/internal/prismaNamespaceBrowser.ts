@@ -78,6 +78,7 @@ export const ModelName = {
   error_catalog: 'error_catalog',
   pinned_dashboards: 'pinned_dashboards',
   ReportSchedule: 'ReportSchedule',
+  AlertThreshold: 'AlertThreshold',
   prompt_audit_daily_counter: 'prompt_audit_daily_counter',
   prompt_audit_logs: 'prompt_audit_logs'
 } as const
@@ -549,6 +550,29 @@ export const ReportScheduleScalarFieldEnum = {
 } as const
 
 export type ReportScheduleScalarFieldEnum = (typeof ReportScheduleScalarFieldEnum)[keyof typeof ReportScheduleScalarFieldEnum]
+
+
+export const AlertThresholdScalarFieldEnum = {
+  id: 'id',
+  metric_key: 'metric_key',
+  label: 'label',
+  comparator: 'comparator',
+  min_value: 'min_value',
+  max_value: 'max_value',
+  dashboard_id: 'dashboard_id',
+  source_key: 'source_key',
+  throttle_min: 'throttle_min',
+  is_active: 'is_active',
+  recipient_role_ids: 'recipient_role_ids',
+  custom_set_key: 'custom_set_key',
+  custom_column: 'custom_column',
+  last_fired_at: 'last_fired_at',
+  created_by_id: 'created_by_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type AlertThresholdScalarFieldEnum = (typeof AlertThresholdScalarFieldEnum)[keyof typeof AlertThresholdScalarFieldEnum]
 
 
 export const Prompt_audit_daily_counterScalarFieldEnum = {

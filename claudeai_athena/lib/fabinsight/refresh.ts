@@ -111,11 +111,32 @@ export async function runDueReportRefresh(
     refreshed += r.refreshed;
     failed += r.failed;
     results.push({ dashboardId: s.dashboardId, sourceKey: s.sourceKey, ...r });
+    const status = r.failed === 0 ? "ok" : r.refreshed === 0 ? "error" : "partial";
     await prisma.reportSchedule
       .updateMany({
         where: { id: s.id },
         data: { lastStatus: r.failed ? `refreshed ${r.refreshed}, failed ${r.failed}` : `refreshed ${r.refreshed}` },
       })
+      .catch(() => {});
+    // Log the run to the shared audit_logs table so it shows on the admin Audit
+    // Logs page next to "report.schedule_set": a scheduled run either RAN
+    // (ok/partial) or FAILED (nothing refreshed). System-initiated → user_id NULL.
+    const action = status === "error" ? "report.schedule_failed" : "report.schedule_ran";
+    await prisma
+      .$executeRawUnsafe(
+        `INSERT INTO audit_logs (id, user_id, action, target_type, target_id, metadata, created_at)
+         VALUES (gen_random_uuid()::text, NULL, $1, 'ReportSchedule', $2, $3::jsonb, now())`,
+        action,
+        s.dashboardId,
+        JSON.stringify({
+          dashboardId: s.dashboardId,
+          sourceKey: s.sourceKey,
+          refreshed: r.refreshed,
+          failed: r.failed,
+          status,
+          trigger: "schedule",
+        }),
+      )
       .catch(() => {});
   }
 

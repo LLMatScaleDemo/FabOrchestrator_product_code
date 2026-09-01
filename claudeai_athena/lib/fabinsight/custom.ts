@@ -111,7 +111,7 @@ export async function fetchCustomData(def: CustomDef): Promise<DashboardData> {
 }
 
 /** A column is numeric when every non-empty value in the shown rows is a number. */
-function isNumericColumn(rows: FabRow[], key: string): boolean {
+export function isNumericColumn(rows: FabRow[], key: string): boolean {
   let seen = 0;
   for (const r of rows) {
     const v = r[key];

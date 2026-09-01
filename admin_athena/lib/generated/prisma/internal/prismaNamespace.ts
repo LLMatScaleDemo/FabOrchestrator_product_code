@@ -411,6 +411,7 @@ export const ModelName = {
   error_catalog: 'error_catalog',
   pinned_dashboards: 'pinned_dashboards',
   ReportSchedule: 'ReportSchedule',
+  AlertThreshold: 'AlertThreshold',
   prompt_audit_daily_counter: 'prompt_audit_daily_counter',
   prompt_audit_logs: 'prompt_audit_logs'
 } as const
@@ -428,7 +429,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "session" | "conversation" | "message" | "artifact" | "mcpConnection" | "memoryFile" | "passwordResetToken" | "invitation" | "mcpRegistry" | "auditLog" | "userSessionLog" | "usageRecord" | "platformSettings" | "modelRegistry" | "package" | "stagedUpload" | "packageFile" | "validationReport" | "run" | "mcpDataSource" | "error_audit_daily_counter" | "error_audit_logs" | "error_catalog" | "pinned_dashboards" | "reportSchedule" | "prompt_audit_daily_counter" | "prompt_audit_logs"
+    modelProps: "role" | "user" | "session" | "conversation" | "message" | "artifact" | "mcpConnection" | "memoryFile" | "passwordResetToken" | "invitation" | "mcpRegistry" | "auditLog" | "userSessionLog" | "usageRecord" | "platformSettings" | "modelRegistry" | "package" | "stagedUpload" | "packageFile" | "validationReport" | "run" | "mcpDataSource" | "error_audit_daily_counter" | "error_audit_logs" | "error_catalog" | "pinned_dashboards" | "reportSchedule" | "alertThreshold" | "prompt_audit_daily_counter" | "prompt_audit_logs"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2430,6 +2431,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AlertThreshold: {
+      payload: Prisma.$AlertThresholdPayload<ExtArgs>
+      fields: Prisma.AlertThresholdFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AlertThresholdFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AlertThresholdFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload>
+        }
+        findFirst: {
+          args: Prisma.AlertThresholdFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AlertThresholdFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload>
+        }
+        findMany: {
+          args: Prisma.AlertThresholdFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload>[]
+        }
+        create: {
+          args: Prisma.AlertThresholdCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload>
+        }
+        createMany: {
+          args: Prisma.AlertThresholdCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AlertThresholdCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload>[]
+        }
+        delete: {
+          args: Prisma.AlertThresholdDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload>
+        }
+        update: {
+          args: Prisma.AlertThresholdUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload>
+        }
+        deleteMany: {
+          args: Prisma.AlertThresholdDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AlertThresholdUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AlertThresholdUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload>[]
+        }
+        upsert: {
+          args: Prisma.AlertThresholdUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AlertThresholdPayload>
+        }
+        aggregate: {
+          args: Prisma.AlertThresholdAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAlertThreshold>
+        }
+        groupBy: {
+          args: Prisma.AlertThresholdGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AlertThresholdGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AlertThresholdCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AlertThresholdCountAggregateOutputType> | number
+        }
+      }
+    }
     prompt_audit_daily_counter: {
       payload: Prisma.$prompt_audit_daily_counterPayload<ExtArgs>
       fields: Prisma.prompt_audit_daily_counterFieldRefs
@@ -3070,6 +3145,29 @@ export const ReportScheduleScalarFieldEnum = {
 export type ReportScheduleScalarFieldEnum = (typeof ReportScheduleScalarFieldEnum)[keyof typeof ReportScheduleScalarFieldEnum]
 
 
+export const AlertThresholdScalarFieldEnum = {
+  id: 'id',
+  metric_key: 'metric_key',
+  label: 'label',
+  comparator: 'comparator',
+  min_value: 'min_value',
+  max_value: 'max_value',
+  dashboard_id: 'dashboard_id',
+  source_key: 'source_key',
+  throttle_min: 'throttle_min',
+  is_active: 'is_active',
+  recipient_role_ids: 'recipient_role_ids',
+  custom_set_key: 'custom_set_key',
+  custom_column: 'custom_column',
+  last_fired_at: 'last_fired_at',
+  created_by_id: 'created_by_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type AlertThresholdScalarFieldEnum = (typeof AlertThresholdScalarFieldEnum)[keyof typeof AlertThresholdScalarFieldEnum]
+
+
 export const Prompt_audit_daily_counterScalarFieldEnum = {
   counter_date: 'counter_date',
   last_seq: 'last_seq'
@@ -3469,6 +3567,7 @@ export type GlobalOmitConfig = {
   error_catalog?: Prisma.error_catalogOmit
   pinned_dashboards?: Prisma.pinned_dashboardsOmit
   reportSchedule?: Prisma.ReportScheduleOmit
+  alertThreshold?: Prisma.AlertThresholdOmit
   prompt_audit_daily_counter?: Prisma.prompt_audit_daily_counterOmit
   prompt_audit_logs?: Prisma.prompt_audit_logsOmit
 }

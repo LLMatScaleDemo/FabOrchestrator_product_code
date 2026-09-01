@@ -21,6 +21,7 @@ import {
 } from './mcp-onthefly/service';
 import prisma from './db';
 import { getSchedulableDashboards, resolveAgainst } from './report-dashboards';
+import { ALERT_METRICS, ALERT_DASHBOARDS, getAlertMetric } from './alert-metrics';
 
 // ── Recent Reports refresh scheduling ───────────────────────────────────────
 // Schedulable dashboards are now LIVE — whatever is pinned to Recent Reports
@@ -764,8 +765,13 @@ export function getAdminTools(adminUserId: string) {
             encryptedCreds = encrypt(JSON.stringify({ apiKey }));
           }
 
+          // Link to the catalog connector with the same URL (if any) so a later
+          // registry rename propagates to this copy via registryId, not just the
+          // serverUrl fallback. serverUrl is unique per connector in the registry.
+          const reg = await prisma.mcpRegistry.findFirst({ where: { serverUrl }, select: { id: true } });
+
           const conn = await prisma.mcpConnection.create({
-            data: { userId: null, roleId: resolvedRoleId, name, serverUrl, authType: authType || 'none', authCredentialsEncrypted: encryptedCreds },
+            data: { userId: null, roleId: resolvedRoleId, name, serverUrl, authType: authType || 'none', authCredentialsEncrypted: encryptedCreds, registryId: reg?.id ?? null },
             include: { role: { select: { name: true } } },
           });
           return { success: true, message: `MCP "${name}" added to role ${conn.role?.name}`, id: conn.id };
@@ -1865,7 +1871,7 @@ export function getAdminTools(adminUserId: string) {
 
     get_report_schedules: {
       description:
-        'Show the current report-refresh schedules (cadence, next/last run, enabled) AND the full list of pinned dashboards, flagging which pinned dashboards are NOT yet scheduled. Use when the admin asks what the report schedule is, when a report next refreshes, to confirm a change, or to find newly-added dashboards that still need a schedule. When some pinned dashboards are unscheduled, tell the admin which ones and offer to schedule them. Times are UTC.',
+        'Show the current report-refresh schedules (cadence, next/last run, enabled, timezone), the full list of pinned dashboards flagging which are NOT yet scheduled, AND `recentRuns` — the last 20 scheduled job executions (dashboard, when it ran, refreshed/failed counts, status ok/partial/error). Use when the admin asks what the report schedule is, when a report next refreshes, to confirm a change, to find newly-added dashboards that still need a schedule, or to answer "which scheduled jobs ran / failed / succeeded recently?". When some pinned dashboards are unscheduled, tell the admin which ones and offer to schedule them.',
       inputSchema: z.object({}),
       execute: async () => {
         const list = await getSchedulableDashboards();
@@ -1888,6 +1894,16 @@ export function getAdminTools(adminUserId: string) {
           `SELECT dashboard_id, source_key, frequency, interval_minutes, at_time, day_of_week, day_of_month, enabled, next_run_at, last_run_at, last_status, timezone
            FROM report_schedules ORDER BY dashboard_id`,
         );
+        // Recent RUN history from the shared audit_logs (same as the Audit Logs page):
+        // scheduled runs are logged as report.schedule_ran / report.schedule_failed.
+        type RunRow = { action: string; target_id: string | null; created_at: Date; metadata: unknown };
+        const runs = await prisma
+          .$queryRawUnsafe<RunRow[]>(
+            `SELECT action, target_id, created_at, metadata FROM audit_logs
+              WHERE action IN ('report.schedule_ran','report.schedule_failed')
+              ORDER BY created_at DESC LIMIT 20`,
+          )
+          .catch(() => [] as RunRow[]);
         return {
           total: rows.length,
           schedules: rows.map((r) => ({
@@ -1911,7 +1927,97 @@ export function getAdminTools(adminUserId: string) {
             .filter((d) => !d.scheduled)
             .map((d) => ({ dashboard: d.label, dashboardId: d.id, kind: d.kind })),
           pinnedTotal: list.length,
+          // Run history — the last 20 scheduled refreshes (from audit_logs).
+          recentRuns: runs.map((r) => {
+            const md = (r.metadata ?? {}) as { refreshed?: number; failed?: number; status?: string };
+            return {
+              dashboard: list.find((d) => d.id === r.target_id)?.label ?? r.target_id,
+              ranAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+              refreshed: md.refreshed ?? null,
+              failed: md.failed ?? null,
+              status: r.action === "report.schedule_failed" ? "failed" : md.status ?? "ok",
+            };
+          }),
         };
+      },
+    },
+
+    get_alert_thresholds: {
+      description:
+        'List the current discrepancy alert thresholds (metric, condition, recipient roles, active, throttle) and what CAN be alerted on — the curated dashboards + their metrics, plus any custom dashboards and how many of their columns are alertable — plus the last few times any alert fired. Use for "what alerts are set?", "which metrics can I alert on?", "did any alert fire recently?". To CREATE/CHANGE an alert, do not use this tool — emit an [[alert-threshold: {...}]] marker instead.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        type TRow = {
+          id: string; metric_key: string; label: string | null; comparator: string;
+          min_value: number | null; max_value: number | null; throttle_min: number;
+          is_active: boolean; recipient_role_ids: unknown; custom_column: string | null;
+        };
+        const rows = await prisma.$queryRawUnsafe<TRow[]>(
+          `SELECT id, metric_key, label, comparator, min_value, max_value, throttle_min, is_active, recipient_role_ids, custom_column
+             FROM alert_thresholds ORDER BY metric_key`,
+        );
+        const roles = await prisma.role.findMany({ select: { id: true, name: true } });
+        const roleName = (id: string) => roles.find((r) => r.id === id)?.name ?? id;
+        const thresholds = rows.map((r) => {
+          const m = getAlertMetric(r.metric_key);
+          const unit = m?.unit === "%" ? "%" : "";
+          const cond =
+            r.comparator === "gt" ? `> ${r.max_value}${unit}`
+              : r.comparator === "lt" ? `< ${r.min_value}${unit}`
+                : `outside ${r.min_value}${unit}–${r.max_value}${unit}`;
+          const ids = Array.isArray(r.recipient_role_ids) ? (r.recipient_role_ids as string[]) : [];
+          return {
+            id: r.id,
+            metric: r.label || m?.label || r.custom_column || r.metric_key,
+            condition: cond,
+            recipients: ids.length ? ids.map(roleName).join(", ") : "default roles (Shift Lead, Shift Supervisor, Admin)",
+            active: r.is_active,
+            throttleMin: r.throttle_min,
+          };
+        });
+        const availableCurated = ALERT_DASHBOARDS.map((d) => ({
+          dashboard: d.title,
+          metrics: ALERT_METRICS.filter((m) => m.dashboardId === d.id).map((m) => m.label),
+        }));
+        const pins = await prisma
+          .$queryRawUnsafe<{ title: string; n: number }[]>(
+            `SELECT title, jsonb_array_length(COALESCE(metric_columns,'[]'::jsonb)) AS n FROM pinned_dashboards WHERE kind='custom' ORDER BY title`,
+          )
+          .catch(() => [] as { title: string; n: number }[]);
+        const customDashboards = pins.map((p) => ({ dashboard: `${p.title} (custom)`, alertableColumns: p.n }));
+        type FRow = { target_id: string | null; metadata: unknown; created_at: Date };
+        const fires = await prisma
+          .$queryRawUnsafe<FRow[]>(
+            `SELECT target_id, metadata, created_at FROM audit_logs WHERE action='alert.discrepancy' ORDER BY created_at DESC LIMIT 10`,
+          )
+          .catch(() => [] as FRow[]);
+        return {
+          total: thresholds.length,
+          thresholds,
+          availableCurated,
+          customDashboards,
+          recentFires: fires.map((f) => {
+            const md = (f.metadata ?? {}) as { metricKey?: string; value?: number; emailed?: boolean };
+            return { metricKey: md.metricKey, value: md.value, emailed: md.emailed, at: f.created_at ? new Date(f.created_at).toISOString() : null };
+          }),
+        };
+      },
+    },
+
+    delete_alert_threshold: {
+      description: 'Delete a discrepancy alert threshold by its id (from get_alert_thresholds). Confirm with the admin before calling.',
+      inputSchema: z.object({ id: z.string().describe('Threshold id to delete') }),
+      execute: async ({ id }: { id: string }) => {
+        const rows = await prisma.$queryRawUnsafe<{ metric_key: string }[]>(
+          `SELECT metric_key FROM alert_thresholds WHERE id = $1`,
+          id,
+        );
+        if (!rows.length) return { error: "Alert threshold not found." };
+        await prisma.$executeRawUnsafe(`DELETE FROM alert_thresholds WHERE id = $1`, id);
+        await prisma.auditLog
+          .create({ data: { userId: adminUserId, action: "alert_threshold.delete", targetType: "AlertThreshold", targetId: rows[0].metric_key, metadata: { id, via: "chat" } } })
+          .catch(() => {});
+        return { success: true, message: "Alert deleted." };
       },
     },
 
