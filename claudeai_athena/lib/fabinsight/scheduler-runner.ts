@@ -14,6 +14,7 @@
 import { runDueReportRefresh } from "@/lib/fabinsight/refresh";
 import { runDiscrepancyAlerts } from "@/lib/fabinsight/alerts";
 import { sampleMetricBaselines } from "@/lib/fabinsight/baselines";
+import { runDueShiftSummaries } from "@/lib/fabinsight/shift-summary";
 
 const g = globalThis as unknown as { __fabReportSchedulerStarted?: boolean };
 
@@ -64,6 +65,8 @@ export function startReportScheduler(): void {
       // Metric baselines — sample metric values for the admin's dynamic "normal
       // range"; globally throttled (default every 15 min) inside the call.
       await sampleMetricBaselines();
+      // Shift-summary emails — send at each configured shift boundary (PST).
+      await runDueShiftSummaries();
     } catch (err) {
       console.error("[report-scheduler] tick failed", err);
     } finally {

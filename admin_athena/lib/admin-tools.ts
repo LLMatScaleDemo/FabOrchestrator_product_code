@@ -1871,7 +1871,7 @@ export function getAdminTools(adminUserId: string) {
 
     get_report_schedules: {
       description:
-        'Show the current report-refresh schedules (cadence, next/last run, enabled, timezone), the full list of pinned dashboards flagging which are NOT yet scheduled, AND `recentRuns` — the last 20 scheduled job executions (dashboard, when it ran, refreshed/failed counts, status ok/partial/error). Use when the admin asks what the report schedule is, when a report next refreshes, to confirm a change, to find newly-added dashboards that still need a schedule, or to answer "which scheduled jobs ran / failed / succeeded recently?". When some pinned dashboards are unscheduled, tell the admin which ones and offer to schedule them.',
+        'Show the current report-refresh schedules (cadence, next/last run, enabled, timezone), the full list of pinned dashboards flagging which are NOT yet scheduled, AND `recentRuns` — the last 20 scheduled job executions (dashboard, when it ran, refreshed/failed counts, status ok/partial/error). Use when the admin asks what the report schedule is, when a report next refreshes, to confirm a change, to find newly-added dashboards that still need a schedule, or to answer "which scheduled jobs ran / failed / succeeded recently?". When some pinned dashboards are unscheduled, tell the admin which ones and offer to schedule them. When you render a Frequency column, use each row\'s `frequencyLabel` (it shows "Interval" for sub-hourly cadences — never label a "every 5 min" schedule as "Hourly") and use `cadence` for the human details (it already includes any active-time window).',
       inputSchema: z.object({}),
       execute: async () => {
         const list = await getSchedulableDashboards();
@@ -1889,9 +1889,11 @@ export function getAdminTools(adminUserId: string) {
             last_run_at: Date | null;
             last_status: string | null;
             timezone: string | null;
+            window_start: string | null;
+            window_end: string | null;
           }>
         >(
-          `SELECT dashboard_id, source_key, frequency, interval_minutes, at_time, day_of_week, day_of_month, enabled, next_run_at, last_run_at, last_status, timezone
+          `SELECT dashboard_id, source_key, frequency, interval_minutes, at_time, day_of_week, day_of_month, enabled, next_run_at, last_run_at, last_status, timezone, window_start, window_end
            FROM report_schedules ORDER BY dashboard_id`,
         );
         // Recent RUN history from the shared audit_logs (same as the Audit Logs page):
@@ -1906,21 +1908,41 @@ export function getAdminTools(adminUserId: string) {
           .catch(() => [] as RunRow[]);
         return {
           total: rows.length,
-          schedules: rows.map((r) => ({
-            dashboard: list.find((d) => d.id === r.dashboard_id)?.label ?? r.dashboard_id,
-            dashboardId: r.dashboard_id,
-            sourceKey: r.source_key,
-            frequency: r.frequency,
-            intervalMinutes: r.interval_minutes,
-            atTime: r.at_time,
-            timezone: r.timezone ?? "UTC",
-            dayOfWeek: r.day_of_week,
-            dayOfMonth: r.day_of_month,
-            enabled: r.enabled,
-            nextRunUtc: r.next_run_at ? new Date(r.next_run_at).toISOString() : null,
-            lastRunUtc: r.last_run_at ? new Date(r.last_run_at).toISOString() : null,
-            lastStatus: r.last_status,
-          })),
+          schedules: rows.map((r) => {
+            const tz = r.timezone ?? "UTC";
+            // "Interval" reads correctly for a sub-hour cadence (e.g. every 5 min);
+            // "Hourly" was confusing. Capitalize the others.
+            const frequencyLabel =
+              r.frequency === "hourly" ? "Interval" : r.frequency.charAt(0).toUpperCase() + r.frequency.slice(1);
+            const win = r.window_start && r.window_end ? ` (${r.window_start}–${r.window_end} ${tz})` : "";
+            const cadence =
+              r.frequency === "hourly"
+                ? `every ${r.interval_minutes ?? 60} min${win}`
+                : r.frequency === "daily"
+                  ? `daily at ${r.at_time ?? "00:00"} ${tz}`
+                  : r.frequency === "weekly"
+                    ? `weekly at ${r.at_time ?? "00:00"} ${tz}`
+                    : `monthly on day ${r.day_of_month ?? 1} at ${r.at_time ?? "00:00"} ${tz}`;
+            return {
+              dashboard: list.find((d) => d.id === r.dashboard_id)?.label ?? r.dashboard_id,
+              dashboardId: r.dashboard_id,
+              sourceKey: r.source_key,
+              frequency: r.frequency,
+              frequencyLabel,
+              cadence,
+              intervalMinutes: r.interval_minutes,
+              atTime: r.at_time,
+              timezone: tz,
+              windowStart: r.window_start,
+              windowEnd: r.window_end,
+              dayOfWeek: r.day_of_week,
+              dayOfMonth: r.day_of_month,
+              enabled: r.enabled,
+              nextRunUtc: r.next_run_at ? new Date(r.next_run_at).toISOString() : null,
+              lastRunUtc: r.last_run_at ? new Date(r.last_run_at).toISOString() : null,
+              lastStatus: r.last_status,
+            };
+          }),
           // Pinned dashboards that have NO schedule yet — offer to schedule these
           // ("these N are newly added and not scheduled — want to schedule them?").
           unscheduled: list

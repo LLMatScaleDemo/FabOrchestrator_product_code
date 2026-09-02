@@ -186,6 +186,12 @@ export type ReportSchedule = Prisma.ReportScheduleModel
  */
 export type AlertThreshold = Prisma.AlertThresholdModel
 /**
+ * Model ShiftSummary
+ * Shift-summary email sends (V06). Written by the admin app (raw SQL), read +
+ * fired by Fab Orch's scheduler. Parity/documentation model.
+ */
+export type ShiftSummary = Prisma.ShiftSummaryModel
+/**
  * Model prompt_audit_daily_counter
  * 
  */

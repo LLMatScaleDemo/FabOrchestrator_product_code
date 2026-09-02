@@ -21,6 +21,8 @@ export type ScheduleRow = {
   daysOfWeek: number[] | null; // 0-6 list — weekly can run on several days
   dayOfMonth: number | null; // 1-31
   timezone: string; // IANA tz the atTime/day are interpreted in (default "UTC")
+  windowStart: string | null; // "HH:MM" — interval active-window start (in tz)
+  windowEnd: string | null; // "HH:MM" — interval active-window end (in tz)
   nextRunAt: Date | null;
 };
 
@@ -95,6 +97,37 @@ function monthlyToUtc(y: number, mon: number, dom: number, hh: number, mm: numbe
   return zonedToUtc(y, mon, Math.min(dom, dim), hh, mm, tz);
 }
 
+/** "HH:MM" → [h, m], or null. */
+function hmOrNull(s: string | null): [number, number] | null {
+  if (!s) return null;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
+  if (!m) return null;
+  return [Math.min(23, Math.max(0, parseInt(m[1], 10))), Math.min(59, Math.max(0, parseInt(m[2], 10)))];
+}
+
+/** Minutes-of-day (0-1439) that a UTC instant reads as in `tz`. */
+function localMinutes(utc: Date, tz: string): number {
+  const dtf = new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", hour: "2-digit", minute: "2-digit" });
+  const p: Record<string, string> = {};
+  for (const x of dtf.formatToParts(utc)) if (x.type !== "literal") p[x.type] = x.value;
+  return (+p.hour % 24) * 60 + +p.minute;
+}
+
+/** Push a candidate interval time into the next [start,end) window (in `tz`). */
+function clampToWindow(next: Date, from: Date, tz: string, ws: string | null, we: string | null): Date {
+  const s = hmOrNull(ws);
+  const e = hmOrNull(we);
+  if (!s || !e) return next;
+  const startMin = s[0] * 60 + s[1];
+  const endMin = e[0] * 60 + e[1];
+  const nm = localMinutes(next, tz);
+  if (nm >= startMin && nm < endMin) return next;
+  const p = partsInTz(next, tz);
+  let cand = zonedToUtc(p.y, p.mon, p.day, s[0], s[1], tz);
+  if (nm >= endMin || cand <= from) cand = localDayToUtc(p.y, p.mon, p.day, 1, s[0], s[1], tz);
+  return cand;
+}
+
 /** Next run time (UTC), strictly after `from`, honouring the schedule's timezone. */
 export function computeNextRun(s: ScheduleRow, from: Date): Date {
   const tz = s.timezone && s.timezone.trim() ? s.timezone.trim() : "UTC";
@@ -102,7 +135,8 @@ export function computeNextRun(s: ScheduleRow, from: Date): Date {
 
   if (s.frequency === "hourly") {
     const mins = s.intervalMinutes && s.intervalMinutes > 0 ? s.intervalMinutes : 60;
-    return new Date(from.getTime() + mins * 60_000);
+    const next = new Date(from.getTime() + mins * 60_000);
+    return clampToWindow(next, from, tz, s.windowStart, s.windowEnd);
   }
 
   const now = partsInTz(from, tz); // "today" in the schedule's timezone
@@ -159,6 +193,8 @@ export async function claimDueSchedules(now: Date = new Date()): Promise<Schedul
       daysOfWeek: parseDaysOfWeek(row.daysOfWeek),
       dayOfMonth: row.dayOfMonth,
       timezone: row.timezone ?? "UTC",
+      windowStart: row.windowStart,
+      windowEnd: row.windowEnd,
       nextRunAt: row.nextRunAt,
     };
     const next = computeNextRun(s, now);

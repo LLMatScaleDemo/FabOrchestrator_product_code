@@ -92,6 +92,40 @@ function monthlyToUtc(y: number, mon: number, dom: number, hh: number, mm: numbe
   return zonedToUtc(y, mon, Math.min(dom, dim), hh, mm, tz);
 }
 
+/** Parse "HH:MM" → [h, m], or null. */
+function hm(s?: string | null): [number, number] | null {
+  if (!s) return null;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
+  if (!m) return null;
+  return [Math.min(23, Math.max(0, parseInt(m[1], 10))), Math.min(59, Math.max(0, parseInt(m[2], 10)))];
+}
+
+/** Minutes-of-day (0-1439) that a UTC instant reads as in `tz`. */
+function localMinutes(utc: Date, tz: string): number {
+  const dtf = new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", hour: "2-digit", minute: "2-digit" });
+  const p: Record<string, string> = {};
+  for (const x of dtf.formatToParts(utc)) if (x.type !== "literal") p[x.type] = x.value;
+  return (+p.hour % 24) * 60 + +p.minute;
+}
+
+/**
+ * For an interval schedule with an active window, push a candidate time into the
+ * next [start, end) window (in `tz`) if it falls outside it.
+ */
+function clampToWindow(next: Date, from: Date, tz: string, ws?: string | null, we?: string | null): Date {
+  const s = hm(ws);
+  const e = hm(we);
+  if (!s || !e) return next;
+  const startMin = s[0] * 60 + s[1];
+  const endMin = e[0] * 60 + e[1];
+  const nm = localMinutes(next, tz);
+  if (nm >= startMin && nm < endMin) return next;
+  const p = partsInTz(next, tz);
+  let cand = zonedToUtc(p.y, p.mon, p.day, s[0], s[1], tz);
+  if (nm >= endMin || cand <= from) cand = localDayToUtc(p.y, p.mon, p.day, 1, s[0], s[1], tz);
+  return cand;
+}
+
 /** Next run (UTC), strictly after `from`, honouring `opts.timezone`. Mirrors Fab Orch's computeNextRun. */
 export function computeReportNextRun(
   freq: ReportFrequency,
@@ -102,6 +136,8 @@ export function computeReportNextRun(
     daysOfWeek?: number[] | null;
     dayOfMonth?: number | null;
     timezone?: string | null;
+    windowStart?: string | null;
+    windowEnd?: string | null;
   },
   from: Date,
 ): Date {
@@ -112,7 +148,8 @@ export function computeReportNextRun(
 
   if (freq === "hourly") {
     const mins = opts.intervalMinutes && opts.intervalMinutes > 0 ? opts.intervalMinutes : 60;
-    return new Date(from.getTime() + mins * 60_000);
+    const next = new Date(from.getTime() + mins * 60_000);
+    return clampToWindow(next, from, tz, opts.windowStart, opts.windowEnd);
   }
 
   const now = partsInTz(from, tz);

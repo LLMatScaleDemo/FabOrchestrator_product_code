@@ -3,8 +3,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { REPORT_DASHBOARDS, REPORT_SOURCES, toFrequency, type ReportFrequency } from "@/lib/report-schedule";
+import { listTimezones, browserTz, canonicalTz } from "@/lib/timezones";
 
 type DashOption = { id: string; label: string };
+
+/** A current schedule row returned by GET, used to pre-fill the form on reschedule. */
+type ScheduleRow = {
+  dashboardId: string;
+  frequency: string;
+  intervalMinutes: number | null;
+  atTime: string | null;
+  daysOfWeek: number[] | null;
+  dayOfMonth: number | null;
+  timezone: string | null;
+  enabled: boolean;
+  windowStart: string | null;
+  windowEnd: string | null;
+};
 
 export type ScheduleFormInitial = {
   database?: string;
@@ -17,23 +32,14 @@ export type ScheduleFormInitial = {
   dayOfMonth?: number; // 1-31
   enabled?: boolean;
   timezone?: string; // IANA tz for atTime/day (default: the admin's browser tz)
+  windowStart?: string; // "HH:MM" — interval active-window start
+  windowEnd?: string; // "HH:MM" — interval active-window end
 };
 
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/** Common IANA timezones offered in the dropdown (the admin's own tz is added too). */
-const TIMEZONES = [
-  "UTC",
-  "America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York", "America/Sao_Paulo",
-  "Europe/London", "Europe/Berlin", "Europe/Moscow",
-  "Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Asia/Shanghai", "Asia/Tokyo",
-  "Australia/Sydney",
-];
-
-function browserTz(): string {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; }
-}
+const TZ_OPTIONS = listTimezones();
 
 function norm(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -55,9 +61,10 @@ const selectCls =
 const labelCls = "block text-xs font-medium text-muted-foreground mb-1";
 
 /**
- * In-chat form to set a report's refresh schedule. Pre-filled from what the
- * model parsed out of the admin's text; the admin adjusts the dropdowns and
- * confirms. Confirm POSTs to /api/admin/report-schedule (deterministic write).
+ * In-chat form to set a report's refresh schedule. Pre-filled from the current
+ * schedule (on reschedule) and/or what the model parsed out of the admin's text;
+ * the admin adjusts the dropdowns and confirms. Confirm POSTs to
+ * /api/admin/report-schedule (deterministic write).
  */
 export function ReportScheduleCard({
   initial,
@@ -71,38 +78,14 @@ export function ReportScheduleCard({
   onDone?: (summary: string | null) => void;
 }) {
   const [database, setDatabase] = useState(initial.database || REPORT_SOURCES[0].key);
-  // Live list of schedulable dashboards (7 curated + any admin-created custom).
-  // Seeded with the curated 7 so the form works before the fetch resolves and if
-  // nothing is pinned yet.
   const [dashboards, setDashboards] = useState<DashOption[]>(REPORT_DASHBOARDS);
+  const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
   const [report, setReport] = useState(() => resolveReportValue(initial.report, REPORT_DASHBOARDS));
 
-  useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-    fetch("/api/admin/report-schedule", { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j: { dashboards?: DashOption[] } | null) => {
-        if (cancelled || !j?.dashboards?.length) return;
-        const live = j.dashboards.map((d) => ({ id: d.id, label: d.label }));
-        setDashboards(live);
-        // If the model's report value didn't match the curated fallback, try the live list.
-        setReport((cur) => (cur ? cur : resolveReportValue(initial.report, live)));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [token, initial.report]);
   const [frequency, setFrequency] = useState<ReportFrequency>(toFrequency(initial.frequency));
   const [intervalMinutes, setIntervalMinutes] = useState<number>(initial.intervalMinutes || 60);
   const [atTime, setAtTime] = useState<string>(initial.atTime || "06:00");
-  const [timezone, setTimezone] = useState<string>(initial.timezone || browserTz());
-  // Offer the common list plus the admin's own tz (and any initial one) if not already present.
-  const tzOptions = useMemo(() => {
-    const set = new Set<string>([...TIMEZONES, browserTz(), ...(initial.timezone ? [initial.timezone] : [])]);
-    return [...set];
-  }, [initial.timezone]);
+  const [timezone, setTimezone] = useState<string>(canonicalTz(initial.timezone) || browserTz());
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>(() => {
     if (initial.daysOfWeek && initial.daysOfWeek.length) {
       return [...new Set(initial.daysOfWeek.filter((d) => d >= 0 && d <= 6))].sort((a, b) => a - b);
@@ -111,15 +94,73 @@ export function ReportScheduleCard({
   });
   const [dayOfMonth, setDayOfMonth] = useState<number>(initial.dayOfMonth ?? 1);
   const [enabled, setEnabled] = useState<boolean>(initial.enabled ?? true);
+  const [windowStart, setWindowStart] = useState<string>(initial.windowStart || "");
+  const [windowEnd, setWindowEnd] = useState<string>(initial.windowEnd || "");
 
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  // Fill the form fields from an existing schedule row (reschedule pre-fill).
+  const applySchedule = (s: ScheduleRow) => {
+    setFrequency(toFrequency(s.frequency));
+    setIntervalMinutes(s.intervalMinutes || 60);
+    setAtTime(s.atTime || "06:00");
+    setTimezone(canonicalTz(s.timezone) || browserTz());
+    setDaysOfWeek(s.daysOfWeek && s.daysOfWeek.length ? s.daysOfWeek : [1]);
+    setDayOfMonth(s.dayOfMonth ?? 1);
+    setEnabled(s.enabled ?? true);
+    setWindowStart(s.windowStart || "");
+    setWindowEnd(s.windowEnd || "");
+  };
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    fetch("/api/admin/report-schedule", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { dashboards?: DashOption[]; schedules?: ScheduleRow[] } | null) => {
+        if (cancelled || !j) return;
+        const live = j.dashboards?.length ? j.dashboards.map((d) => ({ id: d.id, label: d.label })) : REPORT_DASHBOARDS;
+        setDashboards(live);
+        setSchedules(j.schedules ?? []);
+        const id = resolveReportValue(initial.report, live) || report;
+        setReport(id);
+        // Pre-fill from the existing schedule for this report, then let any
+        // fields the admin explicitly named in their message win.
+        const existing = (j.schedules ?? []).find((s) => s.dashboardId === id);
+        if (existing) {
+          applySchedule(existing);
+          if (initial.frequency) setFrequency(toFrequency(initial.frequency));
+          if (initial.intervalMinutes) setIntervalMinutes(initial.intervalMinutes);
+          if (initial.atTime) setAtTime(initial.atTime);
+          if (initial.timezone) setTimezone(canonicalTz(initial.timezone));
+          if (initial.daysOfWeek?.length) setDaysOfWeek([...new Set(initial.daysOfWeek.filter((d) => d >= 0 && d <= 6))].sort((a, b) => a - b));
+          if (typeof initial.dayOfMonth === "number") setDayOfMonth(initial.dayOfMonth);
+          if (typeof initial.enabled === "boolean") setEnabled(initial.enabled);
+          if (initial.windowStart) setWindowStart(initial.windowStart);
+          if (initial.windowEnd) setWindowEnd(initial.windowEnd);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, initial.report]);
+
+  // Switching the report in the dropdown loads that report's current schedule.
+  const onReportChange = (id: string) => {
+    setReport(id);
+    const existing = schedules.find((s) => s.dashboardId === id);
+    if (existing) applySchedule(existing);
+  };
 
   const toggleDay = (d: number) =>
     setDaysOfWeek((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort((a, b) => a - b)));
 
   const weeklyDaysMissing = frequency === "weekly" && daysOfWeek.length === 0;
-  const canSave = active && report !== "" && !weeklyDaysMissing && state !== "saving" && state !== "saved";
+  const windowInvalid = frequency === "hourly" && !!windowStart && !!windowEnd && windowStart >= windowEnd;
+  const canSave = active && report !== "" && !weeklyDaysMissing && !windowInvalid && state !== "saving" && state !== "saved";
 
   const submit = async () => {
     if (!canSave) return;
@@ -140,7 +181,9 @@ export function ReportScheduleCard({
           atTime: frequency !== "hourly" ? atTime : undefined,
           daysOfWeek: frequency === "weekly" ? daysOfWeek : undefined,
           dayOfMonth: frequency === "monthly" ? dayOfMonth : undefined,
-          timezone: frequency !== "hourly" ? timezone : undefined,
+          timezone,
+          windowStart: frequency === "hourly" && windowStart ? windowStart : undefined,
+          windowEnd: frequency === "hourly" && windowEnd ? windowEnd : undefined,
           enabled,
         }),
       });
@@ -150,9 +193,10 @@ export function ReportScheduleCard({
 
       const scope = report === "all" ? "all reports" : (json.updated?.[0] ?? "the report");
       const daysLabel = daysOfWeek.map((d) => DOW_SHORT[d]).join(", ");
+      const win = windowStart && windowEnd ? ` between ${windowStart}–${windowEnd} ${timezone}` : "";
       const cadence =
         frequency === "hourly"
-          ? `every ${intervalMinutes} min`
+          ? `every ${intervalMinutes} min${win}`
           : frequency === "daily"
             ? `daily at ${atTime} ${timezone}`
             : frequency === "weekly"
@@ -182,7 +226,7 @@ export function ReportScheduleCard({
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-primary">🗓</span>
         Schedule report refresh
         <span className="ml-auto text-[11px] font-normal text-muted-foreground">
-          {frequency === "hourly" ? "interval-based" : `times in ${timezone.replace(/_/g, " ")}`}
+          times in {timezone.replace(/_/g, " ")}
         </span>
       </div>
 
@@ -198,7 +242,7 @@ export function ReportScheduleCard({
 
         <div>
           <label className={labelCls}>Report</label>
-          <select className={selectCls} value={report} disabled={disabled} onChange={(e) => setReport(e.target.value)}>
+          <select className={selectCls} value={report} disabled={disabled} onChange={(e) => onReportChange(e.target.value)}>
             <option value="" disabled>Select a report…</option>
             {reportOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -214,7 +258,7 @@ export function ReportScheduleCard({
             disabled={disabled}
             onChange={(e) => setFrequency(e.target.value as ReportFrequency)}
           >
-            <option value="hourly">Hourly</option>
+            <option value="hourly">Interval (every N min)</option>
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
@@ -232,6 +276,20 @@ export function ReportScheduleCard({
           </div>
         )}
 
+        {frequency === "hourly" && (
+          <>
+            <div>
+              <label className={labelCls}>Active from (optional)</label>
+              <input type="time" className={selectCls} value={windowStart} disabled={disabled} onChange={(e) => setWindowStart(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>Active until (optional)</label>
+              <input type="time" className={selectCls} value={windowEnd} disabled={disabled} onChange={(e) => setWindowEnd(e.target.value)} />
+            </div>
+            {windowInvalid && <p className="text-xs text-destructive sm:col-span-2">Start time must be before end time.</p>}
+          </>
+        )}
+
         {(frequency === "daily" || frequency === "weekly" || frequency === "monthly") && (
           <div>
             <label className={labelCls}>Time</label>
@@ -239,16 +297,14 @@ export function ReportScheduleCard({
           </div>
         )}
 
-        {(frequency === "daily" || frequency === "weekly" || frequency === "monthly") && (
-          <div>
-            <label className={labelCls}>Timezone</label>
-            <select className={selectCls} value={timezone} disabled={disabled} onChange={(e) => setTimezone(e.target.value)}>
-              {tzOptions.map((tz) => (
-                <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div>
+          <label className={labelCls}>Timezone</label>
+          <select className={selectCls} value={timezone} disabled={disabled} onChange={(e) => setTimezone(e.target.value)}>
+            {TZ_OPTIONS.map((tz) => (
+              <option key={tz.value} value={tz.value}>{tz.label}</option>
+            ))}
+          </select>
+        </div>
 
         {frequency === "weekly" && (
           <div className="sm:col-span-2">

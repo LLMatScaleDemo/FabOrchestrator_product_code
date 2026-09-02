@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation"
 import { CockpitNav } from "@/components/cockpit/cockpit-nav"
 import { COCKPIT_FONT } from "@/components/cockpit/cockpit-page"
 import { PageLoadingSkeleton } from "@/components/ui/skeleton-loaders"
+import { listTimezones, browserTz } from "@/lib/timezones"
 import type { AuthedUser } from "@/app/home/page"
 
 type Pinned = {
@@ -37,13 +38,16 @@ function authHeaders(): HeadersInit {
   return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }
 }
 
-/** Timestamp → UTC, labelled (matches the stamp baked into the dashboard). */
-function formatStamp(iso: string | null | undefined): string {
+const TZ_STORAGE_KEY = "fabinsight_reports_tz"
+
+/** Timestamp formatted in the chosen timezone, with a short tz label (e.g. GMT+5:30). */
+function formatStamp(iso: string | null | undefined, tz: string): string {
   if (!iso) return ""
   try {
     return new Date(iso).toLocaleString("en-US", {
-      month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC",
-    }) + " UTC"
+      month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      timeZone: tz, timeZoneName: "short",
+    })
   } catch {
     return ""
   }
@@ -77,7 +81,15 @@ export default function ReportsPage() {
   const [html, setHtml] = useState("")
   const [rendering, setRendering] = useState(false)
   const [renderError, setRenderError] = useState<string | null>(null)
-  const [refreshedAt, setRefreshedAt] = useState<string | null>(null)
+  const [refreshedAtIso, setRefreshedAtIso] = useState<string | null>(null)
+  // Timezone the times are shown in. Default UTC on first render (avoids a
+  // hydration mismatch), then switch to the viewer's saved choice or local tz.
+  const [tz, setTz] = useState<string>("UTC")
+  useEffect(() => {
+    try { setTz(localStorage.getItem(TZ_STORAGE_KEY) || browserTz()) } catch { setTz(browserTz()) }
+  }, [])
+  const changeTz = (v: string) => { setTz(v); try { localStorage.setItem(TZ_STORAGE_KEY, v) } catch {} }
+  const tzOptions = listTimezones()
   const [isLive, setIsLive] = useState(false)
   const [noSnapshot, setNoSnapshot] = useState(false)
 
@@ -131,7 +143,7 @@ export default function ReportsPage() {
       const json = raw ? (JSON.parse(raw) as { html?: string; refreshedAt?: string; error?: string }) : {}
       if (!res.ok) throw new Error(json.error ?? `Could not load live data (${res.status}).`)
       setHtml(json.html ?? "")
-      setRefreshedAt(formatStamp(json.refreshedAt ?? new Date().toISOString()))
+      setRefreshedAtIso(json.refreshedAt ?? new Date().toISOString())
       setIsLive(true)
     } catch (e) {
       setRenderError(e instanceof Error ? e.message : "Could not load live data.")
@@ -148,7 +160,7 @@ export default function ReportsPage() {
    * run) shows a "not refreshed yet" prompt rather than auto-querying live.
    */
   const openReport = useCallback(async (p: Pinned) => {
-    setOpen(p); setHtml(""); setRefreshedAt(null); setRenderError(null); setIsLive(false); setNoSnapshot(false)
+    setOpen(p); setHtml(""); setRefreshedAtIso(null); setRenderError(null); setIsLive(false); setNoSnapshot(false)
     setRendering(true)
     try {
       const res = await fetch(`/api/fabinsight/pinned/${p.id}`, { headers: authHeaders() })
@@ -156,7 +168,7 @@ export default function ReportsPage() {
       const json = raw ? (JSON.parse(raw) as { html?: string | null; refreshedAt?: string | null }) : {}
       if (res.ok && json.html) {
         setHtml(json.html)
-        setRefreshedAt(formatStamp(json.refreshedAt))
+        setRefreshedAtIso(json.refreshedAt ?? null)
         setIsLive(false)
       } else {
         // No snapshot yet — do NOT auto-refresh live; wait for the button.
@@ -202,6 +214,22 @@ export default function ReportsPage() {
 
   const btn = "flex items-center gap-[6px] rounded-[9px] border px-[11px] py-[7px] text-[12.5px] font-semibold transition-colors disabled:opacity-50"
 
+  const tzSelect = (
+    <label className="flex items-center gap-1.5 text-[12px]" style={{ color: "var(--text-muted-cool)" }}>
+      <span>Times in</span>
+      <select
+        value={tz}
+        onChange={(e) => changeTz(e.target.value)}
+        className="rounded-[7px] border px-2 py-[5px] text-[12px] font-medium"
+        style={{ borderColor: "var(--border-light)", background: "#fff", color: "var(--text-ink)" }}
+      >
+        {tzOptions.map((z) => (
+          <option key={z.value} value={z.value}>{z.label}</option>
+        ))}
+      </select>
+    </label>
+  )
+
   if (!ready) return <PageLoadingSkeleton />
 
   return (
@@ -226,9 +254,9 @@ export default function ReportsPage() {
                 <h1 className="truncate text-[22px] font-extrabold tracking-[-0.4px]">{open.title}</h1>
                 <p className="mt-[3px] text-[12.5px] capitalize" style={{ color: "var(--text-muted-cool)" }}>
                   {subtitle(open)}
-                  {refreshedAt && (
+                  {refreshedAtIso && (
                     <span className="normal-case">
-                      {" · "}{isLive ? "Live" : "Snapshot"} · Last refreshed {refreshedAt}
+                      {" · "}{isLive ? "Live" : "Snapshot"} · Last refreshed {formatStamp(refreshedAtIso, tz)}
                     </span>
                   )}
                 </p>
@@ -247,6 +275,7 @@ export default function ReportsPage() {
                   <Icon d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" className="h-[14px] w-[14px]" /> Remove
                 </button>
               )}
+              <div className="w-full sm:w-auto">{tzSelect}</div>
             </div>
 
             <div className="overflow-hidden rounded-2xl border bg-white" style={CARD_STYLE}>
@@ -292,6 +321,7 @@ export default function ReportsPage() {
                 style={{ color: "var(--brand-indigo)", background: "var(--brand-indigo-bg)" }}>
                 {items.length} PINNED
               </span>
+              <div className="ml-auto">{tzSelect}</div>
             </div>
             <p className="mb-[22px] text-[12.5px]" style={{ color: "var(--text-muted-cool)" }}>
               Dashboards pinned by an administrator. Reports refresh automatically on a schedule — opening shows the
@@ -348,7 +378,7 @@ export default function ReportsPage() {
                     {" · "}Pinned by {p.createdBy}
                     <br />
                     {p.hasCache && p.refreshedAt
-                      ? `Refreshed ${formatStamp(p.refreshedAt)}`
+                      ? `Refreshed ${formatStamp(p.refreshedAt, tz)}`
                       : "Not yet refreshed"}
                   </div>
 

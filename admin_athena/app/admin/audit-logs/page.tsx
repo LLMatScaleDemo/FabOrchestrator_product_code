@@ -72,10 +72,41 @@ export default function AuditLogsPage() {
   };
 
   const actionColor = (action: string): "default" | "destructive" | "success" | "warning" | "secondary" => {
-    if (action.includes("deleted") || action.includes("suspended")) return "destructive";
-    if (action.includes("created") || action.includes("activated")) return "success";
+    if (action.includes("deleted") || action.includes("suspended") || action.includes("failed")) return "destructive";
+    if (action.includes("created") || action.includes("activated") || action.includes("ran")) return "success";
     if (action.includes("force")) return "warning";
     return "secondary";
+  };
+
+  // Friendly Target + Details for scheduled report runs and alerts — show the
+  // dashboard NAME (id) and a clean status instead of a raw metadata dump.
+  const friendly = (log: AuditLogEntry): { target: string; details: string } | null => {
+    const md = (log.metadata || {}) as Record<string, unknown>;
+    if (log.action === "report.schedule_ran" || log.action === "report.schedule_failed") {
+      const id = String(md.dashboardId ?? log.targetId ?? "");
+      const name = String(md.dashboardName ?? id);
+      const target = name && id && name !== id ? `${name} (${id})` : name || id || "—";
+      const details =
+        log.action === "report.schedule_failed"
+          ? "Refresh failed"
+          : md.status === "partial"
+            ? `Partial — ${md.refreshed ?? 0} refreshed, ${md.failed ?? 0} failed`
+            : "Refreshed successfully";
+      return { target, details };
+    }
+    if (log.action === "alert.discrepancy") {
+      const metric = String(md.metricKey ?? log.targetId ?? "alert");
+      const emailed = md.emailed ? `emailed ${md.recipientsCount ?? 0}` : "logged (no email)";
+      return { target: metric, details: `Value ${md.value ?? "?"} breached threshold — ${emailed}` };
+    }
+    if (log.action === "report.shift_summary_sent") {
+      const name = String(md.name ?? log.targetId ?? "shift summary");
+      const details = md.emailed
+        ? `Sent to ${md.recipientsCount ?? 0} — ${md.dashboards ?? 0} dashboards`
+        : "Not sent (no SMTP / recipients)";
+      return { target: `${name} (${md.timezone ?? ""} ${md.sendTime ?? ""})`.trim(), details };
+    }
+    return null;
   };
 
   return (
@@ -133,12 +164,17 @@ export default function AuditLogsPage() {
                     {log.user?.email || "system"}
                   </TableCell>
                   <TableCell className="whitespace-normal px-4 py-3 text-sm text-muted-foreground">
-                    {log.targetType && `${log.targetType}`}
+                    {friendly(log)?.target ?? (log.targetType && `${log.targetType}`)}
                   </TableCell>
-                  <TableCell className="whitespace-normal px-4 py-3 text-xs text-muted-foreground font-mono">
-                    {log.metadata && Object.keys(log.metadata).length > 0
-                      ? Object.entries(log.metadata).map(([k, v]) => `${k}: ${v}`).join(", ")
-                      : "—"}
+                  <TableCell className="whitespace-normal px-4 py-3 text-xs text-muted-foreground">
+                    {friendly(log)?.details ??
+                      (log.metadata && Object.keys(log.metadata).length > 0 ? (
+                        <span className="font-mono">
+                          {Object.entries(log.metadata).map(([k, v]) => `${k}: ${v}`).join(", ")}
+                        </span>
+                      ) : (
+                        "—"
+                      ))}
                   </TableCell>
                 </TableRow>
               ))

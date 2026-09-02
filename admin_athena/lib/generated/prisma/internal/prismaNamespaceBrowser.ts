@@ -79,6 +79,7 @@ export const ModelName = {
   pinned_dashboards: 'pinned_dashboards',
   ReportSchedule: 'ReportSchedule',
   AlertThreshold: 'AlertThreshold',
+  ShiftSummary: 'ShiftSummary',
   prompt_audit_daily_counter: 'prompt_audit_daily_counter',
   prompt_audit_logs: 'prompt_audit_logs'
 } as const
@@ -546,7 +547,9 @@ export const ReportScheduleScalarFieldEnum = {
   last_run_at: 'last_run_at',
   last_status: 'last_status',
   updated_by_id: 'updated_by_id',
-  updated_at: 'updated_at'
+  updated_at: 'updated_at',
+  window_start: 'window_start',
+  window_end: 'window_end'
 } as const
 
 export type ReportScheduleScalarFieldEnum = (typeof ReportScheduleScalarFieldEnum)[keyof typeof ReportScheduleScalarFieldEnum]
@@ -573,6 +576,26 @@ export const AlertThresholdScalarFieldEnum = {
 } as const
 
 export type AlertThresholdScalarFieldEnum = (typeof AlertThresholdScalarFieldEnum)[keyof typeof AlertThresholdScalarFieldEnum]
+
+
+export const ShiftSummaryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  send_time: 'send_time',
+  timezone: 'timezone',
+  recipient_role_ids: 'recipient_role_ids',
+  dashboard_ids: 'dashboard_ids',
+  source_key: 'source_key',
+  is_active: 'is_active',
+  next_send_at: 'next_send_at',
+  last_send_at: 'last_send_at',
+  last_status: 'last_status',
+  created_by_id: 'created_by_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type ShiftSummaryScalarFieldEnum = (typeof ShiftSummaryScalarFieldEnum)[keyof typeof ShiftSummaryScalarFieldEnum]
 
 
 export const Prompt_audit_daily_counterScalarFieldEnum = {

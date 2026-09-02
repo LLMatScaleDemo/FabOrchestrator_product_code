@@ -412,6 +412,7 @@ export const ModelName = {
   pinned_dashboards: 'pinned_dashboards',
   ReportSchedule: 'ReportSchedule',
   AlertThreshold: 'AlertThreshold',
+  ShiftSummary: 'ShiftSummary',
   prompt_audit_daily_counter: 'prompt_audit_daily_counter',
   prompt_audit_logs: 'prompt_audit_logs'
 } as const
@@ -429,7 +430,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "session" | "conversation" | "message" | "artifact" | "mcpConnection" | "memoryFile" | "passwordResetToken" | "invitation" | "mcpRegistry" | "auditLog" | "userSessionLog" | "usageRecord" | "platformSettings" | "modelRegistry" | "package" | "stagedUpload" | "packageFile" | "validationReport" | "run" | "mcpDataSource" | "error_audit_daily_counter" | "error_audit_logs" | "error_catalog" | "pinned_dashboards" | "reportSchedule" | "alertThreshold" | "prompt_audit_daily_counter" | "prompt_audit_logs"
+    modelProps: "role" | "user" | "session" | "conversation" | "message" | "artifact" | "mcpConnection" | "memoryFile" | "passwordResetToken" | "invitation" | "mcpRegistry" | "auditLog" | "userSessionLog" | "usageRecord" | "platformSettings" | "modelRegistry" | "package" | "stagedUpload" | "packageFile" | "validationReport" | "run" | "mcpDataSource" | "error_audit_daily_counter" | "error_audit_logs" | "error_catalog" | "pinned_dashboards" | "reportSchedule" | "alertThreshold" | "shiftSummary" | "prompt_audit_daily_counter" | "prompt_audit_logs"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2505,6 +2506,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ShiftSummary: {
+      payload: Prisma.$ShiftSummaryPayload<ExtArgs>
+      fields: Prisma.ShiftSummaryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ShiftSummaryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ShiftSummaryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload>
+        }
+        findFirst: {
+          args: Prisma.ShiftSummaryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ShiftSummaryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload>
+        }
+        findMany: {
+          args: Prisma.ShiftSummaryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload>[]
+        }
+        create: {
+          args: Prisma.ShiftSummaryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload>
+        }
+        createMany: {
+          args: Prisma.ShiftSummaryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ShiftSummaryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload>[]
+        }
+        delete: {
+          args: Prisma.ShiftSummaryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload>
+        }
+        update: {
+          args: Prisma.ShiftSummaryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload>
+        }
+        deleteMany: {
+          args: Prisma.ShiftSummaryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ShiftSummaryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ShiftSummaryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload>[]
+        }
+        upsert: {
+          args: Prisma.ShiftSummaryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShiftSummaryPayload>
+        }
+        aggregate: {
+          args: Prisma.ShiftSummaryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateShiftSummary>
+        }
+        groupBy: {
+          args: Prisma.ShiftSummaryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShiftSummaryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ShiftSummaryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShiftSummaryCountAggregateOutputType> | number
+        }
+      }
+    }
     prompt_audit_daily_counter: {
       payload: Prisma.$prompt_audit_daily_counterPayload<ExtArgs>
       fields: Prisma.prompt_audit_daily_counterFieldRefs
@@ -3139,7 +3214,9 @@ export const ReportScheduleScalarFieldEnum = {
   last_run_at: 'last_run_at',
   last_status: 'last_status',
   updated_by_id: 'updated_by_id',
-  updated_at: 'updated_at'
+  updated_at: 'updated_at',
+  window_start: 'window_start',
+  window_end: 'window_end'
 } as const
 
 export type ReportScheduleScalarFieldEnum = (typeof ReportScheduleScalarFieldEnum)[keyof typeof ReportScheduleScalarFieldEnum]
@@ -3166,6 +3243,26 @@ export const AlertThresholdScalarFieldEnum = {
 } as const
 
 export type AlertThresholdScalarFieldEnum = (typeof AlertThresholdScalarFieldEnum)[keyof typeof AlertThresholdScalarFieldEnum]
+
+
+export const ShiftSummaryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  send_time: 'send_time',
+  timezone: 'timezone',
+  recipient_role_ids: 'recipient_role_ids',
+  dashboard_ids: 'dashboard_ids',
+  source_key: 'source_key',
+  is_active: 'is_active',
+  next_send_at: 'next_send_at',
+  last_send_at: 'last_send_at',
+  last_status: 'last_status',
+  created_by_id: 'created_by_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type ShiftSummaryScalarFieldEnum = (typeof ShiftSummaryScalarFieldEnum)[keyof typeof ShiftSummaryScalarFieldEnum]
 
 
 export const Prompt_audit_daily_counterScalarFieldEnum = {
@@ -3568,6 +3665,7 @@ export type GlobalOmitConfig = {
   pinned_dashboards?: Prisma.pinned_dashboardsOmit
   reportSchedule?: Prisma.ReportScheduleOmit
   alertThreshold?: Prisma.AlertThresholdOmit
+  shiftSummary?: Prisma.ShiftSummaryOmit
   prompt_audit_daily_counter?: Prisma.prompt_audit_daily_counterOmit
   prompt_audit_logs?: Prisma.prompt_audit_logsOmit
 }

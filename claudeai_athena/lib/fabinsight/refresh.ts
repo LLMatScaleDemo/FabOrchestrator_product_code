@@ -122,6 +122,12 @@ export async function runDueReportRefresh(
     // Logs page next to "report.schedule_set": a scheduled run either RAN
     // (ok/partial) or FAILED (nothing refreshed). System-initiated → user_id NULL.
     const action = status === "error" ? "report.schedule_failed" : "report.schedule_ran";
+    // Resolve a human name for the dashboard so the Audit Logs page can show
+    // "Name (id)" instead of a bare id.
+    const pin = await prisma.pinnedDashboard
+      .findFirst({ where: { dashboardId: s.dashboardId, sourceKey: s.sourceKey }, select: { title: true } })
+      .catch(() => null);
+    const dashboardName = pin?.title || getDashboard(s.dashboardId)?.title || s.dashboardId;
     await prisma
       .$executeRawUnsafe(
         `INSERT INTO audit_logs (id, user_id, action, target_type, target_id, metadata, created_at)
@@ -130,6 +136,7 @@ export async function runDueReportRefresh(
         s.dashboardId,
         JSON.stringify({
           dashboardId: s.dashboardId,
+          dashboardName,
           sourceKey: s.sourceKey,
           refreshed: r.refreshed,
           failed: r.failed,

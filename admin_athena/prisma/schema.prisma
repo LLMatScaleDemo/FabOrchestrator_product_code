@@ -524,6 +524,8 @@ model ReportSchedule {
   last_status      String?
   updated_by_id    String?
   updated_at       DateTime  @default(now()) @updatedAt
+  window_start     String?
+  window_end       String?
 
   @@unique([dashboard_id, source_key])
   @@index([enabled, next_run_at])
@@ -554,6 +556,28 @@ model AlertThreshold {
 
   @@index([is_active])
   @@map("alert_thresholds")
+}
+
+/// Shift-summary email sends (V06). Written by the admin app (raw SQL), read +
+/// fired by Fab Orch's scheduler. Parity/documentation model.
+model ShiftSummary {
+  id                 String    @id @default(uuid())
+  name               String
+  send_time          String
+  timezone           String    @default("America/Los_Angeles")
+  recipient_role_ids Json      @default("[]")
+  dashboard_ids      Json      @default("[]")
+  source_key         String    @default("lumentum")
+  is_active          Boolean   @default(true)
+  next_send_at       DateTime? @db.Timestamptz(6)
+  last_send_at       DateTime? @db.Timestamptz(6)
+  last_status        String?
+  created_by_id      String?
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([is_active, next_send_at])
+  @@map("shift_summaries")
 }
 
 model prompt_audit_daily_counter {

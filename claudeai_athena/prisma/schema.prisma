@@ -450,6 +450,9 @@ model ReportSchedule {
   daysOfWeek      String?   @map("days_of_week")
   /// IANA timezone the atTime/day are interpreted in (e.g. "America/Los_Angeles"); "UTC" default.
   timezone        String    @default("UTC")
+  /// Interval-frequency active window (HH:MM, in `timezone`); null = all day.
+  windowStart     String?   @map("window_start")
+  windowEnd       String?   @map("window_end")
 
   @@unique([dashboardId, sourceKey], map: "report_schedules_dashboard_source_key")
   @@index([enabled, nextRunAt], map: "report_schedules_enabled_next_run_idx")
@@ -481,6 +484,30 @@ model AlertThreshold {
 
   @@index([isActive], map: "alert_thresholds_active_idx")
   @@map("alert_thresholds")
+}
+
+/// Shift-summary email sends (V06 "Scheduled Dashboard"). Written by the admin
+/// app, read + fired by the Fab scheduler: at each send_time it emails an overall
+/// summary + each dashboard's cached summary to the recipient roles. One row per
+/// send time; times are wall-clock in `timezone` (default PST).
+model ShiftSummary {
+  id               String    @id @default(uuid())
+  name             String
+  sendTime         String    @map("send_time")
+  timezone         String    @default("America/Los_Angeles")
+  recipientRoleIds Json      @default("[]") @map("recipient_role_ids")
+  dashboardIds     Json      @default("[]") @map("dashboard_ids")
+  sourceKey        String    @default("lumentum") @map("source_key")
+  isActive         Boolean   @default(true) @map("is_active")
+  nextSendAt       DateTime? @map("next_send_at") @db.Timestamptz(6)
+  lastSendAt       DateTime? @map("last_send_at") @db.Timestamptz(6)
+  lastStatus       String?   @map("last_status")
+  createdById      String?   @map("created_by_id")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([isActive, nextSendAt], map: "shift_summaries_active_next_idx")
+  @@map("shift_summaries")
 }
 
 model error_audit_daily_counter {

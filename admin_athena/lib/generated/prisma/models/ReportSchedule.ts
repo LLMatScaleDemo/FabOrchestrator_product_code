@@ -56,6 +56,8 @@ export type ReportScheduleMinAggregateOutputType = {
   last_status: string | null
   updated_by_id: string | null
   updated_at: Date | null
+  window_start: string | null
+  window_end: string | null
 }
 
 export type ReportScheduleMaxAggregateOutputType = {
@@ -74,6 +76,8 @@ export type ReportScheduleMaxAggregateOutputType = {
   last_status: string | null
   updated_by_id: string | null
   updated_at: Date | null
+  window_start: string | null
+  window_end: string | null
 }
 
 export type ReportScheduleCountAggregateOutputType = {
@@ -92,6 +96,8 @@ export type ReportScheduleCountAggregateOutputType = {
   last_status: number
   updated_by_id: number
   updated_at: number
+  window_start: number
+  window_end: number
   _all: number
 }
 
@@ -124,6 +130,8 @@ export type ReportScheduleMinAggregateInputType = {
   last_status?: true
   updated_by_id?: true
   updated_at?: true
+  window_start?: true
+  window_end?: true
 }
 
 export type ReportScheduleMaxAggregateInputType = {
@@ -142,6 +150,8 @@ export type ReportScheduleMaxAggregateInputType = {
   last_status?: true
   updated_by_id?: true
   updated_at?: true
+  window_start?: true
+  window_end?: true
 }
 
 export type ReportScheduleCountAggregateInputType = {
@@ -160,6 +170,8 @@ export type ReportScheduleCountAggregateInputType = {
   last_status?: true
   updated_by_id?: true
   updated_at?: true
+  window_start?: true
+  window_end?: true
   _all?: true
 }
 
@@ -265,6 +277,8 @@ export type ReportScheduleGroupByOutputType = {
   last_status: string | null
   updated_by_id: string | null
   updated_at: Date
+  window_start: string | null
+  window_end: string | null
   _count: ReportScheduleCountAggregateOutputType | null
   _avg: ReportScheduleAvgAggregateOutputType | null
   _sum: ReportScheduleSumAggregateOutputType | null
@@ -306,6 +320,8 @@ export type ReportScheduleWhereInput = {
   last_status?: Prisma.StringNullableFilter<"ReportSchedule"> | string | null
   updated_by_id?: Prisma.StringNullableFilter<"ReportSchedule"> | string | null
   updated_at?: Prisma.DateTimeFilter<"ReportSchedule"> | Date | string
+  window_start?: Prisma.StringNullableFilter<"ReportSchedule"> | string | null
+  window_end?: Prisma.StringNullableFilter<"ReportSchedule"> | string | null
 }
 
 export type ReportScheduleOrderByWithRelationInput = {
@@ -324,6 +340,8 @@ export type ReportScheduleOrderByWithRelationInput = {
   last_status?: Prisma.SortOrderInput | Prisma.SortOrder
   updated_by_id?: Prisma.SortOrderInput | Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  window_start?: Prisma.SortOrderInput | Prisma.SortOrder
+  window_end?: Prisma.SortOrderInput | Prisma.SortOrder
 }
 
 export type ReportScheduleWhereUniqueInput = Prisma.AtLeast<{
@@ -346,6 +364,8 @@ export type ReportScheduleWhereUniqueInput = Prisma.AtLeast<{
   last_status?: Prisma.StringNullableFilter<"ReportSchedule"> | string | null
   updated_by_id?: Prisma.StringNullableFilter<"ReportSchedule"> | string | null
   updated_at?: Prisma.DateTimeFilter<"ReportSchedule"> | Date | string
+  window_start?: Prisma.StringNullableFilter<"ReportSchedule"> | string | null
+  window_end?: Prisma.StringNullableFilter<"ReportSchedule"> | string | null
 }, "id" | "dashboard_id_source_key">
 
 export type ReportScheduleOrderByWithAggregationInput = {
@@ -364,6 +384,8 @@ export type ReportScheduleOrderByWithAggregationInput = {
   last_status?: Prisma.SortOrderInput | Prisma.SortOrder
   updated_by_id?: Prisma.SortOrderInput | Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  window_start?: Prisma.SortOrderInput | Prisma.SortOrder
+  window_end?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.ReportScheduleCountOrderByAggregateInput
   _avg?: Prisma.ReportScheduleAvgOrderByAggregateInput
   _max?: Prisma.ReportScheduleMaxOrderByAggregateInput
@@ -390,6 +412,8 @@ export type ReportScheduleScalarWhereWithAggregatesInput = {
   last_status?: Prisma.StringNullableWithAggregatesFilter<"ReportSchedule"> | string | null
   updated_by_id?: Prisma.StringNullableWithAggregatesFilter<"ReportSchedule"> | string | null
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"ReportSchedule"> | Date | string
+  window_start?: Prisma.StringNullableWithAggregatesFilter<"ReportSchedule"> | string | null
+  window_end?: Prisma.StringNullableWithAggregatesFilter<"ReportSchedule"> | string | null
 }
 
 export type ReportScheduleCreateInput = {
@@ -408,6 +432,8 @@ export type ReportScheduleCreateInput = {
   last_status?: string | null
   updated_by_id?: string | null
   updated_at?: Date | string
+  window_start?: string | null
+  window_end?: string | null
 }
 
 export type ReportScheduleUncheckedCreateInput = {
@@ -426,6 +452,8 @@ export type ReportScheduleUncheckedCreateInput = {
   last_status?: string | null
   updated_by_id?: string | null
   updated_at?: Date | string
+  window_start?: string | null
+  window_end?: string | null
 }
 
 export type ReportScheduleUpdateInput = {
@@ -444,6 +472,8 @@ export type ReportScheduleUpdateInput = {
   last_status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updated_by_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  window_start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  window_end?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ReportScheduleUncheckedUpdateInput = {
@@ -462,6 +492,8 @@ export type ReportScheduleUncheckedUpdateInput = {
   last_status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updated_by_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  window_start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  window_end?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ReportScheduleCreateManyInput = {
@@ -480,6 +512,8 @@ export type ReportScheduleCreateManyInput = {
   last_status?: string | null
   updated_by_id?: string | null
   updated_at?: Date | string
+  window_start?: string | null
+  window_end?: string | null
 }
 
 export type ReportScheduleUpdateManyMutationInput = {
@@ -498,6 +532,8 @@ export type ReportScheduleUpdateManyMutationInput = {
   last_status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updated_by_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  window_start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  window_end?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ReportScheduleUncheckedUpdateManyInput = {
@@ -516,6 +552,8 @@ export type ReportScheduleUncheckedUpdateManyInput = {
   last_status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updated_by_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  window_start?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  window_end?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ReportScheduleDashboard_idSource_keyCompoundUniqueInput = {
@@ -539,6 +577,8 @@ export type ReportScheduleCountOrderByAggregateInput = {
   last_status?: Prisma.SortOrder
   updated_by_id?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  window_start?: Prisma.SortOrder
+  window_end?: Prisma.SortOrder
 }
 
 export type ReportScheduleAvgOrderByAggregateInput = {
@@ -563,6 +603,8 @@ export type ReportScheduleMaxOrderByAggregateInput = {
   last_status?: Prisma.SortOrder
   updated_by_id?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  window_start?: Prisma.SortOrder
+  window_end?: Prisma.SortOrder
 }
 
 export type ReportScheduleMinOrderByAggregateInput = {
@@ -581,6 +623,8 @@ export type ReportScheduleMinOrderByAggregateInput = {
   last_status?: Prisma.SortOrder
   updated_by_id?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  window_start?: Prisma.SortOrder
+  window_end?: Prisma.SortOrder
 }
 
 export type ReportScheduleSumOrderByAggregateInput = {
@@ -607,6 +651,8 @@ export type ReportScheduleSelect<ExtArgs extends runtime.Types.Extensions.Intern
   last_status?: boolean
   updated_by_id?: boolean
   updated_at?: boolean
+  window_start?: boolean
+  window_end?: boolean
 }, ExtArgs["result"]["reportSchedule"]>
 
 export type ReportScheduleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -625,6 +671,8 @@ export type ReportScheduleSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   last_status?: boolean
   updated_by_id?: boolean
   updated_at?: boolean
+  window_start?: boolean
+  window_end?: boolean
 }, ExtArgs["result"]["reportSchedule"]>
 
 export type ReportScheduleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -643,6 +691,8 @@ export type ReportScheduleSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   last_status?: boolean
   updated_by_id?: boolean
   updated_at?: boolean
+  window_start?: boolean
+  window_end?: boolean
 }, ExtArgs["result"]["reportSchedule"]>
 
 export type ReportScheduleSelectScalar = {
@@ -661,9 +711,11 @@ export type ReportScheduleSelectScalar = {
   last_status?: boolean
   updated_by_id?: boolean
   updated_at?: boolean
+  window_start?: boolean
+  window_end?: boolean
 }
 
-export type ReportScheduleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "dashboard_id" | "source_key" | "frequency" | "interval_minutes" | "at_time" | "day_of_week" | "days_of_week" | "day_of_month" | "enabled" | "next_run_at" | "last_run_at" | "last_status" | "updated_by_id" | "updated_at", ExtArgs["result"]["reportSchedule"]>
+export type ReportScheduleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "dashboard_id" | "source_key" | "frequency" | "interval_minutes" | "at_time" | "day_of_week" | "days_of_week" | "day_of_month" | "enabled" | "next_run_at" | "last_run_at" | "last_status" | "updated_by_id" | "updated_at" | "window_start" | "window_end", ExtArgs["result"]["reportSchedule"]>
 
 export type $ReportSchedulePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ReportSchedule"
@@ -684,6 +736,8 @@ export type $ReportSchedulePayload<ExtArgs extends runtime.Types.Extensions.Inte
     last_status: string | null
     updated_by_id: string | null
     updated_at: Date
+    window_start: string | null
+    window_end: string | null
   }, ExtArgs["result"]["reportSchedule"]>
   composites: {}
 }
@@ -1122,6 +1176,8 @@ export interface ReportScheduleFieldRefs {
   readonly last_status: Prisma.FieldRef<"ReportSchedule", 'String'>
   readonly updated_by_id: Prisma.FieldRef<"ReportSchedule", 'String'>
   readonly updated_at: Prisma.FieldRef<"ReportSchedule", 'DateTime'>
+  readonly window_start: Prisma.FieldRef<"ReportSchedule", 'String'>
+  readonly window_end: Prisma.FieldRef<"ReportSchedule", 'String'>
 }
     
 
