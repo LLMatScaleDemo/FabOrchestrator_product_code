@@ -6,7 +6,7 @@ import { requireAuth } from '@/lib/auth-middleware';
 import { prisma } from '@/lib/db';
 import { isDashboardAdmin } from '@/lib/fabinsight/access';
 import { getDashboard } from '@/lib/fabinsight/dashboards';
-import { parseCustomDef, type CustomDef } from '@/lib/fabinsight/custom';
+import { parseCustomDef, fetchCustomData, isNumericColumn, type CustomDef } from '@/lib/fabinsight/custom';
 import { refreshPin } from '@/lib/fabinsight/refresh';
 
 export const runtime = 'nodejs';
@@ -160,6 +160,25 @@ export async function POST(request: NextRequest) {
       },
       select: { id: true, title: true, dashboardId: true, params: true, createdAt: true },
     });
+    // Re-cache the snapshot + re-detect metric columns for the new definition so
+    // the updated custom dashboard's metrics are available in Alert Thresholds
+    // right away.
+    if (isCustom && customDef) {
+      await refreshPin({ id: updated.id, dashboardId: keepDashboardId, params, sourceKey: 'lumentum', kind: 'custom', definition: customDef }).catch(() => {});
+      try {
+        const data = await fetchCustomData(customDef);
+        const columns: { setKey: string; setLabel: string; column: string }[] = [];
+        for (const set of data.sets) {
+          if (set.error || !set.rows.length) continue;
+          for (const col of Object.keys(set.rows[0])) {
+            if (isNumericColumn(set.rows, col)) columns.push({ setKey: set.key, setLabel: set.label, column: col });
+          }
+        }
+        await prisma.pinnedDashboard.update({ where: { id: updated.id }, data: { metricColumns: columns } });
+      } catch {
+        // leave columns to the sampler.
+      }
+    }
     return NextResponse.json(
       { dashboard: { ...updated, createdAt: updated.createdAt.toISOString() }, replaced: true },
       { status: 200 },
@@ -190,6 +209,22 @@ export async function POST(request: NextRequest) {
       kind: 'custom',
       definition: customDef,
     }).catch(() => {});
+    // Detect the dashboard's numeric columns NOW so its metrics are available in
+    // the admin Alert Thresholds section immediately — no waiting for the first
+    // scheduled sampler run. Best-effort; the sampler refreshes this later too.
+    try {
+      const data = await fetchCustomData(customDef);
+      const columns: { setKey: string; setLabel: string; column: string }[] = [];
+      for (const set of data.sets) {
+        if (set.error || !set.rows.length) continue;
+        for (const col of Object.keys(set.rows[0])) {
+          if (isNumericColumn(set.rows, col)) columns.push({ setKey: set.key, setLabel: set.label, column: col });
+        }
+      }
+      await prisma.pinnedDashboard.update({ where: { id: created.id }, data: { metricColumns: columns } });
+    } catch {
+      // leave metric_columns empty; the sampler will fill it on its next run.
+    }
   }
 
   return NextResponse.json(
