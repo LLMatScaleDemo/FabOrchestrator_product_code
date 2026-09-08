@@ -1225,7 +1225,7 @@ export async function POST(req: NextRequest) {
         writer.merge(result.toUIMessageStream({ sendStart: !curatedMeta, sendReasoning: true, sendSources: true }));
 
         // 2. Wait for completion
-        const [, , steps] = await Promise.all([
+        const [finalText, , steps] = await Promise.all([
           result.text, result.reasoning, result.steps,
         ]);
 
@@ -1316,7 +1316,21 @@ export async function POST(req: NextRequest) {
           for (const file of fileDownloads) {
             fileByName.set(file.filename, file);
           }
-          const uniqueFiles = Array.from(fileByName.values());
+          let uniqueFiles = Array.from(fileByName.values());
+
+          // Guard: when the model already delivered an inline HTML artifact, an
+          // HTML file it ALSO wrote in the sandbox is a duplicate of the visual
+          // (the app renders + downloads the artifact itself). Drop it so the
+          // user doesn't see two tiles for the same content.
+          if (String(finalText ?? '').includes('<antArtifact')) {
+            const before = uniqueFiles.length;
+            uniqueFiles = uniqueFiles.filter(
+              (f) => !(/\.html?$/i.test(f.filename) || /^text\/html\b/i.test(f.mimeType)),
+            );
+            if (uniqueFiles.length !== before) {
+              console.log(`[Chat] Dropped ${before - uniqueFiles.length} HTML file(s) duplicating an inline artifact`);
+            }
+          }
 
           // Enrich with metadata from Files API and write data chunks to stream
           for (const file of uniqueFiles) {
