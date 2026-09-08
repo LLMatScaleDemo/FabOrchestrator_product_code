@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-middleware';
 import { getAnthropicFilesClient, inferMimeType } from '@/lib/anthropic-files';
+import { contentDispositionAttachment } from '@/lib/content-disposition';
 
 export async function GET(
   req: NextRequest,
@@ -40,9 +41,9 @@ export async function GET(
 
     const headers = new Headers({
       'Content-Type': mimeType,
-      'Content-Disposition': /^[\x20-\x7E]+$/.test(filename)
-        ? `attachment; filename="${filename.replace(/"/g, '\\"')}"`
-        : `attachment; filename="${filename.replace(/"/g, '\\"')}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      // Non-ASCII names (e.g. Tamil) must NOT go raw into the header: Node
+      // rejects non-Latin-1 header values, which used to 500 this route.
+      'Content-Disposition': contentDispositionAttachment(filename),
       'Content-Length': String(body.byteLength),
     });
 

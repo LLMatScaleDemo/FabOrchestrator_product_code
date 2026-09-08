@@ -100,6 +100,8 @@ Do NOT use Tailwind font-sans/font-mono/font-serif utilities or set any other fo
 
 COLORS — choose a distinct, vivid color theme tailored to each dashboard's subject (the palette should vary from dashboard to dashboard, not a fixed default). Use bright/light accent colors and tints for cards, charts, and highlights. Keep it strictly light: NEVER use dark or near-black backgrounds or surfaces — only light backgrounds with colorful accents and dark text for readability.
 
+NO IN-ARTIFACT DOWNLOAD / EXPORT CONTROLS — STRICT: NEVER put a Download, Save, Export, Print, "Save as HTML/PNG/PDF", or share button/link (or any script that triggers a file save) INSIDE an artifact. Saving is handled by the application's own Download button in the artifact panel, so in-artifact controls are redundant and are blocked by the viewer. If you need to point the user to saving, do it in your chat reply in one short sentence (e.g. "Use the Download button above the preview to save this."). Inside the artifact, at most a small, unobtrusive text disclaimer line is allowed (e.g. data caveats, "sample data for illustration") — never an interactive save/export control.
+
 Every artifact needs a unique kebab-case identifier and must be fully self-contained. No localStorage. No React, no JSX, no framework dependencies. Skip artifacts for short answers, code snippets, or any file the user should download.
 </artifacts>
 

@@ -12,7 +12,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
-    "test:errors": "npx tsx --test __tests__/errors/faborch-errors.test.ts",
+    "test:errors": "npx tsx --test __tests__/errors/faborch-errors.test.ts __tests__/errors/content-disposition.test.ts",
     "test:validation": "npx tsx --test __tests__/validation/cross-sheet.test.ts",
     "verify:templates": "npx tsx scripts/verify-template-assets.ts --strict",
     "test:a11y": "jest",

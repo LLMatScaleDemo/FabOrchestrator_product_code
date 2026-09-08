@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import { normalizeLanguage } from "@/lib/language-aliases"
 import { useDarkMode } from "@/hooks/use-dark-mode"
 import type { Artifact } from "@/lib/artifacts"
@@ -33,6 +34,20 @@ const MermaidViewer = dynamic(() => import("@/components/viewers/mermaid-viewer"
 import { Markdown } from "@/components/prompt-kit/markdown"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism"
+
+/** Trigger a browser "save as" for a blob under the given filename. */
+function saveBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  // Revoke on the next tick — revoking synchronously can cancel the save in
+  // some browsers before the click has been processed.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
 
 function DocumentLoadingPlaceholder() {
   return (
@@ -403,40 +418,44 @@ export function ArtifactPreview({
     setTimeout(() => setCopied(false), 2000)
   }, [displayContent, artifact.content])
 
-  const handleDownload = useCallback(() => {
-    if (isFileArtifact && artifact.fileId) {
-      const token = localStorage.getItem("llmatscale_auth_token")
-      fetch(`/api/files/${artifact.fileId}/download`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(res => {
-        if (!res.ok) throw new Error(`Download failed: ${res.status}`)
-        return res.blob()
-      }).then(blob => {
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = artifact.filename || 'download'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }).catch(err => {
-        console.error("File download failed:", err)
+  const handleDownload = useCallback(async () => {
+    // Every failure path reports to the user — a swallowed error here is what
+    // turned a broken download into "nothing happened, no message".
+    try {
+      if (isFileArtifact && artifact.fileId) {
+        const token = localStorage.getItem("llmatscale_auth_token")
+        const res = await fetch(artifact.downloadUrl ?? `/api/files/${artifact.fileId}/download`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) {
+          let reason = `HTTP ${res.status}`
+          try {
+            const body = await res.json()
+            if (typeof body?.error === "string") reason = body.error
+          } catch { /* non-JSON body */ }
+          throw new Error(reason)
+        }
+        saveBlob(await res.blob(), artifact.filename || "download")
+        return
+      }
+      const content = displayContent || artifact.content
+      if (!content) throw new Error("There is nothing to download yet — wait for the artifact to finish.")
+      const ext = getArtifactExtension(artifact)
+      const mime = getArtifactMimeType(artifact)
+      // Keep Unicode letters (Tamil, etc.) in the saved name; only strip
+      // characters that are illegal in filenames.
+      const stem = (artifact.title || "artifact")
+        .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "_")
+        .replace(/\s+/g, "_")
+        .replace(/^_+|_+$/g, "") || "artifact"
+      saveBlob(new Blob([content], { type: mime }), `${stem}${ext}`)
+    } catch (err) {
+      console.error("Artifact download failed:", err)
+      toast.error("Download failed", {
+        description: err instanceof Error ? err.message : "Please try again.",
       })
-      return
     }
-    const ext = getArtifactExtension(artifact)
-    const mime = getArtifactMimeType(artifact)
-    const blob = new Blob([artifact.content], { type: mime })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `${artifact.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}${ext}`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }, [isFileArtifact, artifact])
+  }, [isFileArtifact, artifact, displayContent])
 
   const handleOpenInBrowser = useCallback(() => {
     const content = displayContent || artifact.content
@@ -749,7 +768,10 @@ export function ArtifactPreview({
           key={iframeKey}
           srcDoc={enforceLightHtml(displayContent || artifact.content)}
           className="h-full w-full border-0"
-          sandbox="allow-scripts"
+          // allow-downloads: generated dashboards often carry their own
+          // "Download / Export" button; without it Chrome blocks the save
+          // silently (no error, nothing happens).
+          sandbox="allow-scripts allow-downloads"
           title={artifact.title}
         />
       </div>
