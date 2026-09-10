@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import { FabOrchError } from './errors/faborch-errors';
 
 // ============================================
 // Auth Schemas
@@ -192,9 +193,13 @@ export function formatValidationErrors(errors: z.ZodIssue[]): string {
  * failures get the REQ-01 envelope automatically.
  */
 export function validateOrThrow<T>(schema: z.ZodSchema<T>, data: unknown): T {
-  // Lazy import to avoid circular references at module init.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { FabOrchError } = require('./errors/faborch-errors') as typeof import('./errors/faborch-errors');
+  // NOTE: was a lazy `require('./errors/faborch-errors')` "to avoid circular
+  // references". Under the Turbopack build that require resolved to a module
+  // object WITHOUT `FabOrchError`, so every validation failure crashed with
+  // "Cannot read properties of undefined (reading 'invalidParameter')" and was
+  // reported to the user as a LAMBDA_MCP_CRASH ("backend service temporarily
+  // unavailable"). There is no cycle between this module and faborch-errors, so
+  // a static import is safe and correct.
   const result = schema.safeParse(data);
   if (result.success) return result.data;
   const firstIssue = result.error.issues[0];
