@@ -29,6 +29,7 @@ type Pinned = {
   createdBy: string
   refreshedAt: string | null
   hasCache: boolean
+  stale?: boolean
 }
 
 const AUTH_TOKEN_KEY = "llmatscale_auth_token"
@@ -260,6 +261,11 @@ export default function ReportsPage() {
                     </span>
                   )}
                 </p>
+                {open.stale && (
+                  <p className="mt-[4px] text-[12px] font-semibold" style={{ color: "var(--status-red, #d33)" }}>
+                    ⚠ Last scheduled refresh failed — showing the previous snapshot
+                  </p>
+                )}
               </div>
               <button onClick={() => void renderPinned(open)} disabled={rendering}
                 className={btn} style={{ ...CARD_STYLE, background: "#fff" }}>
@@ -380,6 +386,14 @@ export default function ReportsPage() {
                     {p.hasCache && p.refreshedAt
                       ? `Refreshed ${formatStamp(p.refreshedAt, tz)}`
                       : "Not yet refreshed"}
+                    {p.stale && (
+                      <>
+                        <br />
+                        <span style={{ color: "var(--status-red, #d33)", fontWeight: 600 }}>
+                          ⚠ Last refresh failed — showing previous snapshot
+                        </span>
+                      </>
+                    )}
                   </div>
 
                   <div className="mt-[14px] flex items-center gap-1.5 text-[13px] font-bold transition-colors group-hover:text-[var(--cockpit-indigo)]"

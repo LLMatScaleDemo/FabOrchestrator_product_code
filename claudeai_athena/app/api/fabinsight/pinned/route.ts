@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       params: true,
       createdAt: true,
       refreshedAt: true,
+      lastStatus: true,
       cachedHtml: true,
       createdBy: { select: { name: true, email: true } },
     },
@@ -51,6 +52,9 @@ export async function GET(request: NextRequest) {
       // scheduled (or manual) snapshot was cached; null = never cached yet.
       refreshedAt: r.refreshedAt ? r.refreshedAt.toISOString() : null,
       hasCache: !!r.cachedHtml,
+      // "stale: source unreachable" means the last scheduled refresh couldn't
+      // reach the MES and the previous snapshot was intentionally kept.
+      stale: typeof r.lastStatus === 'string' && r.lastStatus.startsWith('stale:'),
       createdBy: r.createdBy?.name || r.createdBy?.email || 'Unknown',
     })),
     canManage: await isDashboardAdmin(auth.user.id),

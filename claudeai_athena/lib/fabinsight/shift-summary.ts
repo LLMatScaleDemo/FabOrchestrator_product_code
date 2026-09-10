@@ -14,6 +14,7 @@ import { renderDashboard } from "@/lib/fabinsight/render";
 import { parseCustomDef, fetchCustomData, renderCustomDashboard } from "@/lib/fabinsight/custom";
 import { computeNextRun } from "@/lib/fabinsight/schedule";
 import { resolveAlertRecipients } from "@/lib/fabinsight/alert-recipients";
+import { probeFabSource } from "@/lib/fabinsight/mcp";
 
 /** The 7 curated dashboards — the default set when a row lists no dashboards. */
 const CURATED_7 = [
@@ -125,6 +126,35 @@ export async function runDueShiftSummaries(now: Date = new Date()): Promise<void
         ? (row.recipientRoleIds as unknown[]).filter((x): x is string => typeof x === "string")
         : [];
       const recipients = await resolveAlertRecipients(roleIds);
+
+      // If the MES is unreachable at send time, don't mail a 0-filled summary —
+      // send a short "unreachable" notice to the same recipients instead.
+      const probe = await probeFabSource();
+      if (!probe.ok) {
+        const reason = probe.detail ?? "source unreachable";
+        const uhtml = `
+          <p><b>${esc(row.name)} — shift summary</b></p>
+          <p>The summary could not be generated because the manufacturing data source was unreachable.</p>
+          <ul>
+            <li>Reason: ${esc(reason)}</li>
+            <li>As of ${now.toISOString()} (UTC)</li>
+          </ul>
+          <p>No summary was sent this time. It resumes at the next scheduled send once the source is reachable.</p>`;
+        const uemailed = await sendMail(recipients, `⚠️ Shift summary not sent — ${row.name} (source unreachable)`, uhtml);
+        await prisma.shiftSummary
+          .update({ where: { id: row.id }, data: { lastStatus: uemailed ? "unreachable notice sent" : "unreachable (no email)" } })
+          .catch(() => {});
+        await prisma
+          .$executeRawUnsafe(
+            `INSERT INTO audit_logs (id, user_id, action, target_type, target_id, metadata, created_at)
+             VALUES (gen_random_uuid()::text, NULL, 'report.shift_summary_failed', 'ShiftSummary', $1, $2::jsonb, now())`,
+            row.id,
+            JSON.stringify({ name: row.name, sendTime: row.sendTime, timezone: tz, reason, emailed: uemailed, recipientsCount: recipients.length }),
+          )
+          .catch(() => {});
+        console.log(`[shift-summary] "${row.name}" SKIPPED — source unreachable; notice sent=${uemailed}`);
+        continue;
+      }
 
       const dashIds =
         Array.isArray(row.dashboardIds) && row.dashboardIds.length

@@ -86,9 +86,11 @@ export default function AuditLogsPage() {
       const id = String(md.dashboardId ?? log.targetId ?? "");
       const name = String(md.dashboardName ?? id);
       const target = name && id && name !== id ? `${name} (${id})` : name || id || "—";
+      const reason = md.reason ? ` — ${String(md.reason).slice(0, 120)}` : "";
+      const kept = md.unreachable ? " (last good snapshot kept)" : "";
       const details =
         log.action === "report.schedule_failed"
-          ? "Refresh failed"
+          ? `Refresh failed${kept}${reason}`
           : md.status === "partial"
             ? `Partial — ${md.refreshed ?? 0} refreshed, ${md.failed ?? 0} failed`
             : "Refreshed successfully";
@@ -104,6 +106,14 @@ export default function AuditLogsPage() {
       const details = md.emailed
         ? `Sent to ${md.recipientsCount ?? 0} — ${md.dashboards ?? 0} dashboards`
         : "Not sent (no SMTP / recipients)";
+      return { target: `${name} (${md.timezone ?? ""} ${md.sendTime ?? ""})`.trim(), details };
+    }
+    if (log.action === "report.shift_summary_failed") {
+      const name = String(md.name ?? log.targetId ?? "shift summary");
+      const reason = md.reason ? ` — ${String(md.reason).slice(0, 120)}` : "";
+      const details = md.emailed
+        ? `Source unreachable — notice sent to ${md.recipientsCount ?? 0}${reason}`
+        : `Source unreachable — no email${reason}`;
       return { target: `${name} (${md.timezone ?? ""} ${md.sendTime ?? ""})`.trim(), details };
     }
     return null;

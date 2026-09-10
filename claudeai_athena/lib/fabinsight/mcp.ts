@@ -151,6 +151,22 @@ export async function fabViewDetails(tables: string[]): Promise<unknown> {
   );
 }
 
+/**
+ * Lightweight reachability check for the MES. Runs a trivial `SELECT 1`; returns
+ * `{ ok: true }` when the source answers, or `{ ok: false, detail }` when it's
+ * unreachable (the FabQueryError detail). Used to decide whether to send a shift
+ * summary or a "source unreachable" notice instead.
+ */
+export async function probeFabSource(): Promise<{ ok: boolean; detail?: string }> {
+  try {
+    await fabQuery("SELECT 1 AS ok", 1);
+    return { ok: true };
+  } catch (e) {
+    const detail = e instanceof FabQueryError ? e.detail ?? e.message : e instanceof Error ? e.message : String(e);
+    return { ok: false, detail };
+  }
+}
+
 /** Numeric coercion tolerant of decimal-as-string and `bit`-as-boolean. */
 export function num(v: unknown): number {
   if (v === null || v === undefined || v === '') return 0;

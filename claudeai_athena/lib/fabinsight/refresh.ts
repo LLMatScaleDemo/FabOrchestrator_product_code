@@ -12,10 +12,14 @@
  */
 
 import { prisma } from "@/lib/db";
-import { getDashboard, fetchDashboardData } from "@/lib/fabinsight/dashboards";
+import { getDashboard, fetchDashboardData, type DashboardData } from "@/lib/fabinsight/dashboards";
 import { renderDashboard } from "@/lib/fabinsight/render";
 import { claimDueSchedules } from "@/lib/fabinsight/schedule";
 import { fetchCustomData, parseCustomDef, renderCustomDashboard } from "@/lib/fabinsight/custom";
+import { resolveAlertRecipients } from "@/lib/fabinsight/alert-recipients";
+import { sendMail } from "@/lib/fabinsight/mailer";
+
+const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
 
 type PinRow = {
   id: string;
@@ -35,17 +39,17 @@ function whitelistParams(params: unknown): Record<string, string> {
   };
 }
 
-export async function refreshPin(pin: PinRow): Promise<{ ok: boolean; error?: string }> {
+export async function refreshPin(pin: PinRow): Promise<{ ok: boolean; error?: string; unreachable?: boolean }> {
   try {
-    let html: string;
-    let summary: string;
+    let data: DashboardData;
+    let render: () => { html: string; summary: string };
 
     if (pin.kind === "custom") {
       // Custom dashboard: re-run its stored query set through the generic layout.
       // parseCustomDef re-applies the read-only SQL guard on every run.
       const def = parseCustomDef(pin.definition);
-      const data = await fetchCustomData(def);
-      ({ html, summary } = renderCustomDashboard(data, def));
+      data = await fetchCustomData(def);
+      render = () => renderCustomDashboard(data, def);
     } else {
       // Recipe dashboard: one of the fixed 7.
       const def = getDashboard(pin.dashboardId);
@@ -55,10 +59,24 @@ export async function refreshPin(pin: PinRow): Promise<{ ok: boolean; error?: st
           .catch(() => {});
         return { ok: false, error: "unknown dashboard" };
       }
-      const data = await fetchDashboardData(def, whitelistParams(pin.params));
-      ({ html, summary } = renderDashboard(data));
+      data = await fetchDashboardData(def, whitelistParams(pin.params));
+      render = () => renderDashboard(data);
     }
 
+    // Source unreachable = EVERY data set errored (fetch* demote a connection
+    // failure to a per-set `.error`, they don't throw). In that case KEEP the
+    // last good snapshot — do not overwrite cachedHtml/cachedSummary/refreshedAt
+    // with a 0-filled render. A set with empty rows but no `.error` is a
+    // legitimate empty result, so we test `.error`, not row count.
+    if (data.sets.length > 0 && data.sets.every((s) => !!s.error)) {
+      const detail = (data.sets[0]?.error ?? "source unreachable").slice(0, 300);
+      await prisma.pinnedDashboard
+        .update({ where: { id: pin.id }, data: { lastStatus: "stale: source unreachable" } })
+        .catch(() => {});
+      return { ok: false, error: detail, unreachable: true };
+    }
+
+    const { html, summary } = render();
     await prisma.pinnedDashboard.update({
       where: { id: pin.id },
       data: { cachedHtml: html, cachedSummary: summary, refreshedAt: new Date(), lastStatus: "ok" },
@@ -77,20 +95,41 @@ export async function refreshPin(pin: PinRow): Promise<{ ok: boolean; error?: st
 export async function refreshDashboardPins(
   dashboardId: string,
   sourceKey: string,
-): Promise<{ refreshed: number; failed: number }> {
+): Promise<{ refreshed: number; failed: number; unreachable: number; reason?: string }> {
   const pins = await prisma.pinnedDashboard.findMany({
     where: { dashboardId, sourceKey },
     select: { id: true, dashboardId: true, params: true, sourceKey: true, kind: true, definition: true },
   });
   let refreshed = 0;
   let failed = 0;
+  let unreachable = 0;
+  let reason: string | undefined;
   // Sequential on purpose — don't hammer the MES with parallel query bursts.
   for (const pin of pins) {
     const r = await refreshPin(pin);
     if (r.ok) refreshed++;
-    else failed++;
+    else {
+      failed++;
+      if (r.unreachable) unreachable++;
+      if (!reason && r.error) reason = r.error;
+    }
   }
-  return { refreshed, failed };
+  return { refreshed, failed, unreachable, reason };
+}
+
+/** True if we already emailed a failure notice for this dashboard within `windowMin`. */
+async function failureAlreadyNotified(dashboardId: string, windowMin: number): Promise<boolean> {
+  const rows = (await prisma.$queryRawUnsafe(
+    `SELECT 1 FROM audit_logs
+      WHERE action = 'report.schedule_failed'
+        AND metadata->>'dashboardId' = $1
+        AND metadata->>'notified' = 'true'
+        AND created_at > now() - ($2 || ' minutes')::interval
+      LIMIT 1`,
+    dashboardId,
+    String(windowMin),
+  )) as unknown[];
+  return rows.length > 0;
 }
 
 /**
@@ -128,6 +167,28 @@ export async function runDueReportRefresh(
       .findFirst({ where: { dashboardId: s.dashboardId, sourceKey: s.sourceKey }, select: { title: true } })
       .catch(() => null);
     const dashboardName = pin?.title || getDashboard(s.dashboardId)?.title || s.dashboardId;
+
+    // A fully-failed run (nothing refreshed — e.g. the MES is unreachable) means
+    // the last good snapshot was KEPT. Notify the alert recipients, throttled so
+    // we don't email every tick while the source stays down.
+    let notified = false;
+    if (status === "error") {
+      const windowMin = Number(process.env.FABINSIGHT_REFRESH_FAIL_NOTIFY_MIN ?? "60");
+      if (!(await failureAlreadyNotified(s.dashboardId, windowMin))) {
+        const reason = r.reason ?? "the scheduled refresh could not complete";
+        const recipients = await resolveAlertRecipients();
+        const html = `
+          <p><b>Scheduled refresh failed</b></p>
+          <p><b>${esc(dashboardName)}</b> did not refresh at its scheduled time.</p>
+          <ul>
+            <li>Reason: ${esc(reason)}</li>
+            <li>As of ${now.toISOString()} (UTC)</li>
+          </ul>
+          <p>The last successful snapshot has been kept — no data was overwritten. It will refresh automatically once the source is reachable again.</p>`;
+        notified = await sendMail(recipients, `⚠️ Scheduled refresh failed — ${dashboardName}`, html, "FabOrchestrator Alerts");
+      }
+    }
+
     await prisma
       .$executeRawUnsafe(
         `INSERT INTO audit_logs (id, user_id, action, target_type, target_id, metadata, created_at)
@@ -141,6 +202,9 @@ export async function runDueReportRefresh(
           refreshed: r.refreshed,
           failed: r.failed,
           status,
+          unreachable: r.unreachable > 0,
+          reason: r.reason ?? null,
+          notified,
           trigger: "schedule",
         }),
       )
