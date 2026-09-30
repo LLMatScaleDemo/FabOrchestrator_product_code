@@ -11,7 +11,8 @@
  * so it reads as part of FabOrchestrator rather than a bolted-on page.
  */
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { isInstalledPhone } from "@/lib/installed-app"
 import { useRouter } from "next/navigation"
 import { CockpitNav } from "@/components/cockpit/cockpit-nav"
 import { COCKPIT_FONT } from "@/components/cockpit/cockpit-page"
@@ -160,8 +161,16 @@ export default function ReportsPage() {
    * button. A pin with no snapshot yet (brand-new, before its first scheduled
    * run) shows a "not refreshed yet" prompt rather than auto-querying live.
    */
+  // The page's own scroll container (the root layout locks <body>). A report
+  // opens in place of the list inside it, so it opens wherever the list was
+  // scrolled to — on a short phone screen, with its title and "All reports"
+  // above the fold. The installed phone app resets it; a browser tab keeps
+  // the website's behaviour.
+  const scrollRef = useRef<HTMLDivElement>(null)
+
   const openReport = useCallback(async (p: Pinned) => {
     setOpen(p); setHtml(""); setRefreshedAtIso(null); setRenderError(null); setIsLive(false); setNoSnapshot(false)
+    if (isInstalledPhone()) scrollRef.current?.scrollTo({ top: 0 })
     setRendering(true)
     try {
       const res = await fetch(`/api/fabinsight/pinned/${p.id}`, { headers: authHeaders() })
@@ -235,6 +244,7 @@ export default function ReportsPage() {
 
   return (
     <div
+      ref={scrollRef}
       className="cockpit-v2 h-full overflow-y-auto"
       style={{ fontFamily: COCKPIT_FONT, background: "var(--page-surface)", color: "var(--text-ink)", lineHeight: "normal" }}
     >

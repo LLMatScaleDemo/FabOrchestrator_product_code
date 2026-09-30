@@ -38,6 +38,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { MobileSidebarBar } from "@/components/mobile-sidebar-bar"
 import { cn } from "@/lib/utils"
 import { useChat } from "@ai-sdk/react"
 import { type UIMessage, DefaultChatTransport } from "ai"
@@ -2522,16 +2523,21 @@ function FullChatApp() {
           onOpenSettings={() => setSettingsOpen(true)}
         />
         <SidebarInset id="main-content" tabIndex={-1} className="overflow-hidden">
-          <ChatContent
-            key={chatKey}
-            conversationId={selectedConversationId}
-            selectedModel={selectedModel}
-            setSelectedModel={setSelectedModel}
-            onConversationCreated={handleConversationCreated}
-            userName={userName}
-            onOpenMcpSettings={() => { setSettingsTab("mcp"); setSettingsOpen(true) }}
-            allowedModels={allowedModels}
-          />
+          {/* Below 768px the sidebar is a closed drawer whose own trigger is
+              inside it; this bar is the way in. Hidden at 768px and above. */}
+          <MobileSidebarBar />
+          <div className="min-h-0 flex-1">
+            <ChatContent
+              key={chatKey}
+              conversationId={selectedConversationId}
+              selectedModel={selectedModel}
+              setSelectedModel={setSelectedModel}
+              onConversationCreated={handleConversationCreated}
+              userName={userName}
+              onOpenMcpSettings={() => { setSettingsTab("mcp"); setSettingsOpen(true) }}
+              allowedModels={allowedModels}
+            />
+          </div>
         </SidebarInset>
       </SidebarProvider>
       <SettingsModal

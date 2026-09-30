@@ -38,6 +38,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { MobileSidebarBar } from "@/components/mobile-sidebar-bar"
 import { cn } from "@/lib/utils"
 import { useChat } from "@ai-sdk/react"
 import { type UIMessage, DefaultChatTransport } from "ai"
@@ -2675,6 +2676,10 @@ function ModelingChatApp({
           onOpenLoader={() => setView("loader")}
         />
         <SidebarInset id="main-content" tabIndex={-1} className="overflow-hidden">
+          {/* Below 768px the sidebar is a closed drawer whose own trigger is
+              inside it; this bar is the way in, above both views. Hidden at
+              768px and above. */}
+          <MobileSidebarBar />
           {view === "loader" ? (
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
               <div className="my-auto w-full px-4 py-10">
@@ -2682,7 +2687,9 @@ function ModelingChatApp({
               </div>
             </div>
           ) : (
-            <div className="flex h-full min-h-0 flex-col">
+            // `flex-1` rather than `h-full`, like the loader view above, so it
+            // shares the column with the bar instead of overflowing by its height.
+            <div className="flex min-h-0 flex-1 flex-col">
               {/* Slim top strip — CMF connectivity (the chat also reaches CMF via
                   browse / lookup / fill-from-existing / metadata). */}
               <div className="flex shrink-0 items-center justify-end gap-2 px-4 pt-3 pb-1">

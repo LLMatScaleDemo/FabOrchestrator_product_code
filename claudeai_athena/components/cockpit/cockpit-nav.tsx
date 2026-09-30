@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -23,12 +23,34 @@ const sv = (children: React.ReactNode, size = 16) => (
     </svg>
 )
 
-const NAV_ITEMS: { label: string; active?: boolean; icon: React.ReactNode }[] = [
-    { label: "Cockpit", active: true, icon: sv(<><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></>) },
+const NAV_ITEMS: { label: string; active?: boolean; href?: string; icon: React.ReactNode }[] = [
+    { label: "Cockpit", active: true, href: "/home", icon: sv(<><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></>) },
     { label: "Agents", icon: sv(<><circle cx="12" cy="8" r="3.2" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /></>) },
     { label: "Workflows", icon: sv(<><circle cx="6" cy="6" r="2.2" /><circle cx="6" cy="18" r="2.2" /><circle cx="18" cy="12" r="2.2" /><path d="M8.2 6H13a3 3 0 0 1 3 3v.4" /><path d="M8.2 18H13a3 3 0 0 0 3-3v-.4" /></>) },
     { label: "Sites", icon: sv(<><path d="M4 21V6a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v15" /><path d="M15 9h4a1 1 0 0 1 1 1v11" /><line x1="7.5" y1="9" x2="11" y2="9" /></>) },
-    { label: "Reports", icon: sv(<><line x1="6" y1="20" x2="6" y2="13" /><line x1="12" y1="20" x2="12" y2="8" /><line x1="18" y1="20" x2="18" y2="11" /></>) },
+    { label: "Reports", href: "/reports", icon: sv(<><line x1="6" y1="20" x2="6" y2="13" /><line x1="12" y1="20" x2="12" y2="8" /><line x1="18" y1="20" x2="18" y2="11" /></>) },
+]
+
+const navIcon = (label: string) => NAV_ITEMS.find((item) => item.label === label)?.icon
+
+/**
+ * The header's navigation below 768px — every phone view, browser or installed.
+ *
+ * The row of links (`hidden md:flex`, further down) does not fit a phone —
+ * five labelled buttons are about 500px — so below 768px it collapses into a
+ * menu behind a button at the left of this same header. The button is
+ * `md:hidden`: the exact complement of the row, so at every width exactly one
+ * of the two shows and the header never loses Home and Reports. The menu
+ * offers the destinations that are pages: the cockpit, the chat, and Reports.
+ * Agents, Workflows and Sites have no pages yet, so they are not offered.
+ *
+ * Chat is shown but disabled for now (11 September): it stays visible for
+ * context and is announced as unavailable, not as a link.
+ */
+const MOBILE_NAV: { label: string; href: string; icon: React.ReactNode; disabled?: boolean }[] = [
+    { label: "Cockpit", href: "/home", icon: navIcon("Cockpit") },
+    { label: "Chat", href: "/chat", icon: sv(<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />), disabled: true },
+    { label: "Reports", href: "/reports", icon: navIcon("Reports") },
 ]
 
 function getInitials(name: string | null, email: string): string {
@@ -41,6 +63,7 @@ function getInitials(name: string | null, email: string): string {
 
 export function CockpitNav({ user }: { user: AuthedUser | null }) {
     const router = useRouter()
+    const pathname = usePathname()
     const initials = user ? getInitials(user.name, user.email) : "—"
     const displayName = user?.name || user?.email || "—"
     const roleName = user?.role?.name || "Business User"
@@ -62,9 +85,43 @@ export function CockpitNav({ user }: { user: AuthedUser | null }) {
     }
 
     return (
-        <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b bg-white px-[26px] py-[14px]" style={{ borderColor: "var(--border-light)" }}>
+        <div className="sticky top-0 z-20 flex items-center gap-1.5 border-b bg-white px-4 py-[14px] md:px-[26px]" style={{ borderColor: "var(--border-light)" }}>
+            {/* Navigation below 768px. The link row further along is
+                `hidden md:flex`; this menu is `md:hidden` — the exact
+                complement, so exactly one of the two shows at every width, in
+                a browser and in the installed app alike. */}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="ghost" aria-label="Open navigation" className="-ml-1.5 flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-[9px] border-0 bg-transparent p-0 transition-colors hover:bg-[var(--cockpit-surface)] active:scale-100 md:hidden" style={{ color: "var(--text-ink)" }}>
+                        {sv(<><line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" /></>, 20)}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                    {MOBILE_NAV.map((item) => {
+                        const current = !item.disabled && pathname === item.href
+                        return (
+                            // `disabled` is Radix's own: `aria-disabled` and
+                            // `data-disabled`, skipped by keyboard focus and
+                            // never highlighted; FabOrchestrator's item styles
+                            // it dimmed with no pointer events.
+                            <DropdownMenuItem
+                                key={item.href}
+                                disabled={item.disabled}
+                                onClick={item.disabled ? undefined : () => router.push(item.href)}
+                                aria-current={current ? "page" : undefined}
+                                className="gap-2.5 py-2.5 text-[14px] font-semibold"
+                                style={current ? { color: "var(--brand-indigo)" } : undefined}
+                            >
+                                <span className="flex">{item.icon}</span>
+                                {item.label}
+                            </DropdownMenuItem>
+                        )
+                    })}
+                </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* brand */}
-            <div className="mr-[22px] flex items-center gap-2.5">
+            <div className="mr-1 flex items-center gap-2.5 md:mr-[22px]">
                 <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg text-[15px] font-extrabold text-white" style={{ background: "linear-gradient(135deg,var(--brand-indigo),var(--cockpit-indigo))" }}>
                     A
                 </div>
@@ -76,12 +133,14 @@ export function CockpitNav({ user }: { user: AuthedUser | null }) {
 
             {/* nav links */}
             <nav className="hidden items-center gap-1.5 md:flex">
+                {/* Cockpit and Reports go to their pages; Agents, Workflows and
+                    Sites have none yet and stay on the cockpit. */}
                 {NAV_ITEMS.map((item) => (
                     <Button
                         key={item.label}
                         type="button"
                         variant="ghost"
-                        onClick={() => router.push("/home")}
+                        onClick={() => router.push(item.href ?? "/home")}
                         className="flex h-auto items-center gap-[7px] rounded-[9px] border-0 bg-transparent px-[14px] py-2 text-[13.5px] font-semibold transition-colors hover:bg-transparent active:scale-100 dark:hover:bg-transparent"
                         style={item.active ? { background: "var(--cockpit-nav-active)", color: "var(--pure-white)" } : { color: "var(--text-muted-cool)" }}
                     >

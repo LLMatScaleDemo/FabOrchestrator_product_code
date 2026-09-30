@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
+import { INSTALLED_APP_SCRIPT } from "@/lib/installed-app";
 import "./globals.css";
 import "./artifact-panel.css";
 
@@ -42,6 +43,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning data-theme="fab-blue" className="h-full overflow-hidden">
+      <head>
+        {/* Marks the installed app (`data-installed-app`) before first paint,
+            so its phone navigation never flashes in after the browser layout.
+            See lib/installed-app.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: INSTALLED_APP_SCRIPT }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-hidden`}
         suppressHydrationWarning
