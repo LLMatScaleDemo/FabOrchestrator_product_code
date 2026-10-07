@@ -34,6 +34,37 @@ const NAV_ITEMS: { label: string; active?: boolean; href?: string; icon: React.R
 const navIcon = (label: string) => NAV_ITEMS.find((item) => item.label === label)?.icon
 
 /**
+ * Device administration, when FabOrchestrator runs behind the FabOrchestrator
+ * PWA (7 October 2026). The PWA approves the phones and computers that may
+ * reach FabOrchestrator and manages them at its own page, `/device-admin`, on
+ * the same origin. The button shows only when the PWA says this person is a
+ * device administrator (`/api/pwa/device-admin/me`); FabOrchestrator on its own,
+ * without the PWA, answers that with a 404 and the button never appears. A
+ * whole-page navigation, not `router.push`: `/device-admin` is the PWA's page,
+ * not one of FabOrchestrator's routes.
+ */
+const DEVICES_ICON = sv(<><rect x="7" y="2.5" width="10" height="19" rx="2" /><line x1="11" y1="18" x2="13" y2="18" /><path d="M3 9v6" /><path d="M21 9v6" /></>)
+const DEVICE_ADMIN_PAGE = "/device-admin"
+
+function useDeviceAdmin(): boolean {
+    const [admin, setAdmin] = React.useState(false)
+    React.useEffect(() => {
+        let cancelled = false
+        const token = typeof window === "undefined" ? null : window.localStorage.getItem(AUTH_TOKEN_KEY)
+        if (!token) return
+        fetch("/api/pwa/device-admin/me", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+            .then((res) => {
+                if (!cancelled && res.ok) setAdmin(true)
+            })
+            .catch(() => {})
+        return () => {
+            cancelled = true
+        }
+    }, [])
+    return admin
+}
+
+/**
  * The header's navigation below 768px — every phone view, browser or installed.
  *
  * The row of links (`hidden md:flex`, further down) does not fit a phone —
@@ -67,6 +98,7 @@ export function CockpitNav({ user }: { user: AuthedUser | null }) {
     const initials = user ? getInitials(user.name, user.email) : "—"
     const displayName = user?.name || user?.email || "—"
     const roleName = user?.role?.name || "Business User"
+    const deviceAdmin = useDeviceAdmin()
 
     const handleLogout = async () => {
         if (typeof window === "undefined") return
@@ -117,6 +149,15 @@ export function CockpitNav({ user }: { user: AuthedUser | null }) {
                             </DropdownMenuItem>
                         )
                     })}
+                    {deviceAdmin ? (
+                        <DropdownMenuItem
+                            onClick={() => window.location.assign(DEVICE_ADMIN_PAGE)}
+                            className="gap-2.5 py-2.5 text-[14px] font-semibold"
+                        >
+                            <span className="flex">{DEVICES_ICON}</span>
+                            Devices
+                        </DropdownMenuItem>
+                    ) : null}
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -148,6 +189,18 @@ export function CockpitNav({ user }: { user: AuthedUser | null }) {
                         {item.label}
                     </Button>
                 ))}
+                {deviceAdmin ? (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => window.location.assign(DEVICE_ADMIN_PAGE)}
+                        className="flex h-auto items-center gap-[7px] rounded-[9px] border-0 bg-transparent px-[14px] py-2 text-[13.5px] font-semibold transition-colors hover:bg-transparent active:scale-100 dark:hover:bg-transparent"
+                        style={{ color: "var(--text-muted-cool)" }}
+                    >
+                        <span className="flex">{DEVICES_ICON}</span>
+                        Devices
+                    </Button>
+                ) : null}
             </nav>
 
             <div className="flex-1" />
